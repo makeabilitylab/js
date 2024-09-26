@@ -23,6 +23,10 @@ import path from 'path';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// TODO:
+// 1. Investigate minification
+// 2. Investigate making different bundles for diff things like graphics, math, etc.
+
 export default defineConfig({
   input: './src/lib/makelab-index.js',
   output: {
