@@ -5,8 +5,8 @@
 // UW CSE Professor
 // http://makeabilitylab.io/
 //
-import { Vector } from './vector.js';
-import { convertToRadians, convertToDegrees } from './math-utils.js';
+import { Vector } from '../math/vector.js';
+import { convertToRadians, convertToDegrees } from '../math/math-utils.js';
 
 export class LineSegment {
   /**

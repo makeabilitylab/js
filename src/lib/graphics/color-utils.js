@@ -1,4 +1,4 @@
-import { lerp } from './math-utils.js';
+import { lerp } from '../math/math-utils.js';
 
 /**
  * Linearly interpolates between two colors.
