@@ -1,13 +1,12 @@
 // vector-tests.js
-import { Vector } from '/dist/makelab.bundle.js';
+import { Vector } from '/dist/makelab.bundle.rollup.js';
 
 function testVector(testName, expectedResult, actualResult) {
   const result = expectedResult === actualResult;
-  console.log(`${testName}: ${result ? 'PASSED' : 'FAILED'}`);
-  if (!result) {
-    console.log(`  Expected: ${expectedResult}`);
-    console.log(`  Actual: ${actualResult}`);
-  }
+  // console.log(`${testName}: ${result ? 'PASSED' : 'FAILED'}`);
+ 
+  console.log(`  Expected: ${expectedResult}`);
+  console.log(`  Actual: ${actualResult}`);
 }
 
 // Basic arithmetic tests
