@@ -1746,7 +1746,6 @@ class MakeabilityLabLogoExploder{
     this.makeLabLogoAnimated.isMOutlineVisible = false;
 
     this.originalRandomTriLocs = [];
-    this.reset();
 
     this.explodeSize = true;
     this.explodeX = true;
@@ -1754,19 +1753,42 @@ class MakeabilityLabLogoExploder{
     this.explodeAngle = true;
   }
 
+  /**
+   * Resets the state of the logo exploder with new dimensions and randomizes the 
+   * positions, angles, and sizes of the triangles.
+   *
+   * @param {number} width - The drawing area width
+   * @param {number} height - The drawing area height
+   */
   reset(width, height){
+
     this.originalRandomTriLocs = [];
-    const triangleSize = this.makeLabLogoAnimated.triangleSize;
-    for(const tri of this.makeLabLogo.getAllTriangles(true)){
+    const triangleSize = this.makeLabLogo.cellSize;
+   
+    const makeLabLogoTriangles = this.makeLabLogo.getAllTriangles(true);
+    const makeLabLogoAnimatedTriangles = this.makeLabLogoAnimated.getAllTriangles(true);
+    for (let i = 0; i < makeLabLogoAnimatedTriangles.length; i++) {
+      const tri = makeLabLogoAnimatedTriangles[i];
       let randSize = this.explodeSize ? random(triangleSize/2, triangleSize*3) : triangleSize;
-      tri.x = random(randSize, width - randSize);
-      tri.y = random(randSize, height - randSize);
-      tri.angle = modifyAngle ? random(0, 360) : 0;
+      tri.x = this.explodeX ? random(randSize, width - randSize) : makeLabLogoTriangles[i].x;
+      tri.y = this.explodeY ? random(randSize, height - randSize) : makeLabLogoTriangles[i].y;
+      tri.angle = this.explodeAngle ? random(0, 360) : 0;
       tri.size = randSize;
       this.originalRandomTriLocs.push({x: tri.x, y: tri.y, angle: tri.angle, size: randSize});
     }
   }
 
+  /**
+   * Updates the state of the animated logo based on the provided interpolation amount.
+   *
+   * @param {number} lerpAmt - The interpolation amount, a value between 0 and 1.
+   *
+   * This function performs the following operations:
+   * 1. Toggles the visibility of the logo outline based on the lerpAmt.
+   * 2. Interpolates the position, angle, and size of each triangle in the logo from their
+   *    original random locations to their final static positions.
+   * 3. Interpolates the color of each triangle in the logo from white to their original colors.
+   */
   update(lerpAmt){
     if(lerpAmt >= 1){
       this.makeLabLogoAnimated.isLOutlineVisible = true;
@@ -1808,6 +1830,11 @@ class MakeabilityLabLogoExploder{
     }
   }
 
+  /**
+   * Draws the MakeLab logo and its animated version on the provided canvas context.
+   *
+   * @param {CanvasRenderingContext2D} ctx - The canvas rendering context where the logos will be drawn.
+   */
   draw(ctx){
     this.makeLabLogo.draw(ctx);
     this.makeLabLogoAnimated.draw(ctx);

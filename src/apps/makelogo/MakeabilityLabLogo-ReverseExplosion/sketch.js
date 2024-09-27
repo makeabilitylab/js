@@ -74,33 +74,6 @@ function resetRandomTriLocs(){
   console.log(`resetRandomTriLocs: originalRandomTriLocs.length: ${originalRandomTriLocs.length}`);
 }
 
-// function resetRandomTriLocs(){
-//   originalRandomTriLocs = [];
-//   const width = canvas.width;
-//   const height = canvas.height;
-//   // Get the triangles from both makeLabLogo and makeLabLogoAnimated
-//   const makeLabLogoTriangles = makeLabLogo.getAllTriangles(true);
-//   const makeLabLogoAnimatedTriangles = makeLabLogoAnimated.getAllTriangles(true);
-
-//   const triangleSize = makeLabLogo.triangleSize;
-
-//   // Iterate through both arrays simultaneously
-//   for (let i = 0; i < makeLabLogoTriangles.length; i++) {
-//     const originalTri = makeLabLogoTriangles[i];
-//     const animatedTri = makeLabLogoAnimatedTriangles[i];
-//     let randSize = explodeSize ? random(triangleSize/2, triangleSize*3) : triangleSize;
-//     animatedTri.x = explodeX ? random(randSize, width - randSize) : originalTri.x;
-//     animatedTri.y = explodeY ? random(randSize, height - randSize) : originalTri.y;
-//     animatedTri.angle = explodeAngle ? random(0, 360) : 0;
-//     animatedTri.size = randSize;
-//     originalRandomTriLocs.push({x: animatedTri.x, 
-//       y: animatedTri.y, 
-//       angle: animatedTri.angle, 
-//       size: randSize});
-//   }
-//   console.log(`resetRandomTriLocs: originalRandomTriLocs.length: ${originalRandomTriLocs.length}`);
-// }
-
 function mouseMoved(event) {
   //console.log(`mouseMoved: ${event.clientX}, ${event.clientY}`);
   // const mouseX = event.clientX;
