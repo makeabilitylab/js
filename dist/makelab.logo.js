@@ -144,6 +144,35 @@ function convertToDegrees(radians) {
   return radians * (180 / Math.PI);
 }
 
+/**
+ * Linearly interpolates between two values.
+ *
+ * @param {number} start - The starting value.
+ * @param {number} end - The ending value.
+ * @param {number} amt - The interpolation amount (0-1).
+ * @returns {number} The interpolated value.
+ */
+function lerp(start, end, amt) {
+  return (1 - amt) * start + amt * end;
+}
+
+/**
+ * Generates a random number within a specified range (similar to p5js random)
+ * If only one argument is provided, it generates a number between 0 and the argument.
+ * If two arguments are provided, it generates a number between the two arguments.
+ * 
+ * @param {number} min - The minimum value (inclusive) or the maximum value if only one argument is provided.
+ * @param {number} [max] - The maximum value (exclusive).
+ * @returns {number} A random number within the specified range.
+ */
+function random(min, max) {
+  if (max === undefined) {
+    max = min;
+    min = 0;
+  }
+  return Math.random() * (max - min) + min;
+}
+
 // This library provides basic line segment functionality, including drawing
 // and vector operations
 //
@@ -1630,5 +1659,161 @@ class MakeabilityLabLogoColorer {
   }
 }
 
-export { Cell, Grid, MakeabilityLabLogo, MakeabilityLabLogoColorer, ORIGINAL_COLOR_ARRAY, OriginalColorPaletteRGB, Triangle, TriangleDir };
+/**
+ * Linearly interpolates between two colors.
+ *
+ * @param {Object|string} startColor - The starting color. Can be an object with r, g, b, and 
+ *  optionally alpha fields, or a string in a valid CSS color format.
+ * @param {Object|string} endColor - The ending color. Can be an object with r, g, b, and 
+ *  optionally alpha fields, or a string in a valid CSS color format.
+ * @param {number} amt - The amount to interpolate between the two colors. Should be a value between 0 and 1.
+ * @returns {string} The interpolated color in rgba format.
+ */
+function lerpColor(startColor, endColor, amt) {
+  // console.log(`lerpColor: startColor: ${startColor}, endColor: ${endColor}, amt: ${amt}`);
+
+  // Ensure both colors are objects with r, g, b, and optionally a properties
+  startColor = convertColorStringToObject(startColor);
+  endColor = convertColorStringToObject(endColor);
+
+  const r = Math.round(lerp(startColor.r, endColor.r, amt));
+  const g = Math.round(lerp(startColor.g, endColor.g, amt));
+  const b = Math.round(lerp(startColor.b, endColor.b, amt));
+  const a = lerp(startColor.a || 1, endColor.a || 1, amt); // Default to 1 if a property is missing
+
+  return `rgba(${r}, ${g}, ${b}, ${a})`;
+}
+
+/**
+ * Converts a color string (hex, rgb, or rgba) to an object with r, g, b, and optionally a properties.
+ * If the input is already an object, it returns the input as is.
+ *
+ * @param {string|Object} colorStr - The color string or object to convert.
+ * @returns {Object} An object with properties r, g, b, and optionally a.
+ * @throws {Error} If the color string format is invalid.
+ */
+function convertColorStringToObject(colorStr) {
+  if (typeof colorStr === 'string') {
+    // Handle hexstring, rgb, or rgba string
+    const match = colorStr.match(/^#([0-9a-fA-F]{6}|[0-9a-fA-F]{3}|[0-9a-fA-F]{8})$/);
+    if (match) {
+      // Hexstring
+      const hex = match[1];
+      if (hex.length === 8) {
+        // 8-digit hex string with alpha
+        return {
+          r: parseInt(hex.substring(0, 2), 16),
+          g: parseInt(hex.substring(2, 4), 16),
+          b: parseInt(hex.substring(4, 6), 16),
+          a: parseInt(hex.substring(6, 8), 16) / 255
+        };
+      } else {
+        // 6-digit hex string without alpha
+        return {
+          r: parseInt(hex.substring(0, 2), 16),
+          g: parseInt(hex.substring(2, 4), 16),
+          b: parseInt(hex.substring(4, 6), 16),
+          a: 1 // Default to 1 if alpha is not specified
+        };
+      }
+    } else if (colorStr.startsWith('rgb')) {
+      // rgb or rgba string
+      const match = colorStr.match(/rgba?\((\d+), (\d+), (\d+)(?:, (\d?\.\d+))?\)/);
+      if (match) {
+        const [, r, g, b, a] = match;
+        return {
+          r: parseInt(r),
+          g: parseInt(g),
+          b: parseInt(b),
+          a: a !== undefined ? parseFloat(a) : 1 // Default to 1 if alpha is not specified
+        };
+      }
+    }
+    throw new Error(`Invalid color string: ${colorStr}`);
+  }
+
+  // If it's already an object, return it
+  return colorStr;
+}
+
+class MakeabilityLabLogoExploder{
+  constructor(x, y, triangleSize){
+    this.makeLabLogo = new MakeabilityLabLogo(x, y, triangleSize);
+    this.makeLabLogo.visible = false;
+
+    this.makeLabLogoAnimated = new MakeabilityLabLogo(x, y, triangleSize);
+    this.makeLabLogoAnimated.isLOutlineVisible = false;
+    this.makeLabLogoAnimated.isMOutlineVisible = false;
+
+    this.originalRandomTriLocs = [];
+    this.reset();
+
+    this.explodeSize = true;
+    this.explodeX = true;
+    this.explodeY = true;
+    this.explodeAngle = true;
+  }
+
+  reset(width, height){
+    this.originalRandomTriLocs = [];
+    const triangleSize = this.makeLabLogoAnimated.triangleSize;
+    for(const tri of this.makeLabLogo.getAllTriangles(true)){
+      let randSize = this.explodeSize ? random(triangleSize/2, triangleSize*3) : triangleSize;
+      tri.x = random(randSize, width - randSize);
+      tri.y = random(randSize, height - randSize);
+      tri.angle = modifyAngle ? random(0, 360) : 0;
+      tri.size = randSize;
+      this.originalRandomTriLocs.push({x: tri.x, y: tri.y, angle: tri.angle, size: randSize});
+    }
+  }
+
+  update(lerpAmt){
+    if(lerpAmt >= 1){
+      this.makeLabLogoAnimated.isLOutlineVisible = true;
+    }else {
+      this.makeLabLogoAnimated.isLOutlineVisible = false;
+    }
+
+    const staticTriangles = this.makeLabLogo.getAllTriangles(true);
+    let animatedTriangles = this.makeLabLogoAnimated.getAllTriangles(true);
+
+    for (let i = 0; i < this.originalRandomTriLocs.length; i++) {
+      const endX = staticTriangles[i].x;
+      const endY = staticTriangles[i].y;
+      const endAngle = 0;
+      const endSize = staticTriangles[i].size;
+  
+      const startX = this.originalRandomTriLocs[i].x;
+      const startY = this.originalRandomTriLocs[i].y;
+      const startAngle = this.originalRandomTriLocs[i].angle;
+      const startSize = this.originalRandomTriLocs[i].size;
+  
+      const newX = lerp(startX, endX, lerpAmt);
+      const newY = lerp(startY, endY, lerpAmt);
+      const newAngle = lerp(startAngle, endAngle, lerpAmt);
+      const newSize = lerp(startSize, endSize, lerpAmt);
+  
+      animatedTriangles[i].x = newX;
+      animatedTriangles[i].y = newY;
+      animatedTriangles[i].angle = newAngle;
+      animatedTriangles[i].size = newSize;
+    }
+  
+    const animatedColoredTriangles = this.makeLabLogoAnimated.getDefaultColoredTriangles();
+    for (let i = 0; i < animatedColoredTriangles.length; i++) {
+      const startColor = { r: 255, g: 255, b: 255, a: 1 };
+      const endColor = ORIGINAL_COLOR_ARRAY[i];
+      const newColor = lerpColor(startColor, endColor, lerpAmt);
+      animatedColoredTriangles[i].fillColor = newColor;
+    }
+  }
+
+  draw(ctx){
+    this.makeLabLogo.draw(ctx);
+    this.makeLabLogoAnimated.draw(ctx);
+  }
+  
+}
+
+export { Cell, Grid, MakeabilityLabLogo, MakeabilityLabLogoColorer, MakeabilityLabLogoExploder, ORIGINAL_COLOR_ARRAY, OriginalColorPaletteRGB, Triangle, TriangleDir };
 //# sourceMappingURL=makelab.logo.js.map

@@ -1,6 +1,10 @@
-import { MakeabilityLabLogo, Grid, ORIGINAL_COLOR_ARRAY } from '../_library/makelab-logo.js';
-import { lerpColor, convertColorStringToObject } from '../_library/color-utils.js';
-import { lerp, random } from '../_library/math-utils.js';
+// import { MakeabilityLabLogo, Grid, ORIGINAL_COLOR_ARRAY } from '../_library/makelab-logo.js';
+// import { lerpColor, convertColorStringToObject } from '../_library/color-utils.js';
+// import { lerp, random } from '../_library/math-utils.js';
+
+import { MakeabilityLabLogo, Grid, ORIGINAL_COLOR_ARRAY} from '/dist/makelab.all.js';
+import { lerpColor } from '/dist/makelab.all.js';
+import { lerp, random } from '/dist/makelab.all.js';
 
 const canvas = document.getElementById('myCanvas');
 
@@ -10,8 +14,10 @@ canvas.height = 1000;
 const ctx = canvas.getContext('2d');
 
 let originalRandomTriLocs = [];
-let modifySize = true;
-let modifyAngle = true;
+let explodeSize = true;
+let explodeAngle = true;
+let explodeX = true;
+let explodeY = true;
 
 ctx.fillStyle = "rgb(250, 250, 250)"; // Set the fill style to gray
 ctx.fillRect(0, 0, canvas.width, canvas.height); // Fill the entire canvas with the gray color
@@ -28,30 +34,72 @@ makeLabLogoAnimated.isLOutlineVisible = false;
 makeLabLogoAnimated.isMOutlineVisible = false;
 resetRandomTriLocs();
 
-// console.log(convertColorStringToObject("#ff0000"));
-// console.log(convertColorStringToObject("#ff0000ee"));
-// console.log(convertColorStringToObject('rgb(255, 0, 0)'));
-// console.log(convertColorStringToObject('rgb(255, 0, 0, 0.5)'));
-//console.log(convertColorStringToObject('rgb(255, 0, 0, 128)'));
-
 draw(ctx);
 printMenu();
 canvas.addEventListener('mousemove', mouseMoved);
+
+// function resetRandomTriLocs(){
+//   originalRandomTriLocs = [];
+//   const width = canvas.width;
+//   const height = canvas.height;
+//   for(const tri of makeLabLogoAnimated.getAllTriangles(true)){
+  
+//     let randSize = explodeSize ? random(TRIANGLE_SIZE/2, TRIANGLE_SIZE*3) : TRIANGLE_SIZE;
+//     tri.x = random(randSize, width - randSize);
+//     tri.y = random(randSize, height - randSize);
+//     tri.angle = explodeAngle ? random(0, 360) : 0;
+//     tri.size = randSize;
+//     originalRandomTriLocs.push({x: tri.x, y: tri.y, angle: tri.angle, size: randSize});
+//   }
+  
+//   console.log(`resetRandomTriLocs: originalRandomTriLocs.length: ${originalRandomTriLocs.length}`);
+// }
 
 function resetRandomTriLocs(){
   originalRandomTriLocs = [];
   const width = canvas.width;
   const height = canvas.height;
-  for(const tri of makeLabLogoAnimated.getAllTriangles(true)){
-    let randSize = modifySize ? random(TRIANGLE_SIZE/2, TRIANGLE_SIZE*3) : TRIANGLE_SIZE;
-    tri.x = random(randSize, width - randSize);
-    tri.y = random(randSize, height - randSize);
-    tri.angle = modifyAngle ? random(0, 360) : 0;
+  const makeLabLogoTriangles = makeLabLogo.getAllTriangles(true);
+  const makeLabLogoAnimatedTriangles = makeLabLogoAnimated.getAllTriangles(true);
+  for (let i = 0; i < makeLabLogoAnimatedTriangles.length; i++) {
+    const tri = makeLabLogoAnimatedTriangles[i];
+    let randSize = explodeSize ? random(TRIANGLE_SIZE/2, TRIANGLE_SIZE*3) : TRIANGLE_SIZE;
+    tri.x = explodeX ? random(randSize, width - randSize) : makeLabLogoTriangles[i].x;
+    tri.y = explodeY ? random(randSize, height - randSize) : makeLabLogoTriangles[i].y;
+    tri.angle = explodeAngle ? random(0, 360) : 0;
     tri.size = randSize;
     originalRandomTriLocs.push({x: tri.x, y: tri.y, angle: tri.angle, size: randSize});
   }
+  
   console.log(`resetRandomTriLocs: originalRandomTriLocs.length: ${originalRandomTriLocs.length}`);
 }
+
+// function resetRandomTriLocs(){
+//   originalRandomTriLocs = [];
+//   const width = canvas.width;
+//   const height = canvas.height;
+//   // Get the triangles from both makeLabLogo and makeLabLogoAnimated
+//   const makeLabLogoTriangles = makeLabLogo.getAllTriangles(true);
+//   const makeLabLogoAnimatedTriangles = makeLabLogoAnimated.getAllTriangles(true);
+
+//   const triangleSize = makeLabLogo.triangleSize;
+
+//   // Iterate through both arrays simultaneously
+//   for (let i = 0; i < makeLabLogoTriangles.length; i++) {
+//     const originalTri = makeLabLogoTriangles[i];
+//     const animatedTri = makeLabLogoAnimatedTriangles[i];
+//     let randSize = explodeSize ? random(triangleSize/2, triangleSize*3) : triangleSize;
+//     animatedTri.x = explodeX ? random(randSize, width - randSize) : originalTri.x;
+//     animatedTri.y = explodeY ? random(randSize, height - randSize) : originalTri.y;
+//     animatedTri.angle = explodeAngle ? random(0, 360) : 0;
+//     animatedTri.size = randSize;
+//     originalRandomTriLocs.push({x: animatedTri.x, 
+//       y: animatedTri.y, 
+//       angle: animatedTri.angle, 
+//       size: randSize});
+//   }
+//   console.log(`resetRandomTriLocs: originalRandomTriLocs.length: ${originalRandomTriLocs.length}`);
+// }
 
 function mouseMoved(event) {
   //console.log(`mouseMoved: ${event.clientX}, ${event.clientY}`);

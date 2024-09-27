@@ -1,5 +1,5 @@
-import { Vector } from './math/vector.js';
-import { LineSegment } from './graphics/line-segment.js';
+import { Vector } from '../math/vector.js';
+import { LineSegment } from '../graphics/line-segment.js';
 
 export class MakeabilityLabLogo {
 

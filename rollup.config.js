@@ -1,3 +1,10 @@
+// This configuration will generate four bundles:
+
+// 1. makelab.math.js and makelab.math.min.js
+// 2. makelab.graphics.js and makelab.graphics.min.js
+// 3. makelab.logo.js and makelab.logo.min.js
+// 4. makelab.all.js and makelab.all.min.js
+
 import { defineConfig } from 'rollup';
 import resolve from '@rollup/plugin-node-resolve';
 import alias from '@rollup/plugin-alias';
@@ -60,7 +67,7 @@ export default defineConfig([
   },
   // Bundle for makelab.logo.js
   {
-    input: './src/lib/makelab-logo.js',
+    input: './src/lib/logo/index.js',
     output: [
       {
         file: 'dist/makelab.logo.js',
