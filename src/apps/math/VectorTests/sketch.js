@@ -1,5 +1,5 @@
 // vector-tests.js
-import { Vector } from '/dist/makelab.bundle.rollup.js';
+import { Vector } from '/dist/makelab.math.js';
 
 function testVector(testName, expectedResult, actualResult) {
   const result = expectedResult === actualResult;

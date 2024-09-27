@@ -1,10 +1,4 @@
-// Import the LineSegment class (assuming ES Modules)
-// import { LineSegment } from '@graphicslib/line-segment.js';
-//import { LineSegment } from '/dist/makelab.bundle.js';
-
-import makelab from '/dist/makelab.bundle.js';
-
-const { LineSegment } = makelab;
+import { LineSegment } from '/dist/makelab.graphics.js';
 
 const canvas = document.getElementById('myCanvas');
 canvas.width = 400;

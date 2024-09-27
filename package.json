@@ -19,5 +19,8 @@
   "scripts": {
     "build": "webpack",
     "start": "webpack serve --open"
+  },
+  "dependencies": {
+    "@rollup/plugin-terser": "^0.4.4"
   }
 }

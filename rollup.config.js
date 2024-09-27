@@ -1,51 +1,97 @@
-// https://github.com/rollup/rollup-starter-lib
-// import path from 'path';
-// import { defineConfig } from 'rollup';
-
-// export default defineConfig({
-//   input: './src/lib/makelab-index.js',
-//   output: {
-//     file: 'dist/makelab.bundle.rollup.js',
-//     format: 'es', // Or 'es' for ES modules
-//     name: 'makelab', // Optional, if you want to use a global variable
-//   },
-//   plugins: [
-//     // Add plugins as needed, e.g., for transpilation or tree shaking
-//   ],
-// });
-
 import { defineConfig } from 'rollup';
 import resolve from '@rollup/plugin-node-resolve';
 import alias from '@rollup/plugin-alias';
+import terser from '@rollup/plugin-terser';
 import { fileURLToPath } from 'url';
 import path from 'path';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// TODO:
-// 1. Investigate minification
-// 2. Investigate making different bundles for diff things like graphics, math, etc.
+const commonPlugins = [
+  resolve(),
+  alias({
+    entries: [
+      { find: '@lib', replacement: path.resolve(__dirname, 'src/lib') },
+      { find: '@graphicslib', replacement: path.resolve(__dirname, 'src/lib/graphics') },
+      { find: '@mathlib', replacement: path.resolve(__dirname, 'src/lib/math') },
+      { find: '@apps', replacement: path.resolve(__dirname, 'src/apps') },
+      { find: '@dist', replacement: path.resolve(__dirname, 'dist') }
+    ]
+  }),
+];
 
-export default defineConfig({
-  input: './src/lib/makelab-index.js',
-  output: {
-    file: 'dist/makelab.bundle.rollup.js',
-    format: 'es', // Or 'cjs' for CommonJS
-    //format: 'iife', // Use 'iife' for browser compatibility
-    name: 'makelab', // Optional, if you want to use a global variable
+export default defineConfig([
+  // Bundle for makelab.math.js
+  {
+    input: './src/lib/math/index.js',
+    output: [
+      {
+        file: 'dist/makelab.math.js',
+        format: 'es',
+        sourcemap: true,
+      },
+      {
+        file: 'dist/makelab.math.min.js',
+        format: 'es',
+        sourcemap: false,
+        plugins: [terser()],
+      },
+    ],
+    plugins: commonPlugins,
   },
-  plugins: [
-    resolve(),
-    alias({
-      entries: [
-        { find: '@lib', replacement: path.resolve(__dirname, 'src/lib') },
-        { find: '@graphicslib', replacement: path.resolve(__dirname, 'src/lib/graphics') },
-        { find: '@mathlib', replacement: path.resolve(__dirname, 'src/lib/math') },
-        { find: '@apps', replacement: path.resolve(__dirname, 'src/apps') },
-        { find: '@dist', replacement: path.resolve(__dirname, 'dist') }
-      ]
-    }),
-    // Add other plugins as needed
-  ],
-});
+  // Bundle for makelab.graphics.js
+  {
+    input: './src/lib/graphics/index.js',
+    output: [
+      {
+        file: 'dist/makelab.graphics.js',
+        format: 'es',
+        sourcemap: true,
+      },
+      {
+        file: 'dist/makelab.graphics.min.js',
+        format: 'es',
+        sourcemap: false,
+        plugins: [terser()],
+      },
+    ],
+    plugins: commonPlugins,
+  },
+  // Bundle for makelab.logo.js
+  {
+    input: './src/lib/makelab-logo.js',
+    output: [
+      {
+        file: 'dist/makelab.logo.js',
+        format: 'es',
+        sourcemap: true,
+      },
+      {
+        file: 'dist/makelab.logo.min.js',
+        format: 'es',
+        sourcemap: false,
+        plugins: [terser()],
+      },
+    ],
+    plugins: commonPlugins,
+  },
+  // Bundle for makelab.all.js
+  {
+    input: './src/lib/index.js',
+    output: [
+      {
+        file: 'dist/makelab.all.js',
+        format: 'es',
+        sourcemap: true,
+      },
+      {
+        file: 'dist/makelab.all.min.js',
+        format: 'es',
+        sourcemap: false,
+        plugins: [terser()],
+      },
+    ],
+    plugins: commonPlugins,
+  },
+]);
