@@ -24,7 +24,7 @@ function mouseMoved(event){
   const lerpAmt = Math.min(mouseX / width, 1); // Normalize to range [0.0, 1.0]
   //console.log(`mouseX: ${mouseX}, width: ${width}, lerpAmt: ${lerpAmt}`);
 
-  makeLabLogoExploder.update(lerpAmt)
+  makeLabLogoExploder.update(lerpAmt);
   draw(ctx);
 }
 
