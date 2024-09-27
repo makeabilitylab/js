@@ -17,6 +17,10 @@ export class MakeabilityLabLogoExploder{
     this.explodeX = true;
     this.explodeY = true;
     this.explodeAngle = true;
+
+    // TODO:
+    // - Add explodeFillColor property
+    // - Add explodeStrokeColor property
   }
 
   /**
