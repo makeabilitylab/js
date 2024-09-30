@@ -1,5 +1,7 @@
-// This configuration will generate four bundles:
-
+// Run this config file with the following command:
+// npx rollup -c rollup.config.js
+// 
+// This will generate the following files in the dist folder:
 // 1. makelab.math.js and makelab.math.min.js
 // 2. makelab.graphics.js and makelab.graphics.min.js
 // 3. makelab.logo.js and makelab.logo.min.js

@@ -1,5 +1,6 @@
-//import { MakeabilityLabLogoExploder } from '../../../lib/logo/makelab-logo-exploder.js';
-import { MakeabilityLabLogoExploder, MakeabilityLabLogo} from '/dist/makelab.logo.js';
+import { MakeabilityLabLogoExploder } from '../../../lib/logo/makelab-logo-exploder.js';
+import { MakeabilityLabLogo } from '../../../lib/logo/makelab-logo.js'; 
+//import { MakeabilityLabLogoExploder, MakeabilityLabLogo} from '/dist/makelab.logo.js';
 
 const canvas = document.getElementById('myCanvas');
 
