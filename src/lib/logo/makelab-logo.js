@@ -147,6 +147,17 @@ export class MakeabilityLabLogo {
   }
 
   /**
+   * Sets the stroke color for all L-shaped triangles.
+   *
+   * @param {string} color - The color to set as the stroke color for the triangles.
+   */
+  setLTriangleStrokeColor(color){
+    for(const tri of this.getLTriangles()){
+      tri.strokeColor = color;
+    }
+  }
+
+  /**
    * Sets the stroke visibility for all triangles.
    *
    * @param {boolean} isTransparent - If true, the stroke will be made transparent (invisible).
@@ -850,16 +861,19 @@ export class Triangle {
 
     if (this.isFillVisible) {
       ctx.fillStyle = this.fillColor;
-    } else {
-      ctx.fillStyle = 'rgba(0, 0, 0, 0)';
-    }
+    } 
+    // else {
+    //   ctx.fillStyle = 'rgba(0, 0, 0, 0)';
+    // }
 
     if (this.isStrokeVisible) {
       ctx.strokeStyle = this.strokeColor;
       ctx.lineWidth = this.strokeWeight;
-    } else {
-      ctx.strokeStyle = 'rgba(0, 0, 0, 0)';
-    }
+    } 
+    
+    // else {
+    //   ctx.strokeStyle = 'rgba(0, 0, 0, 0)';
+    // }
 
     ctx.translate(this.x, this.y);
     ctx.rotate(this.angle * Math.PI / 180);
@@ -893,6 +907,7 @@ export class Triangle {
     if (this.isFillVisible) {
       ctx.fill();
     }
+
     if (this.isStrokeVisible) {
       ctx.stroke();
     }
