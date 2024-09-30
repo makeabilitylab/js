@@ -11,16 +11,31 @@ export class MakeabilityLabLogoExploder{
     this.makeLabLogoAnimated.isLOutlineVisible = false;
     this.makeLabLogoAnimated.isMOutlineVisible = false;
 
+    // TODO: working on animating the L triangles that should go from 
+    // black to white
+    
+    this.makeLabLogo.setLTriangleStrokeColor('white');
+    this.makeLabLogoAnimated.setLTriangleStrokeColor('black');
+    this.makeLabLogoAnimated.areLTriangleStrokesVisible = true;
+
+    // Print out L triangle color
+    const lTriangles = this.makeLabLogoAnimated.getLTriangles();
+    for (let i = 0; i < lTriangles.length; i++) {
+      console.log(`L Triangle ${i} color: ${lTriangles[i].strokeColor} and visibility: ${lTriangles[i].isStrokeVisible}`);
+    }
+
     this.originalRandomTriLocs = [];
 
     this.explodeSize = true;
     this.explodeX = true;
     this.explodeY = true;
     this.explodeAngle = true;
+    this.explodeStrokeColor = true;
 
     // TODO:
     // - Add explodeFillColor property
     // - Add explodeStrokeColor property
+    // - Add Makeability Lab text at end of animation
   }
 
   /**
@@ -43,8 +58,16 @@ export class MakeabilityLabLogoExploder{
       tri.x = this.explodeX ? random(randSize, width - randSize) : makeLabLogoTriangles[i].x;
       tri.y = this.explodeY ? random(randSize, height - randSize) : makeLabLogoTriangles[i].y;
       tri.angle = this.explodeAngle ? random(0, 360) : 0;
+      tri.strokeColor = this.explodeStrokeColor ? makeLabLogoAnimatedTriangles[i].strokeColor : makeLabLogoTriangles[i].strokeColor;
+      console.log(`tri.strokeColor: ${tri.strokeColor}`);
       tri.size = randSize;
-      this.originalRandomTriLocs.push({x: tri.x, y: tri.y, angle: tri.angle, size: randSize});
+      this.originalRandomTriLocs.push(
+        { x: tri.x, 
+          y: tri.y, 
+          angle: tri.angle, 
+          size: randSize,
+          strokeColor: tri.strokeColor
+        });
     }
   }
 
@@ -62,8 +85,10 @@ export class MakeabilityLabLogoExploder{
   update(lerpAmt){
     if(lerpAmt >= 1){
       this.makeLabLogoAnimated.isLOutlineVisible = true;
+      //this.makeLabLogoAnimated.areLTriangleStrokesVisible = false;
     }else{
       this.makeLabLogoAnimated.isLOutlineVisible = false;
+      //this.makeLabLogoAnimated.areLTriangleStrokesVisible = true;
     }
 
     const staticTriangles = this.makeLabLogo.getAllTriangles(true);
@@ -74,21 +99,26 @@ export class MakeabilityLabLogoExploder{
       const endY = staticTriangles[i].y;
       const endAngle = 0;
       const endSize = staticTriangles[i].size;
+      const endStrokeColor = staticTriangles[i].strokeColor;
   
       const startX = this.originalRandomTriLocs[i].x;
       const startY = this.originalRandomTriLocs[i].y;
       const startAngle = this.originalRandomTriLocs[i].angle;
       const startSize = this.originalRandomTriLocs[i].size;
+      const startStrokeColor = this.originalRandomTriLocs[i].strokeColor;
   
       const newX = lerp(startX, endX, lerpAmt);
       const newY = lerp(startY, endY, lerpAmt);
       const newAngle = lerp(startAngle, endAngle, lerpAmt);
       const newSize = lerp(startSize, endSize, lerpAmt);
-  
+      const newStrokeColor = lerpColor(startStrokeColor, endStrokeColor, lerpAmt);
+      console.log(`startStrokeColor: ${startStrokeColor}, endStrokeColor: ${endStrokeColor}, newStrokeColor: ${newStrokeColor}, lerpAmt: ${lerpAmt}`);
       animatedTriangles[i].x = newX;
       animatedTriangles[i].y = newY;
       animatedTriangles[i].angle = newAngle;
       animatedTriangles[i].size = newSize;
+      animatedTriangles[i].strokeColor = newStrokeColor;
+      // animatedTriangles[i].fillColor = "red";
     }
   
     const animatedColoredTriangles = this.makeLabLogoAnimated.getDefaultColoredTriangles();
