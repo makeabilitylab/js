@@ -13,11 +13,10 @@ export class MakeabilityLabLogoExploder{
     this.makeLabLogoAnimated.isLOutlineVisible = false;
     this.makeLabLogoAnimated.isMOutlineVisible = false;
     
-    this.makeLabLogo.setLTriangleStrokeColor('rgb(240, 240, 240)');
+    this.makeLabLogo.setLTriangleStrokeColor('rgb(240, 240, 240)'); // barely noticeable
     this.makeLabLogoAnimated.setFillColor(startFillColor);
     this.makeLabLogoAnimated.setColors(startFillColor, startStrokeColor);
     this.makeLabLogoAnimated.areLTriangleStrokesVisible = true;
-
 
     this.originalRandomTriLocs = [];
 

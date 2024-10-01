@@ -15,7 +15,6 @@ let makeLabLogoExploder = new MakeabilityLabLogoExploder(xLogo, yLogo, TRIANGLE_
 makeLabLogoExploder.reset(canvas.width, canvas.height);
 makeLabLogoExploder.draw(ctx);
 
-
 canvas.addEventListener('mousemove', mouseMoved);
 printMenu();
 
