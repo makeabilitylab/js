@@ -3,7 +3,9 @@ import { lerpColor, convertColorStringToObject } from '../graphics/color-utils.j
 import { lerp, random } from '../math/math-utils.js';
 
 export class MakeabilityLabLogoExploder{
-  constructor(x, y, triangleSize, startFillColor='white', startStrokeColor='black'){
+  constructor(x, y, triangleSize, startFillColor="rgb(255, 255, 255, 0.5)", 
+    startStrokeColor="rgba(0, 0, 0, 0.6)"){
+
     this.makeLabLogo = new MakeabilityLabLogo(x, y, triangleSize);
     this.makeLabLogo.visible = false;
 
@@ -16,11 +18,6 @@ export class MakeabilityLabLogoExploder{
     this.makeLabLogoAnimated.setColors(startFillColor, startStrokeColor);
     this.makeLabLogoAnimated.areLTriangleStrokesVisible = true;
 
-    // Print out L triangle color
-    const lTriangles = this.makeLabLogoAnimated.getLTriangles();
-    for (let i = 0; i < lTriangles.length; i++) {
-      console.log(`L Triangle ${i} color: ${lTriangles[i].strokeColor} and visibility: ${lTriangles[i].isStrokeVisible}`);
-    }
 
     this.originalRandomTriLocs = [];
 
@@ -30,6 +27,7 @@ export class MakeabilityLabLogoExploder{
     this.explodeAngle = true;
     this.explodeStrokeColor = true;
     this.explodeFillColor = true;
+    this.explodeStrokeWidth = true;
 
     // TODO:
     // - Add explodeFillColor property
@@ -49,8 +47,8 @@ export class MakeabilityLabLogoExploder{
     this.originalRandomTriLocs = [];
     const triangleSize = this.makeLabLogo.cellSize;
    
-    const makeLabLogoTriangles = this.makeLabLogo.getAllTriangles(true);
-    const makeLabLogoAnimatedTriangles = this.makeLabLogoAnimated.getAllTriangles(true);
+    const makeLabLogoTriangles = this.makeLabLogo.getAllTriangles();
+    const makeLabLogoAnimatedTriangles = this.makeLabLogoAnimated.getAllTriangles();
     for (let i = 0; i < makeLabLogoAnimatedTriangles.length; i++) {
       const tri = makeLabLogoAnimatedTriangles[i];
       let randSize = this.explodeSize ? random(triangleSize/2, triangleSize*3) : triangleSize;
@@ -59,15 +57,16 @@ export class MakeabilityLabLogoExploder{
       tri.angle = this.explodeAngle ? random(0, 360) : 0;
       tri.strokeColor = this.explodeStrokeColor ? makeLabLogoAnimatedTriangles[i].strokeColor : makeLabLogoTriangles[i].strokeColor;
       tri.fillColor = this.explodeFillColor ? makeLabLogoAnimatedTriangles[i].fillColor : makeLabLogoTriangles[i].fillColor;
-      console.log(`tri.strokeColor: ${tri.strokeColor}`);
+      tri.strokeWidth = this.explodeStrokeWidth ? makeLabLogoAnimatedTriangles[i].strokeWidth : makeLabLogoTriangles[i].strokeWidth;
       tri.size = randSize;
       this.originalRandomTriLocs.push(
         { x: tri.x, 
           y: tri.y, 
           angle: tri.angle, 
-          size: randSize,
+          size: tri.size,
           strokeColor: tri.strokeColor,
-          fillColor: tri.fillColor
+          fillColor: tri.fillColor,
+          strokeWidth: tri.strokeWidth
         });
     }
   }
@@ -102,6 +101,7 @@ export class MakeabilityLabLogoExploder{
       const endSize = staticTriangles[i].size;
       const endStrokeColor = staticTriangles[i].strokeColor;
       const endFillColor = staticTriangles[i].fillColor;
+      const endStrokeWidth = staticTriangles[i].strokeWidth;
   
       const startX = this.originalRandomTriLocs[i].x;
       const startY = this.originalRandomTriLocs[i].y;
@@ -109,31 +109,27 @@ export class MakeabilityLabLogoExploder{
       const startSize = this.originalRandomTriLocs[i].size;
       const startStrokeColor = this.originalRandomTriLocs[i].strokeColor;
       const startFillColor = this.originalRandomTriLocs[i].fillColor;
+      const startStrokeWidth = this.originalRandomTriLocs[i].strokeWidth;
   
       const newX = lerp(startX, endX, lerpAmt);
       const newY = lerp(startY, endY, lerpAmt);
       const newAngle = lerp(startAngle, endAngle, lerpAmt);
       const newSize = lerp(startSize, endSize, lerpAmt);
+      const newStrokeWidth = lerp(startStrokeWidth, endStrokeWidth, lerpAmt);
       const newStrokeColor = lerpColor(startStrokeColor, endStrokeColor, lerpAmt);
       const newFillColor = lerpColor(startFillColor, endFillColor, lerpAmt);
-      
-      console.log(`startStrokeColor: ${startStrokeColor}, endStrokeColor: ${endStrokeColor}, newStrokeColor: ${newStrokeColor}, lerpAmt: ${lerpAmt}`);
       
       animatedTriangles[i].x = newX;
       animatedTriangles[i].y = newY;
       animatedTriangles[i].angle = newAngle;
       animatedTriangles[i].size = newSize;
+      animatedTriangles[i].strokeWidth = newStrokeWidth;
       animatedTriangles[i].strokeColor = newStrokeColor;
       animatedTriangles[i].fillColor = newFillColor;
+
+      console.log(`Triangle ${i}`, JSON.stringify(animatedTriangles[i]));
+      //console.log
     }
-  
-    // const animatedColoredTriangles = this.makeLabLogoAnimated.getDefaultColoredTriangles();
-    // for (let i = 0; i < animatedColoredTriangles.length; i++) {
-    //   const startColor = { r: 255, g: 255, b: 255, a: 1 };
-    //   const endColor = ORIGINAL_COLOR_ARRAY[i];
-    //   const newColor = lerpColor(startColor, endColor, lerpAmt);
-    //   animatedColoredTriangles[i].fillColor = newColor;
-    // }
   }
 
   /**
