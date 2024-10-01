@@ -158,6 +158,17 @@ export class MakeabilityLabLogo {
   }
 
   /**
+   * Sets the fill color for all MShadow triangles.
+   *
+   * @param {string} color - The color to set for the fill of the MShadow triangles.
+   */
+  setMShadowTriangleFillColor(color){
+    for(const tri of this.getMShadowTriangles()){
+      tri.fillColor = color;
+    }
+  }
+
+  /**
    * Sets the stroke visibility for all triangles.
    *
    * @param {boolean} isTransparent - If true, the stroke will be made transparent (invisible).
@@ -181,23 +192,25 @@ export class MakeabilityLabLogo {
   }
 
   /**
+   * Sets the fill color for all triangles in the logo.
+   *
+   * @param {string} color - The color to set as the fill color for the triangles.
+   */
+  setFillColor(color, includeMShadowTriangles=true){
+    for (const tri of this.getAllTriangles(includeMShadowTriangles)) {
+      tri.fillColor = color;
+    }
+  }
+
+  /**
    * Convenience method to set fill and stroke colors
    * @param {*} fillColor 
    * @param {*} strokeColor 
    */
-  setColors(fillColor, strokeColor){
-    for (let row = 0; row < this.makeLabLogoArray.length; row++) {
-      for (let col = 0; col < this.makeLabLogoArray[row].length; col++) {
-        this.makeLabLogoArray[row][col].tri1.fillColor = fillColor;
-        this.makeLabLogoArray[row][col].tri1.strokeColor = strokeColor;
-
-        this.makeLabLogoArray[row][col].tri2.fillColor = fillColor;
-        this.makeLabLogoArray[row][col].tri2.strokeColor = strokeColor;
-      }
-    }  
-
-    for(const tri of this.getMShadowTriangles()){
-      tri.fillColor = tri.strokeColor;
+  setColors(fillColor, strokeColor, includeMShadowTriangles=true){
+    for (const tri of this.getAllTriangles(includeMShadowTriangles)) {
+      tri.fillColor = fillColor;
+      tri.strokeColor = strokeColor;
     }
   }
 
@@ -227,7 +240,7 @@ export class MakeabilityLabLogo {
 
   /**
    * Gets the triangles that are part of the M "shadow". That is, the 
-   * black/darkened in the logo
+   * black/darkened parts of the M logo
    *
    * @returns {Array} An array containing the selected triangles.
    */
