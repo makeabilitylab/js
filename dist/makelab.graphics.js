@@ -91,7 +91,10 @@ function convertColorStringToObject(colorStr) {
       }
     } else if (colorStr.startsWith('rgb')) {
       // rgb or rgba string
-      const match = colorStr.match(/rgba?\((\d+), (\d+), (\d+)(?:, (\d*\.?\d+))?\)/);
+      //const match = colorStr.match(/rgba?\((\d+), (\d+), (\d+)(?:, (\d*\.?\d+))?\)/);
+      
+      // updated to support optional whitespace between commas
+      const match = colorStr.match(/rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*(?:,\s*(\d*\.?\d+)\s*)?\)/);
       if (match) {
         const [, r, g, b, a] = match;
         let parsedColor = {
@@ -101,7 +104,7 @@ function convertColorStringToObject(colorStr) {
           a: a !== undefined ? parseFloat(a) : 1 // Default to 1 if alpha is not specified
         };
         //parsedColor.a = 0.0001;
-        console.log(`parsedColor: ${JSON.stringify(parsedColor)}`);
+        //console.log(`parsedColor: ${JSON.stringify(parsedColor)}`);
         return parsedColor;
       }
     }
