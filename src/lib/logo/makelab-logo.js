@@ -4,6 +4,9 @@ import { LineSegment } from '../graphics/line-segment.js';
 export class MakeabilityLabLogo {
 
   constructor(x, y, triangleSize) {
+
+    // The Makeability Lab logo is composed of 6 columns and 4 rows of square cells
+    // Each cell is composed of two triangles, which can be in different orientations
     this.makeLabLogoArray = MakeabilityLabLogo.createMakeabilityLabLogoCellArray(x, y, triangleSize);
 
     this.visible = true;
@@ -222,16 +225,18 @@ export class MakeabilityLabLogo {
    * @param {boolean} [includeMShadowTriangles=true] - Whether to include M shadow triangles in the result.
    * @returns {Array} An array containing all the triangles from the Makeability Lab logo.
    */
-  getAllTriangles(includeMShadowTriangles=true){
+  getAllTriangles(includeMShadowTriangles=true, includeLTriangles=true){
     let allTriangles = new Array();
     for (let row = 0; row < this.makeLabLogoArray.length; row++) {
       for (let col = 0; col < this.makeLabLogoArray[row].length; col++) {
-        if(includeMShadowTriangles || !MakeabilityLabLogo.isMShadowTriangle(row, col, 1)){
-          allTriangles.push(this.makeLabLogoArray[row][col].tri1);
+        if ((includeMShadowTriangles || !MakeabilityLabLogo.isMShadowTriangle(row, col, 1)) &&
+            (includeLTriangles || !MakeabilityLabLogo.isLTriangle(row, col, 1))) {
+            allTriangles.push(this.makeLabLogoArray[row][col].tri1);
         }
 
-        if(includeMShadowTriangles || !MakeabilityLabLogo.isMShadowTriangle(row, col, 2)){
-          allTriangles.push(this.makeLabLogoArray[row][col].tri2);
+        if ((includeMShadowTriangles || !MakeabilityLabLogo.isMShadowTriangle(row, col, 2)) &&
+            (includeLTriangles || !MakeabilityLabLogo.isLTriangle(row, col, 2))) {
+            allTriangles.push(this.makeLabLogoArray[row][col].tri2);
         }
       }
     }  
@@ -335,13 +340,26 @@ export class MakeabilityLabLogo {
   }
 
   /**
+   * Sets the stroke width for all triangles.
+   *
+   * @param {number} strokeWidth - The width of the stroke to set.
+   * @param {boolean} [includeMShadowTriangles=true] - Whether to include M shadow triangles.
+   * @param {boolean} [includeLTriangles=true] - Whether to include L triangles.
+   */
+  setStrokeWidth(strokeWidth, includeMShadowTriangles=true, includeLTriangles=true, ){
+    for(const tri of this.getAllTriangles(includeMShadowTriangles, includeLTriangles)){
+      tri.strokeWidth = strokeWidth;
+    }
+  }
+
+  /**
    * Draws the Makeability Lab logo and its outlines if they are visible.
    * 
    * This method performs the following actions:
    * 1. Checks if the logo is visible; if not, it returns immediately.
    * 2. Iterates through the `makeLabLogoArray` and calls the `draw` method on each element.
-   * 3. If the M outline is visible, it draws the M outline using the specified color and stroke weight.
-   * 4. If the L outline is visible, it draws the L outline using the specified color and stroke weight.
+   * 3. If the M outline is visible, it draws the M outline using the specified color and stroke width.
+   * 4. If the L outline is visible, it draws the L outline using the specified color and stroke width.
    */
   draw(ctx) {
     if(!this.visible){ return; }
@@ -629,12 +647,53 @@ export class MakeabilityLabLogo {
     return botRow;
   }
 
+  /**
+   * Determines if the given row, column, and triangle number correspond to an M shadow triangle.
+   * See getMShadowTriangles() for more information.
+   * 
+   * @param {number} row - The row number to check.
+   * @param {number} col - The column number to check.
+   * @param {number} triNum - The triangle number to check.
+   * @returns {boolean} - Returns true if the specified row, column, and triangle number 
+   * form an M shadow triangle, otherwise false.
+   */
   static isMShadowTriangle(row, col, triNum){
     return (row == 2 && col == 1 && triNum == 2) ||
           (row == 3 && col == 1 && triNum == 1) ||
           (row == 2 && col == 4 && triNum == 2) ||
           (row == 3 && col == 4 && triNum == 1);
   }
+
+  /**
+   * Determines if the specified row, column, and triangle number correspond to a 
+   * triangle used in the L in the Makeability Lab logo
+   * See getLTriangles() for more information.
+   *
+   * @param {number} row - The row index.
+   * @param {number} col - The column index.
+   * @param {number} triNum - The triangle number.
+   * @returns {boolean} - Returns true if the specified row, column, and triangle number 
+   *   correspond to an L-shaped triangle; otherwise, false.
+   */
+  static isLTriangle(row, col, triNum) {
+    return (row == 0 && col == 0 && triNum == 2) ||
+           (row == 0 && col == 1 && triNum == 2) ||
+           (row == 1 && col == 0 && triNum == 1) ||
+           (row == 1 && col == 1 && triNum == 1) ||
+           (row == 1 && col == 1 && triNum == 2) ||
+           (row == 1 && col == 2 && triNum == 2) ||
+           (row == 2 && col == 1 && triNum == 1) ||
+           (row == 2 && col == 2 && triNum == 1) ||
+           (row == 2 && col == 2 && triNum == 2) ||
+           (row == 3 && col == 2 && triNum == 1) ||
+           (row == 3 && col == 3 && triNum == 1) ||
+           (row == 2 && col == 3 && triNum == 1) ||
+           (row == 2 && col == 3 && triNum == 2) ||
+           (row == 1 && col == 3 && triNum == 2) ||
+           (row == 2 && col == 4 && triNum == 1) ||
+           (row == 1 && col == 4 && triNum == 2);
+  }
+
 }
 
 export const TriangleDir = {
@@ -706,6 +765,16 @@ export class Cell {
   setFillColor(fillColor){
     this.tri1.fillColor = fillColor;
     this.tri2.fillColor = fillColor;
+  }
+
+  /**
+   * Sets the stroke width for the logo's triangles.
+   *
+   * @param {number} strokeWidth - The width of the stroke to be applied to the triangles.
+   */
+  setStrokeWidth(strokeWidth){
+    this.tri1.strokeWidth = strokeWidth;
+    this.tri2.strokeWidth = strokeWidth;
   }
 
   /**
@@ -824,11 +893,11 @@ export class Triangle {
    * @param {string} direction - The direction of the triangle. See TriangleDir for possible values.
    * @param {p5.Color} [fillColor='white'] - The fill color of the triangle.
    * @param {p5.Color} [strokeColor='black'] - The stroke color of the triangle.
-   * @param {number} [strokeWeight=1] - The stroke weight of the triangle.
+   * @param {number} [strokeWidth=1] - The stroke width of the triangle.
    * @param {boolean} [visible=true] - The visibility of the triangle.
    */
   constructor(x, y, size, direction, fillColor = 'white',
-    strokeColor = 'black', strokeWeight = 1, visible = true) {
+    strokeColor = 'black', strokeWidth = 1, visible = true) {
     this.x = x;
     this.y = y;
     this.size = size;
@@ -837,7 +906,7 @@ export class Triangle {
 
     this.strokeColor = strokeColor;
     this.fillColor = fillColor;
-    this.strokeWeight = strokeWeight;
+    this.strokeWidth = strokeWidth;
     this.visible = visible;
 
     this.isFillVisible = true;
@@ -875,18 +944,11 @@ export class Triangle {
     if (this.isFillVisible) {
       ctx.fillStyle = this.fillColor;
     } 
-    // else {
-    //   ctx.fillStyle = 'rgba(0, 0, 0, 0)';
-    // }
 
     if (this.isStrokeVisible) {
       ctx.strokeStyle = this.strokeColor;
-      ctx.lineWidth = this.strokeWeight;
+      ctx.lineWidth = this.strokeWidth;
     } 
-    
-    // else {
-    //   ctx.strokeStyle = 'rgba(0, 0, 0, 0)';
-    // }
 
     ctx.translate(this.x, this.y);
     ctx.rotate(this.angle * Math.PI / 180);
