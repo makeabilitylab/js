@@ -42,6 +42,7 @@ function printMenu(){
   console.log("Press 'x' to toggle explode X. Currently set to: ", makeLabLogoExploder.explodeX);
   console.log("Press 'y' to toggle explode Y. Currently set to: ", makeLabLogoExploder.explodeY);
   console.log("Press 'h' to toggle Makeability Lab logo. Currently set to: ", makeLabLogoExploder.makeLabLogo.visible);
+  console.log("Press 'r' to reset animation.");
   console.log("");
   console.log("Type printMenu() to see this menu again.");
 }
@@ -86,7 +87,7 @@ document.addEventListener('keydown', function(event) {
       break;
 
     case 'r':
-      console.log("Resetting random triangle locations");
+      console.log("Resetting animation");
       makeLabLogoExploder.reset(canvas.width, canvas.height);
       draw(ctx);
       break;
