@@ -29,8 +29,6 @@ export class MakeabilityLabLogoExploder{
     this.explodeStrokeWidth = true;
 
     // TODO:
-    // - Add explodeFillColor property
-    // - Add explodeStrokeColor property
     // - Add Makeability Lab text at end of animation
   }
 
@@ -126,8 +124,7 @@ export class MakeabilityLabLogoExploder{
       animatedTriangles[i].strokeColor = newStrokeColor;
       animatedTriangles[i].fillColor = newFillColor;
 
-      console.log(`Triangle ${i}`, JSON.stringify(animatedTriangles[i]));
-      //console.log
+      //console.log(`Triangle ${i}`, JSON.stringify(animatedTriangles[i]));
     }
   }
 
