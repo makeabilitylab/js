@@ -1993,8 +1993,6 @@ class MakeabilityLabLogoExploder{
     this.makeLabLogoAnimated.isMOutlineVisible = false;
     
     this.makeLabLogo.setLTriangleStrokeColor('rgb(240, 240, 240)'); // barely noticeable
-    this.makeLabLogoAnimated.setFillColor(startFillColor);
-    this.makeLabLogoAnimated.setColors(startFillColor, startStrokeColor);
     this.makeLabLogoAnimated.areLTriangleStrokesVisible = true;
 
     this.originalRandomTriLocs = [];
@@ -2006,6 +2004,9 @@ class MakeabilityLabLogoExploder{
     this.explodeStrokeColor = true;
     this.explodeFillColor = true;
     this.explodeStrokeWidth = true;
+
+    this.startFillColor = startFillColor;
+    this.startStrokeColor = startStrokeColor;
 
     // TODO:
     // - Add Makeability Lab text at end of animation
@@ -2025,6 +2026,7 @@ class MakeabilityLabLogoExploder{
    
     const makeLabLogoTriangles = this.makeLabLogo.getAllTriangles();
     const makeLabLogoAnimatedTriangles = this.makeLabLogoAnimated.getAllTriangles();
+    this.makeLabLogoAnimated.setColors(this.startFillColor, this.startStrokeColor);
     for (let i = 0; i < makeLabLogoAnimatedTriangles.length; i++) {
       const tri = makeLabLogoAnimatedTriangles[i];
       let randSize = this.explodeSize ? random(triangleSize/2, triangleSize*3) : triangleSize;
