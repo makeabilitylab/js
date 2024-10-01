@@ -64,15 +64,18 @@ export function convertColorStringToObject(colorStr) {
       }
     } else if (colorStr.startsWith('rgb')) {
       // rgb or rgba string
-      const match = colorStr.match(/rgba?\((\d+), (\d+), (\d+)(?:, (\d?\.\d+))?\)/);
+      const match = colorStr.match(/rgba?\((\d+), (\d+), (\d+)(?:, (\d*\.?\d+))?\)/);
       if (match) {
         const [, r, g, b, a] = match;
-        return {
+        let parsedColor = {
           r: parseInt(r),
           g: parseInt(g),
           b: parseInt(b),
           a: a !== undefined ? parseFloat(a) : 1 // Default to 1 if alpha is not specified
         };
+        //parsedColor.a = 0.0001;
+        console.log(`parsedColor: ${JSON.stringify(parsedColor)}`);
+        return parsedColor;
       }
     }
     throw new Error(`Invalid color string: ${colorStr}`);
