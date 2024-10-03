@@ -34,13 +34,34 @@ export class MakeabilityLabLogoExploder{
   }
 
   /**
+   * Sets the size of the logo for both the static and animated versions.
+   *
+   * @param {number} logoWidth - The width to set for the logo.
+   */
+  setLogoSize(logoWidth){
+    this.makeLabLogo.setLogoSize(logoWidth);
+    this.makeLabLogoAnimated.setLogoSize(logoWidth);
+  }
+
+  /**
+   * Centers the logo on the canvas.
+   *
+   * @param {number} canvasWidth - The width of the canvas.
+   * @param {number} canvasHeight - The height of the canvas.
+   */
+  centerLogo(canvasWidth, canvasHeight){
+    this.makeLabLogo.centerLogo(canvasWidth, canvasHeight);
+    this.makeLabLogoAnimated.centerLogo(canvasWidth, canvasHeight);
+  }
+
+  /**
    * Resets the state of the logo exploder with new dimensions and randomizes the 
    * positions, angles, and sizes of the triangles.
    *
-   * @param {number} width - The drawing area width
-   * @param {number} height - The drawing area height
+   * @param {number} canvasWidth - The drawing area width
+   * @param {number} canvasHeight - The drawing area height
    */
-  reset(width, height){
+  reset(canvasWidth, canvasHeight){
 
     this.originalRandomTriLocs = [];
     const triangleSize = this.makeLabLogo.cellSize;
@@ -51,8 +72,8 @@ export class MakeabilityLabLogoExploder{
     for (let i = 0; i < makeLabLogoAnimatedTriangles.length; i++) {
       const tri = makeLabLogoAnimatedTriangles[i];
       let randSize = this.explodeSize ? random(triangleSize/2, triangleSize*3) : triangleSize;
-      tri.x = this.explodeX ? random(randSize, width - randSize) : makeLabLogoTriangles[i].x;
-      tri.y = this.explodeY ? random(randSize, height - randSize) : makeLabLogoTriangles[i].y;
+      tri.x = this.explodeX ? random(randSize, canvasWidth - randSize) : makeLabLogoTriangles[i].x;
+      tri.y = this.explodeY ? random(randSize, canvasHeight - randSize) : makeLabLogoTriangles[i].y;
       tri.angle = this.explodeAngle ? random(0, 360) : 0;
       tri.strokeColor = this.explodeStrokeColor ? makeLabLogoAnimatedTriangles[i].strokeColor : makeLabLogoTriangles[i].strokeColor;
       tri.fillColor = this.explodeFillColor ? makeLabLogoAnimatedTriangles[i].fillColor : makeLabLogoTriangles[i].fillColor;
