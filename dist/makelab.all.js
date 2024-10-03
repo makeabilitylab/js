@@ -912,6 +912,60 @@ class MakeabilityLabLogo {
    */
   get areDefaultColorsOn(){ return this._defaultColorsOn; }
 
+
+  /**
+   * Centers the logo on the provided dimensions
+   *
+   * @param {number} canvasWidth - The width of the canvas.
+   * @param {number} canvasHeight - The height of the canvas.
+   */
+  centerLogo(canvasWidth, canvasHeight){
+    const xCenter = MakeabilityLabLogo.getXCenterPosition(this.cellSize, canvasWidth);
+    const yCenter = MakeabilityLabLogo.getYCenterPosition(this.cellSize, canvasHeight);
+    this.setLogoPosition(xCenter, yCenter);
+  }
+
+  /**
+   * Sets the size of the logo based on the given width.
+   *
+   * @param {number} logoWidth - The width of the logo.
+   */
+  setLogoSize(logoWidth){
+    const triangleSize = logoWidth / MakeabilityLabLogo.numCols;
+    this.setTriangleSize(triangleSize);
+  }
+
+  /**
+   * Sets the size of all triangles to the specified value.
+   *
+   * @param {number} triangleSize - The new size to set for all triangles.
+   */
+  setTriangleSize(triangleSize){
+    const makeLabLogoNewSize = new MakeabilityLabLogo(this.x, this.y, triangleSize);
+    const newTriangles = makeLabLogoNewSize.getAllTriangles();
+    const allTriangles = this.getAllTriangles();
+    for (let i = 0; i < allTriangles.length; i++) {
+      allTriangles[i].x = newTriangles[i].x;
+      allTriangles[i].y = newTriangles[i].y;
+      allTriangles[i].size = newTriangles[i].size;
+    }
+  }
+
+  /**
+   * Sets the position of the logo by adjusting the coordinates of all triangles.
+   *
+   * @param {number} x - The new x-coordinate for the logo.
+   * @param {number} y - The new y-coordinate for the logo.
+   */
+  setLogoPosition(x, y){
+    const xOffset = x - this.x;
+    const yOffset = y - this.y;
+    for(const tri of this.getAllTriangles()){
+      tri.x += xOffset;
+      tri.y += yOffset;
+    }
+  }
+
   /**
    * Sets the visibility of the strokes for the L outline in the Makeability Lab logo
    * 
@@ -1511,6 +1565,16 @@ class Cell {
   }
 
   /**
+   * Sets the x-coordinate for the cell
+   * 
+   * @param {number} x - The x-coordinate to set.
+   */
+  set x(x){
+    this.tri1.x = x;
+    this.tri2.x = x;
+  }
+
+  /**
    * Gets the y-coordinate of the cell
    * @returns {number} The y-coordinate of the cell.
    */
@@ -1519,11 +1583,31 @@ class Cell {
   }
 
   /**
+   * Sets the y-coordinate for the cell
+   * 
+   * @param {number} y - The y-coordinate to set.
+   */
+  set y(y){
+    this.tri1.y = y;
+    this.tri2.y = y;
+  }
+
+  /**
    * Gets the size of the cell. Cells are always square.
    * @type {number}
    */
   get size() {
     return this.tri1.size;
+  }
+
+  /**
+   * Sets the size of the cell.
+   * 
+   * @param {number} size - The size to set for the cell.
+   */
+  set size(size){
+    this.tri1.size = size;
+    this.tri2.size = size;
   }
 
 
@@ -2016,13 +2100,34 @@ class MakeabilityLabLogoExploder{
   }
 
   /**
+   * Sets the size of the logo for both the static and animated versions.
+   *
+   * @param {number} logoWidth - The width to set for the logo.
+   */
+  setLogoSize(logoWidth){
+    this.makeLabLogo.setLogoSize(logoWidth);
+    this.makeLabLogoAnimated.setLogoSize(logoWidth);
+  }
+
+  /**
+   * Centers the logo on the canvas.
+   *
+   * @param {number} canvasWidth - The width of the canvas.
+   * @param {number} canvasHeight - The height of the canvas.
+   */
+  centerLogo(canvasWidth, canvasHeight){
+    this.makeLabLogo.centerLogo(canvasWidth, canvasHeight);
+    this.makeLabLogoAnimated.centerLogo(canvasWidth, canvasHeight);
+  }
+
+  /**
    * Resets the state of the logo exploder with new dimensions and randomizes the 
    * positions, angles, and sizes of the triangles.
    *
-   * @param {number} width - The drawing area width
-   * @param {number} height - The drawing area height
+   * @param {number} canvasWidth - The drawing area width
+   * @param {number} canvasHeight - The drawing area height
    */
-  reset(width, height){
+  reset(canvasWidth, canvasHeight){
 
     this.originalRandomTriLocs = [];
     const triangleSize = this.makeLabLogo.cellSize;
@@ -2033,8 +2138,8 @@ class MakeabilityLabLogoExploder{
     for (let i = 0; i < makeLabLogoAnimatedTriangles.length; i++) {
       const tri = makeLabLogoAnimatedTriangles[i];
       let randSize = this.explodeSize ? random(triangleSize/2, triangleSize*3) : triangleSize;
-      tri.x = this.explodeX ? random(randSize, width - randSize) : makeLabLogoTriangles[i].x;
-      tri.y = this.explodeY ? random(randSize, height - randSize) : makeLabLogoTriangles[i].y;
+      tri.x = this.explodeX ? random(randSize, canvasWidth - randSize) : makeLabLogoTriangles[i].x;
+      tri.y = this.explodeY ? random(randSize, canvasHeight - randSize) : makeLabLogoTriangles[i].y;
       tri.angle = this.explodeAngle ? random(0, 360) : 0;
       tri.strokeColor = this.explodeStrokeColor ? makeLabLogoAnimatedTriangles[i].strokeColor : makeLabLogoTriangles[i].strokeColor;
       tri.fillColor = this.explodeFillColor ? makeLabLogoAnimatedTriangles[i].fillColor : makeLabLogoTriangles[i].fillColor;
