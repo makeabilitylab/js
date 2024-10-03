@@ -1,5 +1,5 @@
-// import { MakeabilityLabLogo, Grid } from '../_library/makelab-logo.js';
-import { MakeabilityLabLogo, Grid  } from '/dist/makelab.logo.js';
+import { MakeabilityLabLogo, Grid } from '../../../lib/logo/makelab-logo.js';
+// import { MakeabilityLabLogo, Grid  } from '/dist/makelab.logo.js';
 
 const canvas = document.getElementById('myCanvas');
 canvas.width = 1000;
@@ -14,6 +14,7 @@ let makeLabGrid = new Grid(canvas.width, canvas.height, TRIANGLE_SIZE);
 let xLogo = MakeabilityLabLogo.getXCenterPosition(TRIANGLE_SIZE, canvas.width);
 let yLogo = MakeabilityLabLogo.getYCenterPosition(TRIANGLE_SIZE, canvas.height);
 let makeLabLogo = new MakeabilityLabLogo(xLogo, yLogo, TRIANGLE_SIZE);
+window.makeLabLogo = makeLabLogo;
 
 draw(ctx);
 printMenuToConsole();
@@ -34,6 +35,7 @@ function printMenuToConsole(){
   console.log("Press 'l' to toggle L outline. Currently set to: ", makeLabLogo.isLOutlineVisible);
   console.log("Press 'k' to toggle L triangle strokes. Currently set to: ", makeLabLogo.areLTriangleStrokesVisible);
   console.log("Press 'h' to toggle Makeability Lab logo. Currently set to: ", makeLabLogo.visible);
+  console.log("Press 'r' to refresh the canvas.");
   console.log("");
   console.log("Type printMenu() to see this menu again.");
 }
@@ -69,6 +71,10 @@ document.addEventListener('keydown', function(event) {
     case 'h':
       makeLabLogo.visible = !makeLabLogo.visible;
       console.log("Makeability Lab logo visible: ", makeLabLogo.visible);
+      draw(ctx);
+      break;
+    
+    case 'r':
       draw(ctx);
       break;
       
