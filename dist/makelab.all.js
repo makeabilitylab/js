@@ -2110,6 +2110,17 @@ class MakeabilityLabLogoExploder{
   }
 
   /**
+   * Sets the position of the logo.
+   *
+   * @param {number} x - The x-coordinate for the logo position.
+   * @param {number} y - The y-coordinate for the logo position.
+   */
+  setLogoPosition(x, y){
+    this.makeLabLogo.setLogoPosition(x, y);
+    this.makeLabLogoAnimated.setLogoPosition(x, y);
+  }
+
+  /**
    * Centers the logo on the canvas.
    *
    * @param {number} canvasWidth - The width of the canvas.
