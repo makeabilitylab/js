@@ -844,16 +844,26 @@ class MakeabilityLabLogo {
     return MakeabilityLabLogo.numRows * triangleSize;
   }
 
+ 
+
   /**
-   * Calculates the x-coordinate for centering the MakeabilityLabLogo on the canvas.
+   * Calculates the X center position for the MakeabilityLabLogo on a canvas.
    *
-   * @param {number} triangleSize - The size of each triangle.
+   * @param {number} triangleSize - The size of the triangle used in the logo.
    * @param {number} canvasWidth - The width of the canvas.
-   * @returns {number} The x-coordinate for centering the logo.
+   * @param {boolean} [alignToGrid=false] - Whether to align the center position to the grid.a   * @returns {number} The X center position, optionally aligned to the grid.n(xCent on the given width.
+   *
+   * @param {number} logoWidth - The width of the logo.
    */
-  static getXCenterPosition(triangleSize, canvasWidth){
+  static getXCenterPosition(triangleSize, canvasWidth, alignToGrid = false){
     const xCenter = (canvasWidth - MakeabilityLabLogo.getWidth(triangleSize)) / 2;
-    return Math.round(xCenter / triangleSize) * triangleSize;
+    
+    if(alignToGrid){
+      return Math.round(xCenter / triangleSize) * triangleSize;
+    }else {
+      return xCenter;
+    }
+    
   }
 
   /**
@@ -861,11 +871,18 @@ class MakeabilityLabLogo {
    *
    * @param {number} triangleSize - The size of each triangle.
    * @param {number} canvasHeight - The width of the canvas.
+   * @param {boolean} [alignToGrid=false] - Whether to align the center position to the grid.a   * @returns {number} The X center position, optionally aligned to the grid.n(xCent on the given width.
+   *
    * @returns {number} The y-coordinate for centering the logo.
    */
-  static getYCenterPosition(triangleSize, canvasHeight){
+  static getYCenterPosition(triangleSize, canvasHeight, alignToGrid=false){
     const yCenter = (canvasHeight - MakeabilityLabLogo.getHeight(triangleSize)) / 2;
-    return Math.round(yCenter / triangleSize) * triangleSize;
+    
+    if(alignToGrid){
+      return Math.round(yCenter / triangleSize) * triangleSize;
+    }else {
+      return yCenter;
+    }
   }
 
   /**
@@ -914,14 +931,15 @@ class MakeabilityLabLogo {
 
 
   /**
-   * Centers the logo on the provided dimensions
+   * Centers the logo on the canvas.
    *
    * @param {number} canvasWidth - The width of the canvas.
    * @param {number} canvasHeight - The height of the canvas.
+   * @param {boolean} [alignToGrid=false] - Whether to align the logo to the grid.
    */
-  centerLogo(canvasWidth, canvasHeight){
-    const xCenter = MakeabilityLabLogo.getXCenterPosition(this.cellSize, canvasWidth);
-    const yCenter = MakeabilityLabLogo.getYCenterPosition(this.cellSize, canvasHeight);
+  centerLogo(canvasWidth, canvasHeight, alignToGrid=false){
+    const xCenter = MakeabilityLabLogo.getXCenterPosition(this.cellSize, canvasWidth, alignToGrid);
+    const yCenter = MakeabilityLabLogo.getYCenterPosition(this.cellSize, canvasHeight, alignToGrid);
     this.setLogoPosition(xCenter, yCenter);
   }
 
@@ -2098,6 +2116,9 @@ class MakeabilityLabLogoExploder{
     // TODO:
     // - Add Makeability Lab text at end of animation
   }
+
+  get finalHeight(){ return this.makeLabLogo.height; }
+  get finalWidth(){ return this.makeLabLogo.width; }
 
   /**
    * Sets the size of the logo for both the static and animated versions.

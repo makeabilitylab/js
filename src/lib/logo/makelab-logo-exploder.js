@@ -33,6 +33,9 @@ export class MakeabilityLabLogoExploder{
     // - Add Makeability Lab text at end of animation
   }
 
+  get finalHeight(){ return this.makeLabLogo.height; }
+  get finalWidth(){ return this.makeLabLogo.width; }
+
   /**
    * Sets the size of the logo for both the static and animated versions.
    *
