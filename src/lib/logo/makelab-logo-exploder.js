@@ -47,6 +47,26 @@ export class MakeabilityLabLogoExploder{
   }
 
   /**
+   * Sets the x position for both the static and animated MakeLab logos.
+   *
+   * @param {number} x - The x-coordinate to set for the logos.
+   */
+  setXPosition(x){
+    this.makeLabLogo.x = x;
+    this.makeLabLogoAnimated.x = x;
+  }
+
+  /**
+   * Sets the Y position for both static and animated MakeLab logos.
+   *
+   * @param {number} y - The Y coordinate to set.
+   */
+  setYPosition(y){
+    this.makeLabLogo.y = y;
+    this.makeLabLogoAnimated.y = y;
+  }
+
+  /**
    * Sets the position of the logo.
    *
    * @param {number} x - The x-coordinate for the logo position.

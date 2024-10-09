@@ -36,6 +36,7 @@ function printMenu(){
   console.log("Press 'l' to toggle L outline. Currently set to: ", makeLabLogo.isLOutlineVisible);
   console.log("Press 'k' to toggle L triangle strokes. Currently set to: ", makeLabLogo.areLTriangleStrokesVisible);
   console.log("Press 'h' to toggle Makeability Lab logo. Currently set to: ", makeLabLogo.visible);
+  console.log("Press 'r' to refresh the canvas.");
   console.log("");
   console.log("Type printMenu() to see this menu again.");
 }
@@ -92,6 +93,11 @@ document.addEventListener('keydown', function(event) {
       console.log("Makeability Lab logo visible: ", makeLabLogo.visible);
       draw(ctx);
       break;
+
+    case 'r':
+      console.log("Refresh...");
+      draw(ctx);
+      break;
       
   }
 });
@@ -101,6 +107,7 @@ function recreateGraphicalObjects(){
   xLogo = MakeabilityLabLogo.getXCenterPosition(triangleSize, canvas.width);
   yLogo = MakeabilityLabLogo.getYCenterPosition(triangleSize, canvas.height);
   makeLabLogo = new MakeabilityLabLogo(xLogo, yLogo, triangleSize);
+  window.makeLabLogo = makeLabLogo;
 }
 
 function resizeCanvas() {

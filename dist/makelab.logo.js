@@ -657,12 +657,39 @@ class MakeabilityLabLogo {
    */
   get x(){ return this.makeLabLogoArray[0][0].x }
 
+  
+  /**
+   * Sets the x-coordinate for the logo by adjusting the coordinates 
+   * of all triangles accordingly
+   * 
+   * @param {number} x - The new x-coordinate to set.
+   */
+  set x(x){
+    const xOffset = x - this.x;
+    for(const tri of this.getAllTriangles()){
+      tri.x += xOffset;
+    }
+  }
+
   /**
    * Gets the top y-coordinate of the Makeability Lab logo
    * 
    * @returns {number} The y-coordinate of the first element.
    */
   get y(){ return this.makeLabLogoArray[0][0].y }
+
+  /**
+   * Sets the y-coordinate for the logo and adjusts the y-coordinates of all 
+   * triangles accordingly.
+   * 
+   * @param {number} y - The new y-coordinate to set.
+   */
+  set y(y){ 
+    const yOffset = y - this.y;
+    for(const tri of this.getAllTriangles()){
+      tri.y += yOffset;
+    }
+  }
 
   /**
    * Gets the size of a cell in the Makeability Lab logo
@@ -2125,6 +2152,26 @@ class MakeabilityLabLogoExploder{
   setLogoSize(logoWidth){
     this.makeLabLogo.setLogoSize(logoWidth);
     this.makeLabLogoAnimated.setLogoSize(logoWidth);
+  }
+
+  /**
+   * Sets the x position for both the static and animated MakeLab logos.
+   *
+   * @param {number} x - The x-coordinate to set for the logos.
+   */
+  setXPosition(x){
+    this.makeLabLogo.x = x;
+    this.makeLabLogoAnimated.x = x;
+  }
+
+  /**
+   * Sets the Y position for both static and animated MakeLab logos.
+   *
+   * @param {number} y - The Y coordinate to set.
+   */
+  setYPosition(y){
+    this.makeLabLogo.y = y;
+    this.makeLabLogoAnimated.y = y;
   }
 
   /**
