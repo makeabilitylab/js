@@ -2146,10 +2146,12 @@ class MakeabilityLabLogoExploder{
    *
    * @param {number} canvasWidth - The width of the canvas.
    * @param {number} canvasHeight - The height of the canvas.
-   */
-  centerLogo(canvasWidth, canvasHeight){
-    this.makeLabLogo.centerLogo(canvasWidth, canvasHeight);
-    this.makeLabLogoAnimated.centerLogo(canvasWidth, canvasHeight);
+   * @param {boolean} [alignToGrid=false] - Whether to align the center position to the grid.a   * @returns {number} The X center position, optionally aligned to the grid.n(xCent on the given width.
+   * 
+  */
+  centerLogo(canvasWidth, canvasHeight, alignedToGrid=false){
+    this.makeLabLogo.centerLogo(canvasWidth, canvasHeight, alignedToGrid);
+    this.makeLabLogoAnimated.centerLogo(canvasWidth, canvasHeight, alignedToGrid);
   }
 
   /**
