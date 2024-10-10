@@ -956,6 +956,21 @@ class MakeabilityLabLogo {
    */
   get areDefaultColorsOn(){ return this._defaultColorsOn; }
 
+  /**
+   * Adjusts the logo size to fit within the given canvas dimensions.
+   * Optionally aligns the logo to a grid.
+   *
+   * @param {number} canvasWidth - The width of the canvas.
+   * @param {number} canvasHeight - The height of the canvas.
+   * @param {boolean} [alignToGrid=false] - If true, aligns the logo to the grid.
+   */ 
+  fitToCanvas(canvasWidth, canvasHeight, alignToGrid=false){
+    // Maximize the logo size to fit the canvas
+    // If alignToGrid is true, the logo will be aligned to the grid
+    const triangleSize = Math.min(canvasWidth / MakeabilityLabLogo.numCols, canvasHeight / MakeabilityLabLogo.numRows);
+    this.setTriangleSize(triangleSize);
+    this.centerLogo(canvasWidth, canvasHeight, alignToGrid);
+  }
 
   /**
    * Centers the logo on the canvas.
