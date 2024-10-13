@@ -732,7 +732,14 @@ class MakeabilityLabLogo {
   fitToCanvas(canvasWidth, canvasHeight, alignToGrid=false){
     // Maximize the logo size to fit the canvas
     // If alignToGrid is true, the logo will be aligned to the grid
-    const triangleSize = Math.min(canvasWidth / MakeabilityLabLogo.numCols, canvasHeight / MakeabilityLabLogo.numRows);
+    let adjustedHeight = canvasHeight - 2;
+    if (this.isLOutlineVisible){
+      adjustedHeight -= this.lOutlineStrokeWidth / 2.0;
+    }
+    if(this.isMOutlineVisible){
+      adjustedHeight -= this.mOutlineStrokeWidth / 2.0;
+    }
+    const triangleSize = Math.min(canvasWidth / MakeabilityLabLogo.numCols, adjustedHeight / MakeabilityLabLogo.numRows);
     this.setTriangleSize(triangleSize);
     this.centerLogo(canvasWidth, canvasHeight, alignToGrid);
   }
@@ -2158,6 +2165,19 @@ class MakeabilityLabLogoExploder{
 
   get finalHeight(){ return this.makeLabLogo.height; }
   get finalWidth(){ return this.makeLabLogo.width; }
+
+  
+  /**
+   * Adjusts the size of the logo to fit within the specified canvas dimensions.
+   *
+   * @param {number} canvasWidth - The width of the canvas to fit the logo into.
+   * @param {number} canvasHeight - The height of the canvas to fit the logo into.
+   * @param {boolean} [alignToGrid=false] - Optional parameter to align the logo to a grid.
+   */
+  fitToCanvas(canvasWidth, canvasHeight, alignToGrid=false){
+    this.makeLabLogo.fitToCanvas(canvasWidth, canvasHeight, alignToGrid);
+    this.makeLabLogoAnimated.fitToCanvas(canvasWidth, canvasHeight, alignToGrid);
+  }
 
   /**
    * Sets the size of the logo for both the static and animated versions.

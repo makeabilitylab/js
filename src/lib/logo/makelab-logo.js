@@ -179,7 +179,14 @@ export class MakeabilityLabLogo {
   fitToCanvas(canvasWidth, canvasHeight, alignToGrid=false){
     // Maximize the logo size to fit the canvas
     // If alignToGrid is true, the logo will be aligned to the grid
-    const triangleSize = Math.min(canvasWidth / MakeabilityLabLogo.numCols, canvasHeight / MakeabilityLabLogo.numRows);
+    let adjustedHeight = canvasHeight - 2;
+    if (this.isLOutlineVisible){
+      adjustedHeight -= this.lOutlineStrokeWidth / 2.0;
+    }
+    if(this.isMOutlineVisible){
+      adjustedHeight -= this.mOutlineStrokeWidth / 2.0;
+    }
+    const triangleSize = Math.min(canvasWidth / MakeabilityLabLogo.numCols, adjustedHeight / MakeabilityLabLogo.numRows);
     this.setTriangleSize(triangleSize);
     this.centerLogo(canvasWidth, canvasHeight, alignToGrid);
   }

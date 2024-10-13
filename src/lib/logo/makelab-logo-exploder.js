@@ -36,6 +36,19 @@ export class MakeabilityLabLogoExploder{
   get finalHeight(){ return this.makeLabLogo.height; }
   get finalWidth(){ return this.makeLabLogo.width; }
 
+  
+  /**
+   * Adjusts the size of the logo to fit within the specified canvas dimensions.
+   *
+   * @param {number} canvasWidth - The width of the canvas to fit the logo into.
+   * @param {number} canvasHeight - The height of the canvas to fit the logo into.
+   * @param {boolean} [alignToGrid=false] - Optional parameter to align the logo to a grid.
+   */
+  fitToCanvas(canvasWidth, canvasHeight, alignToGrid=false){
+    this.makeLabLogo.fitToCanvas(canvasWidth, canvasHeight, alignToGrid);
+    this.makeLabLogoAnimated.fitToCanvas(canvasWidth, canvasHeight, alignToGrid);
+  }
+
   /**
    * Sets the size of the logo for both the static and animated versions.
    *
