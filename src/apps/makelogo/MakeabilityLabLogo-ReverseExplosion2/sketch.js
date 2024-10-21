@@ -39,6 +39,7 @@ function draw(ctx){
 
 function printMenu(){
   console.log("Press 'a' to toggle explode angle. Currently set to: ", makeLabLogoExploder.explodeAngle);
+  console.log("Press 'd' to toggle debug info. Currently set to: ", makeLabLogoExploder.makeLabLogoAnimated.drawBoundingBox);
   console.log("Press 's' to toggle explode size. Currently set to: ", makeLabLogoExploder.explodeSize);
   console.log("Press 'x' to toggle explode X. Currently set to: ", makeLabLogoExploder.explodeX);
   console.log("Press 'y' to toggle explode Y. Currently set to: ", makeLabLogoExploder.explodeY);
@@ -52,6 +53,13 @@ document.addEventListener('keydown', function(event) {
   const key = event.key;
 
   switch (key) {
+
+    case 'd':
+      makeLabLogoExploder.makeLabLogoAnimated.drawBoundingBox = !makeLabLogoExploder.makeLabLogoAnimated.drawBoundingBox;
+      makeLabLogoExploder.makeLabLogoAnimated.setDrawDebugInfo(makeLabLogoExploder.makeLabLogoAnimated.drawBoundingBox);
+      console.log("Draw debug info ", makeLabLogoExploder.makeLabLogoAnimated.drawBoundingBox);
+      draw(ctx);
+      break;
 
     case 'a':
       makeLabLogoExploder.explodeAngle = !makeLabLogoExploder.explodeAngle;

@@ -24,6 +24,8 @@ export class MakeabilityLabLogo {
 
     //this.setColorScheme(ColorScheme.BlackOnWhite);
     this.areLTriangleStrokesVisible = false;
+
+    this.drawBoundingBox = false;
   }
 
   /**
@@ -56,8 +58,6 @@ export class MakeabilityLabLogo {
     return MakeabilityLabLogo.numRows * triangleSize;
   }
 
- 
-
   /**
    * Calculates the X center position for the MakeabilityLabLogo on a canvas.
    *
@@ -74,8 +74,7 @@ export class MakeabilityLabLogo {
       return Math.round(xCenter / triangleSize) * triangleSize;
     }else{
       return xCenter;
-    }
-    
+    } 
   }
 
   /**
@@ -98,12 +97,89 @@ export class MakeabilityLabLogo {
   }
 
   /**
+   * Sets the draw debug information flag for the logo and its components.
+   *
+   * @param {boolean} drawDebugInfo - A flag indicating whether to draw debug information.
+   */
+  setDrawDebugInfo(drawDebugInfo){
+    this.drawBoundingBox = drawDebugInfo;
+    for (let row = 0; row < this.makeLabLogoArray.length; row++) {
+      for (let col = 0; col < this.makeLabLogoArray[row].length; col++) {
+        this.makeLabLogoArray[row][col].setDrawDebugInfo(drawDebugInfo);
+      }
+    }
+  }
+
+  /**
+   * Calculates the bounding box for the logo dynamically that encompasses all triangles.
+   * Keeps track of which triangles contribute to the minX, minY, maxX, and maxY values.
+   *
+   * @returns {Object} An object representing the bounding box with the following properties:
+   * - `x` {number}: The minimum x-coordinate of the bounding box.
+   * - `y` {number}: The minimum y-coordinate of the bounding box.
+   * - `width` {number}: The width of the bounding box.
+   * - `height` {number}: The height of the bounding box.
+   * - `minXTriangle` {Triangle}: The triangle contributing to the minimum x-coordinate.
+   * - `minYTriangle` {Triangle}: The triangle contributing to the minimum y-coordinate.
+   * - `maxXTriangle` {Triangle}: The triangle contributing to the maximum x-coordinate.
+   * - `maxYTriangle` {Triangle}: The triangle contributing to the maximum y-coordinate.
+   */
+  getBoundingBox() {
+    let minX = Infinity;
+    let minY = Infinity;
+    let maxX = -Infinity;
+    let maxY = -Infinity;
+
+    let minXTriangle = null;
+    let minYTriangle = null;
+    let maxXTriangle = null;
+    let maxYTriangle = null;
+
+    for (const tri of this.getAllTriangles()) {
+      if (!tri.visible){ continue; }
+
+      const triBoundingBox = tri.getBoundingBox();
+      
+      // Update minX and minY
+      if (triBoundingBox.x < minX) {
+        minX = triBoundingBox.x;
+        minXTriangle = tri;
+      }
+      if (triBoundingBox.y < minY) {
+        minY = triBoundingBox.y;
+        minYTriangle = tri;
+      }
+      
+      // Update maxX and maxY
+      if (triBoundingBox.x + triBoundingBox.width > maxX) {
+        maxX = triBoundingBox.x + triBoundingBox.width;
+        maxXTriangle = tri;
+      }
+      if (triBoundingBox.y + triBoundingBox.height > maxY) {
+        maxY = triBoundingBox.y + triBoundingBox.height;
+        maxYTriangle = tri;
+      }
+    }
+
+    return {
+      x: minX,
+      y: minY,
+      width: maxX - minX,
+      height: maxY - minY,
+      minXTriangle,
+      minYTriangle,
+      maxXTriangle,
+      maxYTriangle
+    };
+  }
+
+
+  /**
    * Gets the far left x-coordinate of the Makeability Lab logo
    * 
    * @returns {number} The x-coordinate of the first element.
    */
   get x(){ return this.makeLabLogoArray[0][0].x }
-
   
   /**
    * Sets the x-coordinate for the logo by adjusting the coordinates 
@@ -484,6 +560,52 @@ export class MakeabilityLabLogo {
   draw(ctx) {
     if(!this.visible){ return; }
 
+    if(this.drawBoundingBox){
+      // for debugging
+      const bBox = this.getBoundingBox();
+      ctx.save();
+      ctx.setLineDash([4, 8]); // Dots of 3 pixel, gaps of 4 pixels
+      ctx.strokeStyle = 'rgba(255, 0, 0, 0.5)';
+      ctx.strokeRect(bBox.x, bBox.y, bBox.width, bBox.height);
+      ctx.restore();
+
+      bBox.minXTriangle.visible = true;
+      bBox.maxXTriangle.visible = true;
+      bBox.minYTriangle.visible = true;
+      bBox.maxYTriangle.visible = true;
+
+      bBox.minXTriangle.fillColor = 'green';
+      bBox.maxXTriangle.fillColor = 'blue';
+      bBox.minYTriangle.fillColor = 'red';
+      bBox.maxYTriangle.fillColor = 'orange';
+
+      // set text properties
+      ctx.fillStyle = 'black';
+      ctx.font = '16px Arial';
+
+      // show width and height of bounding box
+      const boundingBoxDimensionsText = `Bounding Box Dimensions: ${bBox.width.toFixed(1)} x ${bBox.height.toFixed(1)}`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'bottom';
+      ctx.fillText(boundingBoxDimensionsText, bBox.x + bBox.width / 2, bBox.y);
+
+      // measure and draw bounding box width centered at the top
+      const widthText = `Width: ${bBox.width.toFixed(1)}`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'top';
+      ctx.fillText(widthText, bBox.x + bBox.width / 2, bBox.y + bBox.height + 2);
+
+      // measure and draw bounding box height rotated 90 degrees and centered vertically
+      const heightText = `Height: ${bBox.height.toFixed(1)}`;
+      ctx.save();
+      ctx.translate(bBox.x - 1, bBox.y + bBox.height / 2);
+      ctx.rotate(-Math.PI / 2);
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'bottom';
+      ctx.fillText(heightText, 0, 0);
+      ctx.restore();
+    }
+
     for (let row = 0; row < this.makeLabLogoArray.length; row++) {
       for (let col = 0; col < this.makeLabLogoArray[row].length; col++) {
           this.makeLabLogoArray[row][col].draw(ctx);
@@ -517,6 +639,8 @@ export class MakeabilityLabLogo {
       ctx.stroke();
       ctx.restore();
     }
+
+    
   }
 
   /**
@@ -833,6 +957,19 @@ export class Cell {
   constructor(triangle1, triangle2) {
     this.tri1 = triangle1;
     this.tri2 = triangle2;
+
+    this.drawBoundingBox = false; // for debugging
+  }
+
+  /**
+   * Sets the draw debug information flag for this cell
+   *
+   * @param {boolean} drawDebugInfo - A flag indicating whether to draw debug information.
+   */
+  setDrawDebugInfo(drawDebugInfo){
+    this.drawBoundingBox = drawDebugInfo;
+    this.tri1.setDrawDebugInfo(drawDebugInfo);
+    this.tri2.setDrawDebugInfo(drawDebugInfo);
   }
 
   /**
@@ -947,6 +1084,17 @@ export class Cell {
     this.tri2.visible = isVisible;
   }
 
+  getBoundingBox() {
+    const tri1BoundingBox = this.tri1.getBoundingBox();
+    const tri2BoundingBox = this.tri2.getBoundingBox();
+  
+    if (this.tri1.visible){
+      return this.tri1.getBoundingBox();
+    }else{
+      return this.tri2.getBoundingBox();
+    }
+  }
+
   /**
    * Draws the cells on the canvas
    *
@@ -960,6 +1108,15 @@ export class Cell {
     if (this.tri2.visible) {
       this.tri2.draw(ctx);
     }
+
+    ctx.save();
+    if (this.drawBoundingBox){
+      const boundingBox = this.getBoundingBox();
+      ctx.setLineDash([3, 4]); // Dots of 3 pixel, gaps of 4 pixels
+      ctx.strokeStyle = 'rgba(0, 0, 240, 0.5)';
+      ctx.strokeRect(boundingBox.x, boundingBox.y, boundingBox.width, boundingBox.height);
+    }
+    ctx.restore();
   }
 
   /**
@@ -1039,7 +1196,7 @@ export class Triangle {
    * @constructor
    * @param {number} x - The x-coordinate of the triangle.
    * @param {number} y - The y-coordinate of the triangle.
-   * @param {number} size - The size of the triangle.
+   * @param {number} size - The size of the equilateral triangle.
    * @param {string} direction - The direction of the triangle. See TriangleDir for possible values.
    * @param {p5.Color} [fillColor='white'] - The fill color of the triangle.
    * @param {p5.Color} [strokeColor='black'] - The stroke color of the triangle.
@@ -1063,6 +1220,17 @@ export class Triangle {
     this.isStrokeVisible = true;
 
     this.drawCellOutline = false; // for debugging
+    this.drawBoundingBox = false; // for debugging
+  }
+
+  /**
+   * Sets the draw debug information flag for this triangle
+   *
+   * @param {boolean} drawDebugInfo - A flag indicating whether to draw debug information.
+   */
+  setDrawDebugInfo(drawDebugInfo){
+    this.drawCellOutline = drawDebugInfo; 
+    this.drawBoundingBox = drawDebugInfo;
   }
 
   /**
@@ -1139,11 +1307,89 @@ export class Triangle {
 
     // useful for debugging
     if (this.drawCellOutline) {
-      ctx.strokeStyle = 'rgba(128, 128, 128, 0.5)';
+      ctx.setLineDash([2, 3]); // Dots of 2 pixel, gaps of 3 pixels
+      ctx.strokeStyle = 'rgba(0, 200, 0, 0.5)';
       ctx.strokeRect(0, 0, this.size, this.size);
     }
 
     ctx.restore();
+
+    ctx.save();
+    if (this.drawBoundingBox){
+      const boundingBox = this.getBoundingBox();
+      ctx.setLineDash([1, 5]); // Dots of 1 pixel, gaps of 5 pixels
+      ctx.strokeStyle = 'rgba(200, 0, 30, 0.8)';
+      ctx.strokeRect(boundingBox.x, boundingBox.y, boundingBox.width, boundingBox.height);
+    }
+    ctx.restore();
+  }
+
+  /**
+   * Calculates the bounding box of the triangle, taking into account its location, 
+   * size, and angle
+   *
+   * @returns {Object} An object containing the coordinates of the bounding box.
+   */
+  getBoundingBox() {
+    const halfSize = this.size / 2;
+    const rad = this.angle * Math.PI / 180;
+
+    // Calculate the vertices of the triangle based on its direction
+    let vertices;
+    switch (this.direction) {
+      case TriangleDir.BottomLeft:
+        vertices = [
+          { x: 0, y: 0 },
+          { x: 0, y: this.size },
+          { x: this.size, y: this.size }
+        ];
+        break;
+      case TriangleDir.BottomRight:
+        vertices = [
+          { x: 0, y: this.size },
+          { x: this.size, y: this.size },
+          { x: this.size, y: 0 }
+        ];
+        break;
+      case TriangleDir.TopRight:
+        vertices = [
+          { x: 0, y: 0 },
+          { x: this.size, y: 0 },
+          { x: this.size, y: this.size }
+        ];
+        break;
+      case TriangleDir.TopLeft:
+      default:
+        vertices = [
+          { x: 0, y: this.size },
+          { x: 0, y: 0 },
+          { x: this.size, y: 0 }
+        ];
+        break;
+    }
+
+    // Rotate the vertices around the origin and translate to the triangle's position
+    const rotatedVertices = vertices.map(vertex => {
+      const rotatedX = vertex.x * Math.cos(rad) - vertex.y * Math.sin(rad);
+      const rotatedY = vertex.x * Math.sin(rad) + vertex.y * Math.cos(rad);
+      return {
+        x: this.x + rotatedX,
+        y: this.y + rotatedY
+      };
+    });
+
+    // Find the min and max x and y values
+    const minX = Math.min(...rotatedVertices.map(vertex => vertex.x));
+    const maxX = Math.max(...rotatedVertices.map(vertex => vertex.x));
+    const minY = Math.min(...rotatedVertices.map(vertex => vertex.y));
+    const maxY = Math.max(...rotatedVertices.map(vertex => vertex.y));
+
+    return {
+      x: minX,
+      y: minY,
+      width: maxX - minX,
+      height: maxY - minY
+    };
   }
 
   /**

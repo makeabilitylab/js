@@ -60,6 +60,15 @@ export class MakeabilityLabLogoExploder{
   }
 
   /**
+   * Sets the final size of the logo at the end state
+   *
+   * @param {number} finalWidth - The desired width of the logo.
+   */
+  setLogoSizeEndState(finalWidth){
+    this.makeLabLogo.setLogoSize(finalWidth);
+  }
+
+  /**
    * Sets the x position for both the static and animated MakeLab logos.
    *
    * @param {number} x - The x-coordinate to set for the logos.
@@ -113,17 +122,17 @@ export class MakeabilityLabLogoExploder{
   reset(canvasWidth, canvasHeight){
 
     this.originalRandomTriLocs = [];
-    const triangleSize = this.makeLabLogo.cellSize;
+    const endStateTriangleSize = this.makeLabLogo.cellSize;
    
     const makeLabLogoTriangles = this.makeLabLogo.getAllTriangles();
     const makeLabLogoAnimatedTriangles = this.makeLabLogoAnimated.getAllTriangles();
     this.makeLabLogoAnimated.setColors(this.startFillColor, this.startStrokeColor);
     for (let i = 0; i < makeLabLogoAnimatedTriangles.length; i++) {
       const tri = makeLabLogoAnimatedTriangles[i];
-      let randSize = this.explodeSize ? random(triangleSize/2, triangleSize*3) : triangleSize;
+      let randSize = this.explodeSize ? random(endStateTriangleSize/2, endStateTriangleSize*3) : endStateTriangleSize;
       tri.x = this.explodeX ? random(randSize, canvasWidth - randSize) : makeLabLogoTriangles[i].x;
       tri.y = this.explodeY ? random(randSize, canvasHeight - randSize) : makeLabLogoTriangles[i].y;
-      tri.angle = this.explodeAngle ? random(0, 360) : 0;
+      tri.angle = this.explodeAngle ? random(0, 540) : 0;
       tri.strokeColor = this.explodeStrokeColor ? makeLabLogoAnimatedTriangles[i].strokeColor : makeLabLogoTriangles[i].strokeColor;
       tri.fillColor = this.explodeFillColor ? makeLabLogoAnimatedTriangles[i].fillColor : makeLabLogoTriangles[i].fillColor;
       tri.strokeWidth = this.explodeStrokeWidth ? makeLabLogoAnimatedTriangles[i].strokeWidth : makeLabLogoTriangles[i].strokeWidth;
