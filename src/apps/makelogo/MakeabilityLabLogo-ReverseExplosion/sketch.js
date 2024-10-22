@@ -139,6 +139,7 @@ function draw(ctx){
 }
 
 function printMenu(){
+  console.log("Press 'd' to toggle debug info. Currently set to: ", makeLabLogoAnimated.drawBoundingBox);
   console.log("Press 'g' to toggle grid. Currently set to: ", makeLabGrid.visible);
   console.log("Press 'm' to toggle M outline. Currently set to: ", makeLabLogo.isMOutlineVisible);
   console.log("Press 'l' to toggle L outline. Currently set to: ", makeLabLogo.isLOutlineVisible);
@@ -152,6 +153,13 @@ document.addEventListener('keydown', function(event) {
   const key = event.key;
 
   switch (key) {
+    case 'd':
+      makeLabLogoAnimated.drawBoundingBox = !makeLabLogoAnimated.drawBoundingBox;
+      makeLabLogoAnimated.setDrawDebugInfo(makeLabLogoAnimated.drawBoundingBox);
+      console.log("Draw debug info ", makeLabLogoAnimated.drawBoundingBox);
+      draw(ctx);
+      break;
+
     case 'g':
       makeLabGrid.visible = !makeLabGrid.visible;
       console.log("Grid visibility is set to: ", makeLabGrid.visible);
