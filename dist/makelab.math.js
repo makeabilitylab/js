@@ -44,7 +44,9 @@ function random(min, max) {
     max = min;
     min = 0;
   }
-  return Math.random() * (max - min) + min;
+  const lower = Math.min(min, max);
+  const upper = Math.max(min, max);
+  return Math.random() * (upper - lower) + lower;
 }
 
 /**
@@ -111,6 +113,10 @@ class Vector {
    */
   normalize() {
     const mag = this.magnitude();
+    // BUG FIX: Prevent division by zero
+    if (mag === 0) {
+      return new Vector(0, 0);
+    }
     return new Vector(this.x / mag, this.y / mag);
   }
 

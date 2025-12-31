@@ -62,6 +62,10 @@ class Vector {
    */
   normalize() {
     const mag = this.magnitude();
+    // BUG FIX: Prevent division by zero
+    if (mag === 0) {
+      return new Vector(0, 0);
+    }
     return new Vector(this.x / mag, this.y / mag);
   }
 
@@ -170,7 +174,9 @@ function random(min, max) {
     max = min;
     min = 0;
   }
-  return Math.random() * (max - min) + min;
+  const lower = Math.min(min, max);
+  const upper = Math.max(min, max);
+  return Math.random() * (upper - lower) + lower;
 }
 
 // This library provides basic line segment functionality, including drawing
@@ -405,14 +411,18 @@ class LineSegment {
   
     // Draw text labels (optional)
     if (this.drawTextLabels) {
-      ctx.font = `${this.fontSize}px Arial`; // Replace with your desired font and size
+      ctx.save(); // Save context to prevent affecting other drawing calls
+      ctx.font = `${this.fontSize}px Arial`;
       ctx.textAlign = "left";
       ctx.textBaseline = "top";
-      ctx.fillStyle = this.strokeColor; // Or any other desired color
-  
+      ctx.fillStyle = this.strokeColor;
+
       const label = this.generateLabel();
       const labelWidth = ctx.measureText(label).width;
-      ctx.fillText(label, -labelWidth - 3, 12);
+      
+      // BUG FIX: Draw relative to pt1 instead of global origin
+      ctx.fillText(label, this.pt1.x - labelWidth - 3, this.pt1.y + 12);
+      ctx.restore();
     }
   }
 
@@ -714,11 +724,13 @@ class MakeabilityLabLogo {
       }
     }
 
+    const padding = Math.max(this.mOutlineStrokeWidth, this.lOutlineStrokeWidth) / 2;
+
     return {
-      x: minX,
-      y: minY,
-      width: maxX - minX,
-      height: maxY - minY,
+      x: minX - padding,
+      y: minY - padding,
+      width: (maxX - minX) + 2 * padding,
+      height: (maxY - minY) + 2 * padding,
       minXTriangle,
       minYTriangle,
       maxXTriangle,
@@ -2179,6 +2191,14 @@ function lerpColor(startColor, endColor, amt) {
  * @returns {Object} An object with properties r, g, b, and optionally a.
  * @throws {Error} If the color string format is invalid.
  */
+/**
+ * Converts a color string (hex, rgb, or rgba) to an object with r, g, b, and optionally a properties.
+ * If the input is already an object, it returns the input as is.
+ *
+ * @param {string|Object} colorStr - The color string or object to convert.
+ * @returns {Object} An object with properties r, g, b, and optionally a.
+ * @throws {Error} If the color string format is invalid.
+ */
 function convertColorStringToObject(colorStr) {
   if (typeof colorStr === 'string') {
     // Handle HTML color names
@@ -2209,22 +2229,21 @@ function convertColorStringToObject(colorStr) {
         };
       }
     } else if (colorStr.startsWith('rgb')) {
-      // rgb or rgba string
-      //const match = colorStr.match(/rgba?\((\d+), (\d+), (\d+)(?:, (\d*\.?\d+))?\)/);
-      
-      // updated to support optional whitespace between commas
+      // Improved regex to support varied spacing and decimal alpha (e.g., .5 or 0.5)
       const match = colorStr.match(/rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*(?:,\s*(\d*\.?\d+)\s*)?\)/);
+      
       if (match) {
         const [, r, g, b, a] = match;
-        let parsedColor = {
-          r: parseInt(r),
-          g: parseInt(g),
-          b: parseInt(b),
-          a: a !== undefined ? parseFloat(a) : 1 // Default to 1 if alpha is not specified
+        
+        // BUG FIX: Helper to clamp values between 0-255
+        const clamp = (val) => Math.min(255, Math.max(0, parseInt(val)));
+
+        return {
+          r: clamp(r),
+          g: clamp(g),
+          b: clamp(b),
+          a: a !== undefined ? parseFloat(a) : 1 
         };
-        //parsedColor.a = 0.0001;
-        //console.log(`parsedColor: ${JSON.stringify(parsedColor)}`);
-        return parsedColor;
       }
     }
     throw new Error(`Invalid color string: ${colorStr}`);
