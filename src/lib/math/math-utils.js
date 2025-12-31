@@ -44,5 +44,7 @@ export function random(min, max) {
     max = min;
     min = 0;
   }
-  return Math.random() * (max - min) + min;
+  const lower = Math.min(min, max);
+  const upper = Math.max(min, max);
+  return Math.random() * (upper - lower) + lower;
 }

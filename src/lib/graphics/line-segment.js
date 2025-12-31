@@ -232,14 +232,18 @@ export class LineSegment {
   
     // Draw text labels (optional)
     if (this.drawTextLabels) {
-      ctx.font = `${this.fontSize}px Arial`; // Replace with your desired font and size
+      ctx.save(); // Save context to prevent affecting other drawing calls
+      ctx.font = `${this.fontSize}px Arial`;
       ctx.textAlign = "left";
       ctx.textBaseline = "top";
-      ctx.fillStyle = this.strokeColor; // Or any other desired color
-  
+      ctx.fillStyle = this.strokeColor;
+
       const label = this.generateLabel();
       const labelWidth = ctx.measureText(label).width;
-      ctx.fillText(label, -labelWidth - 3, 12);
+      
+      // BUG FIX: Draw relative to pt1 instead of global origin
+      ctx.fillText(label, this.pt1.x - labelWidth - 3, this.pt1.y + 12);
+      ctx.restore();
     }
   }
 

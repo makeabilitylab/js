@@ -161,11 +161,13 @@ export class MakeabilityLabLogo {
       }
     }
 
+    const padding = Math.max(this.mOutlineStrokeWidth, this.lOutlineStrokeWidth) / 2;
+
     return {
-      x: minX,
-      y: minY,
-      width: maxX - minX,
-      height: maxY - minY,
+      x: minX - padding,
+      y: minY - padding,
+      width: (maxX - minX) + 2 * padding,
+      height: (maxY - minY) + 2 * padding,
       minXTriangle,
       minYTriangle,
       maxXTriangle,

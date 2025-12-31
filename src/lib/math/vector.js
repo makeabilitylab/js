@@ -62,6 +62,10 @@ export class Vector {
    */
   normalize() {
     const mag = this.magnitude();
+    // BUG FIX: Prevent division by zero
+    if (mag === 0) {
+      return new Vector(0, 0);
+    }
     return new Vector(this.x / mag, this.y / mag);
   }
 

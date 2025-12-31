@@ -17,6 +17,9 @@ export function lerpColor(startColor, endColor, amt) {
   startColor = convertColorStringToObject(startColor);
   endColor = convertColorStringToObject(endColor);
 
+  // Clamp values between 0 and 255 to ensure valid CSS strings
+  const clamp = (val) => Math.min(255, Math.max(0, val));
+
   const r = Math.round(lerp(startColor.r, endColor.r, amt));
   const g = Math.round(lerp(startColor.g, endColor.g, amt));
   const b = Math.round(lerp(startColor.b, endColor.b, amt));
@@ -25,6 +28,14 @@ export function lerpColor(startColor, endColor, amt) {
   return `rgba(${r}, ${g}, ${b}, ${a})`;
 }
 
+/**
+ * Converts a color string (hex, rgb, or rgba) to an object with r, g, b, and optionally a properties.
+ * If the input is already an object, it returns the input as is.
+ *
+ * @param {string|Object} colorStr - The color string or object to convert.
+ * @returns {Object} An object with properties r, g, b, and optionally a.
+ * @throws {Error} If the color string format is invalid.
+ */
 /**
  * Converts a color string (hex, rgb, or rgba) to an object with r, g, b, and optionally a properties.
  * If the input is already an object, it returns the input as is.
@@ -63,22 +74,21 @@ export function convertColorStringToObject(colorStr) {
         };
       }
     } else if (colorStr.startsWith('rgb')) {
-      // rgb or rgba string
-      //const match = colorStr.match(/rgba?\((\d+), (\d+), (\d+)(?:, (\d*\.?\d+))?\)/);
-      
-      // updated to support optional whitespace between commas
+      // Improved regex to support varied spacing and decimal alpha (e.g., .5 or 0.5)
       const match = colorStr.match(/rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*(?:,\s*(\d*\.?\d+)\s*)?\)/);
+      
       if (match) {
         const [, r, g, b, a] = match;
-        let parsedColor = {
-          r: parseInt(r),
-          g: parseInt(g),
-          b: parseInt(b),
-          a: a !== undefined ? parseFloat(a) : 1 // Default to 1 if alpha is not specified
+        
+        // BUG FIX: Helper to clamp values between 0-255
+        const clamp = (val) => Math.min(255, Math.max(0, parseInt(val)));
+
+        return {
+          r: clamp(r),
+          g: clamp(g),
+          b: clamp(b),
+          a: a !== undefined ? parseFloat(a) : 1 
         };
-        //parsedColor.a = 0.0001;
-        //console.log(`parsedColor: ${JSON.stringify(parsedColor)}`);
-        return parsedColor;
       }
     }
     throw new Error(`Invalid color string: ${colorStr}`);
