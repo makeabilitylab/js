@@ -196,6 +196,104 @@ For production use, reference the minified versions:
 </script>
 ```
 
+## Versioning and Releases
+
+This library follows [Semantic Versioning](https://semver.org/) (SemVer): `MAJOR.MINOR.PATCH`
+
+- **MAJOR**: Breaking changes that are not backwards compatible
+- **MINOR**: New features that are backwards compatible
+- **PATCH**: Bug fixes and minor improvements
+
+### Creating a New Release
+
+When you're ready to release a new version:
+
+#### 1. Update the Version Number
+
+Edit `package.json` and update the version number:
+
+```json
+{
+  "name": "makelab-lib",
+  "version": "1.2.3",  // Update this
+  ...
+}
+```
+
+#### 2. Build the Distribution Files
+
+```bash
+npx rollup -c rollup.config.js
+```
+
+This ensures all `dist/` files are up to date with your latest changes.
+
+#### 3. Commit Your Changes
+
+```bash
+git add .
+git commit -m "Release v1.2.3: Brief description of changes"
+git push origin main
+```
+
+#### 4. Create a GitHub Release
+
+Create a new release on GitHub to tag the version:
+
+1. Go to your repository on GitHub
+2. Click on "Releases" (in the right sidebar)
+3. Click "Create a new release"
+4. **Tag version**: Enter the version number (e.g., `v1.2.3`)
+5. **Target**: Select `main` branch
+6. **Release title**: `v1.2.3` or descriptive title
+7. **Description**: Describe what's new, changed, or fixed
+8. Click "Publish release"
+
+#### 5. Verify CDN Access
+
+After creating the release, verify that the CDN serves the new version:
+
+```javascript
+// Test the new version tag
+import { Vector } from 'https://cdn.jsdelivr.net/gh/makeabilitylab/js@v1.2.3/dist/makelab.math.min.js';
+```
+
+The jsdelivr CDN may take a few minutes to update. You can check the status at:
+```
+https://www.jsdelivr.com/package/gh/makeabilitylab/js
+```
+
+### Version Pinning Best Practices
+
+For users of the library:
+
+- **Development/Testing**: Use `@main` for the latest code
+  ```javascript
+  import { Vector } from 'https://cdn.jsdelivr.net/gh/makeabilitylab/js@main/dist/makelab.math.js';
+  ```
+
+- **Production**: Always pin to a specific version tag
+  ```javascript
+  import { Vector } from 'https://cdn.jsdelivr.net/gh/makeabilitylab/js@v1.2.3/dist/makelab.math.min.js';
+  ```
+
+- **Specific Commit**: Pin to a commit hash for absolute stability
+  ```javascript
+  import { Vector } from 'https://cdn.jsdelivr.net/gh/makeabilitylab/js@5baeb55/dist/makelab.math.min.js';
+  ```
+
+### Release Checklist
+
+Before creating a release, ensure:
+
+- [ ] All tests pass (if applicable)
+- [ ] Version number updated in `package.json`
+- [ ] `npx rollup -c rollup.config.js` has been run
+- [ ] All changes committed and pushed to `main`
+- [ ] CHANGELOG updated (if you maintain one)
+- [ ] GitHub Release created with tag
+- [ ] CDN links tested and working
+
 ## Usage
 
 ### Importing Individual Modules (Local Files)
