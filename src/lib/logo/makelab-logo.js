@@ -63,7 +63,7 @@ export class MakeabilityLabLogo {
    *
    * @param {number} triangleSize - The size of the triangle used in the logo.
    * @param {number} canvasWidth - The width of the canvas.
-   * @param {boolean} [alignToGrid=false] - Whether to align the center position to the grid.a   * @returns {number} The X center position, optionally aligned to the grid.n(xCent on the given width.
+   * @param {boolean} [alignToGrid=false] - Whether to align the center position to the grid.a   
    *
    * @param {number} logoWidth - The width of the logo.
    */
@@ -82,7 +82,7 @@ export class MakeabilityLabLogo {
    *
    * @param {number} triangleSize - The size of each triangle.
    * @param {number} canvasHeight - The width of the canvas.
-   * @param {boolean} [alignToGrid=false] - Whether to align the center position to the grid.a   * @returns {number} The X center position, optionally aligned to the grid.n(xCent on the given width.
+   * @param {boolean} [alignToGrid=false] - Whether to align the center position to the grid.a   
    *
    * @returns {number} The y-coordinate for centering the logo.
    */
@@ -298,13 +298,13 @@ export class MakeabilityLabLogo {
    * @param {number} triangleSize - The new size to set for all triangles.
    */
   setTriangleSize(triangleSize){
-    const makeLabLogoNewSize = new MakeabilityLabLogo(this.x, this.y, triangleSize);
-    const newTriangles = makeLabLogoNewSize.getAllTriangles();
-    const allTriangles = this.getAllTriangles();
-    for (let i = 0; i < allTriangles.length; i++) {
-      allTriangles[i].x = newTriangles[i].x;
-      allTriangles[i].y = newTriangles[i].y;
-      allTriangles[i].size = newTriangles[i].size;
+    const oldSize = this.cellSize;
+    if (oldSize === newSize) return;
+    const originX = this.x, originY = this.y;
+    for (const tri of this.getAllTriangles()) {
+      tri.x = originX + (tri.x - originX) * (newSize / oldSize);
+      tri.y = originY + (tri.y - originY) * (newSize / oldSize);
+      tri.size = newSize;
     }
   }
 
@@ -339,12 +339,8 @@ export class MakeabilityLabLogo {
    * 
    * @returns {boolean} True if all L-shaped triangle strokes are visible, otherwise false.
    */
-  get areLTriangleStrokesVisible(){
-    let visible = true;
-    for(const tri of this.getLTriangles()){
-      visible &= tri.isStrokeVisible;
-    }
-    return visible;
+  get areLTriangleStrokesVisible() {
+    return this.getLTriangles().every(tri => tri.isStrokeVisible);
   }
 
   /**
@@ -516,6 +512,7 @@ export class MakeabilityLabLogo {
    */
   setFillColorsToDefault(){
     this.setDefaultColoredTrianglesFillColor(ORIGINAL_COLOR_ARRAY);
+    this._defaultColorsOn = true;
   }
 
   /**
@@ -544,7 +541,7 @@ export class MakeabilityLabLogo {
    * @param {boolean} [includeMShadowTriangles=true] - Whether to include M shadow triangles.
    * @param {boolean} [includeLTriangles=true] - Whether to include L triangles.
    */
-  setStrokeWidth(strokeWidth, includeMShadowTriangles=true, includeLTriangles=true, ){
+  setStrokeWidth(strokeWidth, includeMShadowTriangles=true, includeLTriangles=true){
     for(const tri of this.getAllTriangles(includeMShadowTriangles, includeLTriangles)){
       tri.strokeWidth = strokeWidth;
     }
@@ -1086,15 +1083,25 @@ export class Cell {
     this.tri2.visible = isVisible;
   }
 
+  /**
+   * Calculates the bounding box of the cell, encompassing all visible triangles.
+   * If both triangles are visible, it returns the union of their bounding boxes.
+   * If only one is visible, it returns that triangle's bounding box.
+   *
+   * @returns {Object} An object containing the {x, y, width, height} of the bounding box. 
+   * Returns a zero-sized box {x:0, y:0, width:0, height:0} if no triangles are visible.
+   */
   getBoundingBox() {
-    const tri1BoundingBox = this.tri1.getBoundingBox();
-    const tri2BoundingBox = this.tri2.getBoundingBox();
-  
-    if (this.tri1.visible){
-      return this.tri1.getBoundingBox();
-    }else{
-      return this.tri2.getBoundingBox();
+    const b1 = this.tri1.visible ? this.tri1.getBoundingBox() : null;
+    const b2 = this.tri2.visible ? this.tri2.getBoundingBox() : null;
+    if (b1 && b2) {
+      const minX = Math.min(b1.x, b2.x);
+      const minY = Math.min(b1.y, b2.y);
+      const maxX = Math.max(b1.x + b1.width, b2.x + b2.width);
+      const maxY = Math.max(b1.y + b1.height, b2.y + b2.height);
+      return { x: minX, y: minY, width: maxX - minX, height: maxY - minY };
     }
+    return b1 || b2 || { x: 0, y: 0, width: 0, height: 0 };
   }
 
   /**
@@ -1200,8 +1207,8 @@ export class Triangle {
    * @param {number} y - The y-coordinate of the triangle.
    * @param {number} size - The size of the equilateral triangle.
    * @param {string} direction - The direction of the triangle. See TriangleDir for possible values.
-   * @param {p5.Color} [fillColor='white'] - The fill color of the triangle.
-   * @param {p5.Color} [strokeColor='black'] - The stroke color of the triangle.
+   * @param {string} [fillColor='white'] - The fill color of the triangle.
+   * @param {string} [strokeColor='black'] - The stroke color of the triangle.
    * @param {number} [strokeWidth=1] - The stroke width of the triangle.
    * @param {boolean} [visible=true] - The visibility of the triangle.
    */
@@ -1333,7 +1340,6 @@ export class Triangle {
    * @returns {Object} An object containing the coordinates of the bounding box.
    */
   getBoundingBox() {
-    const halfSize = this.size / 2;
     const rad = this.angle * Math.PI / 180;
 
     // Calculate the vertices of the triangle based on its direction
