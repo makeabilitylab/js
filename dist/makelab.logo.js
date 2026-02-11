@@ -179,6 +179,13 @@ function random(min, max) {
   return Math.random() * (upper - lower) + lower;
 }
 
+// --- Easing functions ---
+// Each takes a value t in [0, 1] and returns a value in [0, 1].
+// See https://easings.net/ for visualizations.
+
+/** @param {number} t @returns {number} */
+function easeOutCubic(t) { return 1 - Math.pow(1 - t, 3); }
+
 // This library provides basic line segment functionality, including drawing
 // and vector operations
 //
@@ -361,7 +368,7 @@ class LineSegment {
 
     const dotProduct = Math.min(Math.max(d2.dotProduct(d1.normalize()), 0), l1); // Constrain dot product between 0 and l1
 
-    return this.pt1.add(d1.multiply(dotProduct)); // Project p onto the line segment
+    return this.pt1.add(d1.normalize().multiply(dotProduct));
   }
 
   /**
@@ -589,6 +596,34 @@ class MakeabilityLabLogo {
     this.areLTriangleStrokesVisible = false;
 
     this.drawBoundingBox = false;
+
+    // --- Outline opacity (0–1) for animated fade-in support ---
+    this.lOutlineOpacity = 1.0;
+    this.mOutlineOpacity = 1.0;
+
+    // --- Label ---
+    /** Whether the label is visible and included in the logo's bounding box / height. */
+    this.isLabelVisible = false;
+    this.labelText = "MAKEABILITY LAB";
+    this.labelBoldUntilIndex = 4; // Bolds "MAKE"
+    this.labelFontFamily = "Inter, Roboto, system-ui, -apple-system, sans-serif";
+    this.labelColor = "black";
+
+    /**
+     * Vertical gap in pixels between the bottom of the logo grid and the label.
+     * @type {number}
+     */
+    this.labelGap = 8;
+
+    /**
+     * Label font size as a fraction of logo width. Used for bounding-box and
+     * height calculations (which don't have access to a canvas context).
+     * At draw time the actual font size is computed via measureText so the
+     * label spans exactly the logo width; this fraction should approximate
+     * that rendered size so centering / layout is accurate.
+     * @type {number}
+     */
+    this.labelFontSizeFraction = 0.09;
   }
 
   /**
@@ -607,17 +642,18 @@ class MakeabilityLabLogo {
    * @param {number} triangleSize - The size of each triangle.
    * @returns {number} The total width of the MakeabilityLabLogo.
    */
-  static getWidth(triangleSize){
+  static getGridWidth(triangleSize){
     return MakeabilityLabLogo.numCols * triangleSize;
   }
 
   /**
-   * Calculates the height of the MakeabilityLabLogo based on the size of the triangles.
+   * Calculates the grid height of the MakeabilityLabLogo (excluding the label)
+   * based on the size of the triangles.
    *
    * @param {number} triangleSize - The size of each triangle.
-   * @returns {number} The total height of the logo.
+   * @returns {number} The grid height of the logo (numRows × triangleSize).
    */
-  static getHeight(triangleSize){
+  static getGridHeight(triangleSize){
     return MakeabilityLabLogo.numRows * triangleSize;
   }
 
@@ -626,12 +662,11 @@ class MakeabilityLabLogo {
    *
    * @param {number} triangleSize - The size of the triangle used in the logo.
    * @param {number} canvasWidth - The width of the canvas.
-   * @param {boolean} [alignToGrid=false] - Whether to align the center position to the grid.a   * @returns {number} The X center position, optionally aligned to the grid.n(xCent on the given width.
-   *
-   * @param {number} logoWidth - The width of the logo.
+   * @param {boolean} [alignToGrid=false] - Whether to align the center position to the grid.
+   * @returns {number} The x-coordinate for centering the logo.
    */
-  static getXCenterPosition(triangleSize, canvasWidth, alignToGrid = false){
-    const xCenter = (canvasWidth - MakeabilityLabLogo.getWidth(triangleSize)) / 2;
+  static getGridXCenterPosition(triangleSize, canvasWidth, alignToGrid = false){
+    const xCenter = (canvasWidth - MakeabilityLabLogo.getGridWidth(triangleSize)) / 2;
     
     if(alignToGrid){
       return Math.round(xCenter / triangleSize) * triangleSize;
@@ -641,16 +676,16 @@ class MakeabilityLabLogo {
   }
 
   /**
-   * Calculates the y-coordinate for centering the MakeabilityLabLogo on the canvas.
+   * Calculates the y-coordinate for centering the logo grid (excluding the label)
+   * on the canvas. For label-aware centering, use the instance method centerLogo().
    *
    * @param {number} triangleSize - The size of each triangle.
-   * @param {number} canvasHeight - The width of the canvas.
-   * @param {boolean} [alignToGrid=false] - Whether to align the center position to the grid.a   * @returns {number} The X center position, optionally aligned to the grid.n(xCent on the given width.
-   *
-   * @returns {number} The y-coordinate for centering the logo.
+   * @param {number} canvasHeight - The height of the canvas.
+   * @param {boolean} [alignToGrid=false] - Whether to align the center position to the grid.
+   * @returns {number} The y-coordinate for centering the logo grid.
    */
-  static getYCenterPosition(triangleSize, canvasHeight, alignToGrid=false){
-    const yCenter = (canvasHeight - MakeabilityLabLogo.getHeight(triangleSize)) / 2;
+  static getGridYCenterPosition(triangleSize, canvasHeight, alignToGrid=false){
+    const yCenter = (canvasHeight - MakeabilityLabLogo.getGridHeight(triangleSize)) / 2;
     
     if(alignToGrid){
       return Math.round(yCenter / triangleSize) * triangleSize;
@@ -674,7 +709,9 @@ class MakeabilityLabLogo {
   }
 
   /**
-   * Calculates the bounding box for the logo dynamically that encompasses all triangles.
+   * Calculates the bounding box for the logo dynamically that encompasses all triangles
+   * and accounts for stroke widths and label height (if visible). 
+   * 
    * Keeps track of which triangles contribute to the minX, minY, maxX, and maxY values.
    *
    * @returns {Object} An object representing the bounding box with the following properties:
@@ -726,11 +763,14 @@ class MakeabilityLabLogo {
 
     const padding = Math.max(this.mOutlineStrokeWidth, this.lOutlineStrokeWidth) / 2;
 
+    // Extend bounding box to include the label when visible
+    const labelExtra = this.labelHeight; // 0 when label is hidden
+
     return {
       x: minX - padding,
       y: minY - padding,
       width: (maxX - minX) + 2 * padding,
-      height: (maxY - minY) + 2 * padding,
+      height: (maxY - minY) + 2 * padding + labelExtra,
       minXTriangle,
       minYTriangle,
       maxXTriangle,
@@ -795,12 +835,29 @@ class MakeabilityLabLogo {
   get width(){ return MakeabilityLabLogo.numCols * this.makeLabLogoArray[0][0].size }
 
   /**
-   * Gets the height of the MakeabilityLab logo.
-   * The height is calculated as the number of rows in the logo multiplied by the size of the first element in the logo array.
-   * 
-   * @returns {number} The height of the MakeabilityLab logo.
+   * Gets the height of the logo grid only (4 rows × cellSize), excluding the label.
+   * @returns {number}
    */
-  get height(){ return MakeabilityLabLogo.numRows * this.makeLabLogoArray[0][0].size }
+  get logoGridHeight(){ return MakeabilityLabLogo.numRows * this.makeLabLogoArray[0][0].size }
+
+  /**
+   * Gets the approximate font size of the label in pixels.
+   * Based on labelFontSizeFraction × logo width.
+   * @returns {number}
+   */
+  get labelFontSize(){ return this.width * this.labelFontSizeFraction; }
+
+  /**
+   * Gets the vertical space the label occupies (gap + font size), or 0 if hidden.
+   * @returns {number}
+   */
+  get labelHeight(){ return this.isLabelVisible ? this.labelGap + this.labelFontSize : 0; }
+
+  /**
+   * Gets the total height of the MakeabilityLab logo, including the label if visible.
+   * @returns {number}
+   */
+  get height(){ return this.logoGridHeight + this.labelHeight; }
 
   /**
    * Getter for the default colors state.
@@ -827,7 +884,18 @@ class MakeabilityLabLogo {
     if(this.isMOutlineVisible){
       adjustedHeight -= this.mOutlineStrokeWidth / 2.0;
     }
-    const triangleSize = Math.min(canvasWidth / MakeabilityLabLogo.numCols, adjustedHeight / MakeabilityLabLogo.numRows);
+
+    // When the label is visible its height depends on triangleSize
+    // (labelFontSize = numCols * triangleSize * labelFontSizeFraction),
+    // so we solve for triangleSize algebraically.
+    let effectiveRows = MakeabilityLabLogo.numRows;
+    if (this.isLabelVisible) {
+      adjustedHeight -= this.labelGap;
+      effectiveRows += MakeabilityLabLogo.numCols * this.labelFontSizeFraction;
+    }
+
+    const triangleSize = Math.min(canvasWidth / MakeabilityLabLogo.numCols,
+                                   adjustedHeight / effectiveRows);
     this.setTriangleSize(triangleSize);
     this.centerLogo(canvasWidth, canvasHeight, alignToGrid);
   }
@@ -840,8 +908,13 @@ class MakeabilityLabLogo {
    * @param {boolean} [alignToGrid=false] - Whether to align the logo to the grid.
    */
   centerLogo(canvasWidth, canvasHeight, alignToGrid=false){
-    const xCenter = MakeabilityLabLogo.getXCenterPosition(this.cellSize, canvasWidth, alignToGrid);
-    const yCenter = MakeabilityLabLogo.getYCenterPosition(this.cellSize, canvasHeight, alignToGrid);
+    const xCenter = MakeabilityLabLogo.getGridXCenterPosition(this.cellSize, canvasWidth, alignToGrid);
+
+    // Center the full height (grid + label) vertically
+    let yCenter = (canvasHeight - this.height) / 2;
+    if (alignToGrid) {
+      yCenter = Math.round(yCenter / this.cellSize) * this.cellSize;
+    }
     this.setLogoPosition(xCenter, yCenter);
   }
 
@@ -861,13 +934,13 @@ class MakeabilityLabLogo {
    * @param {number} triangleSize - The new size to set for all triangles.
    */
   setTriangleSize(triangleSize){
-    const makeLabLogoNewSize = new MakeabilityLabLogo(this.x, this.y, triangleSize);
-    const newTriangles = makeLabLogoNewSize.getAllTriangles();
-    const allTriangles = this.getAllTriangles();
-    for (let i = 0; i < allTriangles.length; i++) {
-      allTriangles[i].x = newTriangles[i].x;
-      allTriangles[i].y = newTriangles[i].y;
-      allTriangles[i].size = newTriangles[i].size;
+    const oldSize = this.cellSize;
+    if (oldSize === newSize) return;
+    const originX = this.x, originY = this.y;
+    for (const tri of this.getAllTriangles()) {
+      tri.x = originX + (tri.x - originX) * (newSize / oldSize);
+      tri.y = originY + (tri.y - originY) * (newSize / oldSize);
+      tri.size = newSize;
     }
   }
 
@@ -902,12 +975,8 @@ class MakeabilityLabLogo {
    * 
    * @returns {boolean} True if all L-shaped triangle strokes are visible, otherwise false.
    */
-  get areLTriangleStrokesVisible(){
-    let visible = true;
-    for(const tri of this.getLTriangles()){
-      visible &= tri.isStrokeVisible;
-    }
-    return visible;
+  get areLTriangleStrokesVisible() {
+    return this.getLTriangles().every(tri => tri.isStrokeVisible);
   }
 
   /**
@@ -1079,6 +1148,7 @@ class MakeabilityLabLogo {
    */
   setFillColorsToDefault(){
     this.setDefaultColoredTrianglesFillColor(ORIGINAL_COLOR_ARRAY);
+    this._defaultColorsOn = true;
   }
 
   /**
@@ -1107,7 +1177,7 @@ class MakeabilityLabLogo {
    * @param {boolean} [includeMShadowTriangles=true] - Whether to include M shadow triangles.
    * @param {boolean} [includeLTriangles=true] - Whether to include L triangles.
    */
-  setStrokeWidth(strokeWidth, includeMShadowTriangles=true, includeLTriangles=true, ){
+  setStrokeWidth(strokeWidth, includeMShadowTriangles=true, includeLTriangles=true){
     for(const tri of this.getAllTriangles(includeMShadowTriangles, includeLTriangles)){
       tri.strokeWidth = strokeWidth;
     }
@@ -1179,6 +1249,7 @@ class MakeabilityLabLogo {
 
     if(this.isMOutlineVisible){
       ctx.save();
+      ctx.globalAlpha = this.mOutlineOpacity;
       ctx.strokeStyle = this.mOutlineColor;
       ctx.lineWidth = this.mOutlineStrokeWidth;
       ctx.beginPath();
@@ -1193,6 +1264,7 @@ class MakeabilityLabLogo {
 
     if(this.isLOutlineVisible){
       ctx.save();
+      ctx.globalAlpha = this.lOutlineOpacity;
       ctx.strokeStyle = this.lOutlineColor;
       ctx.lineWidth = this.lOutlineStrokeWidth;
       ctx.beginPath();
@@ -1205,7 +1277,60 @@ class MakeabilityLabLogo {
       ctx.restore();
     }
 
+    this.drawLabel(ctx);
     
+  }
+
+  /**
+   * Draws the "MAKEABILITY LAB" label below the logo grid, with the first
+   * `labelBoldUntilIndex` characters rendered in bold. The font is scaled so
+   * the full label spans exactly the logo width.
+   *
+   * Callers can pass optional overrides for animated rendering (e.g. fade-in
+   * or slide-up effects) without mutating the logo's own properties.
+   *
+   * @param {CanvasRenderingContext2D} ctx - The canvas rendering context.
+   * @param {Object} [options]
+   * @param {number} [options.opacity=1.0] - Label opacity (0–1).
+   * @param {number} [options.yOffset=0]  - Additional vertical offset in pixels
+   *                                         (positive = downward).
+   */
+  drawLabel(ctx, { opacity = 1.0, yOffset = 0 } = {}) {
+    if (!this.isLabelVisible || opacity <= 0) return;
+
+    const part1 = this.labelText.substring(0, this.labelBoldUntilIndex);
+    const part2 = this.labelText.substring(this.labelBoldUntilIndex);
+
+    // Measure at a reference size and scale to span the logo width exactly
+    const testFontSize = 100;
+    ctx.save();
+
+    ctx.font = `bold ${testFontSize}px ${this.labelFontFamily}`;
+    const widthPart1 = ctx.measureText(part1).width;
+    ctx.font = `${testFontSize}px ${this.labelFontFamily}`;
+    const widthPart2 = ctx.measureText(part2).width;
+
+    const totalMeasuredWidth = widthPart1 + widthPart2;
+    const fontSize = (this.width / totalMeasuredWidth) * testFontSize;
+
+    // Position: below the grid, offset by gap + font size (alphabetic baseline)
+    const labelY = this.y + this.logoGridHeight + this.labelGap + fontSize + yOffset;
+
+    ctx.globalAlpha = opacity;
+    ctx.textBaseline = 'alphabetic';
+    ctx.fillStyle = this.labelColor;
+
+    // Bold part
+    ctx.font = `bold ${fontSize}px ${this.labelFontFamily}`;
+    ctx.textAlign = 'left';
+    ctx.fillText(part1, this.x, labelY);
+
+    // Regular part
+    const part1ActualWidth = ctx.measureText(part1).width;
+    ctx.font = `${fontSize}px ${this.labelFontFamily}`;
+    ctx.fillText(part2, this.x + part1ActualWidth, labelY);
+
+    ctx.restore();
   }
 
   /**
@@ -1649,15 +1774,25 @@ class Cell {
     this.tri2.visible = isVisible;
   }
 
+  /**
+   * Calculates the bounding box of the cell, encompassing all visible triangles.
+   * If both triangles are visible, it returns the union of their bounding boxes.
+   * If only one is visible, it returns that triangle's bounding box.
+   *
+   * @returns {Object} An object containing the {x, y, width, height} of the bounding box. 
+   * Returns a zero-sized box {x:0, y:0, width:0, height:0} if no triangles are visible.
+   */
   getBoundingBox() {
-    this.tri1.getBoundingBox();
-    this.tri2.getBoundingBox();
-  
-    if (this.tri1.visible){
-      return this.tri1.getBoundingBox();
-    }else {
-      return this.tri2.getBoundingBox();
+    const b1 = this.tri1.visible ? this.tri1.getBoundingBox() : null;
+    const b2 = this.tri2.visible ? this.tri2.getBoundingBox() : null;
+    if (b1 && b2) {
+      const minX = Math.min(b1.x, b2.x);
+      const minY = Math.min(b1.y, b2.y);
+      const maxX = Math.max(b1.x + b1.width, b2.x + b2.width);
+      const maxY = Math.max(b1.y + b1.height, b2.y + b2.height);
+      return { x: minX, y: minY, width: maxX - minX, height: maxY - minY };
     }
+    return b1 || b2 || { x: 0, y: 0, width: 0, height: 0 };
   }
 
   /**
@@ -1763,8 +1898,8 @@ class Triangle {
    * @param {number} y - The y-coordinate of the triangle.
    * @param {number} size - The size of the equilateral triangle.
    * @param {string} direction - The direction of the triangle. See TriangleDir for possible values.
-   * @param {p5.Color} [fillColor='white'] - The fill color of the triangle.
-   * @param {p5.Color} [strokeColor='black'] - The stroke color of the triangle.
+   * @param {string} [fillColor='white'] - The fill color of the triangle.
+   * @param {string} [strokeColor='black'] - The stroke color of the triangle.
    * @param {number} [strokeWidth=1] - The stroke width of the triangle.
    * @param {boolean} [visible=true] - The visibility of the triangle.
    */
@@ -1896,7 +2031,6 @@ class Triangle {
    * @returns {Object} An object containing the coordinates of the bounding box.
    */
   getBoundingBox() {
-    this.size / 2;
     const rad = this.angle * Math.PI / 180;
 
     // Calculate the vertices of the triangle based on its direction
@@ -2191,14 +2325,6 @@ function lerpColor(startColor, endColor, amt) {
  * @returns {Object} An object with properties r, g, b, and optionally a.
  * @throws {Error} If the color string format is invalid.
  */
-/**
- * Converts a color string (hex, rgb, or rgba) to an object with r, g, b, and optionally a properties.
- * If the input is already an object, it returns the input as is.
- *
- * @param {string|Object} colorStr - The color string or object to convert.
- * @returns {Object} An object with properties r, g, b, and optionally a.
- * @throws {Error} If the color string format is invalid.
- */
 function convertColorStringToObject(colorStr) {
   if (typeof colorStr === 'string') {
     // Handle HTML color names
@@ -2398,12 +2524,28 @@ const HTML_COLOR_NAMES = {
 };
 
 class MakeabilityLabLogoExploder{
+  /**
+   * Creates a new MakeabilityLabLogoExploder instance.
+   *
+   * The exploder manages two internal MakeabilityLabLogo instances: a static "target"
+   * logo (makeLabLogo) and an animated logo (makeLabLogoAnimated). Call reset() to
+   * randomize particle positions, then update(lerpAmt) to interpolate between the
+   * exploded and assembled states.
+   *
+   * @param {number} x - The x-coordinate for the logo position.
+   * @param {number} y - The y-coordinate for the logo position.
+   * @param {number} triangleSize - The size of each triangle cell.
+   * @param {string} [startFillColor="rgb(255, 255, 255, 0.5)"] - Initial fill color for exploded triangles.
+   * @param {string} [startStrokeColor="rgba(0, 0, 0, 0.6)"] - Initial stroke color for exploded triangles.
+   */
   constructor(x, y, triangleSize, startFillColor="rgb(255, 255, 255, 0.5)", 
     startStrokeColor="rgba(0, 0, 0, 0.6)"){
 
+    // Static "target" logo — invisible by default, used as the end-state reference
     this.makeLabLogo = new MakeabilityLabLogo(x, y, triangleSize);
     this.makeLabLogo.visible = false;
 
+    // Animated logo — the one that moves from exploded → assembled
     this.makeLabLogoAnimated = new MakeabilityLabLogo(x, y, triangleSize);
     this.makeLabLogoAnimated.isLOutlineVisible = false;
     this.makeLabLogoAnimated.isMOutlineVisible = false;
@@ -2411,8 +2553,16 @@ class MakeabilityLabLogoExploder{
     this.makeLabLogo.setLTriangleStrokeColor('rgb(240, 240, 240)'); // barely noticeable
     this.makeLabLogoAnimated.areLTriangleStrokesVisible = true;
 
+    // Enable label on both logos so height/centering calculations are consistent.
+    // The target logo is invisible so its label won't render; only the animated
+    // logo's label is drawn (with animation via _drawAnimatedLabel).
+    this.makeLabLogo.isLabelVisible = true;
+    this.makeLabLogoAnimated.isLabelVisible = true;
+
+    /** @type {Array<Object>} Snapshot of each triangle's randomized start state */
     this.originalRandomTriLocs = [];
 
+    // --- Explode flags: control which properties are randomized ---
     this.explodeSize = true;
     this.explodeX = true;
     this.explodeY = true;
@@ -2424,11 +2574,51 @@ class MakeabilityLabLogoExploder{
     this.startFillColor = startFillColor;
     this.startStrokeColor = startStrokeColor;
 
-    // TODO:
-    // - Add Makeability Lab text at end of animation
+    // --- Easing ---
+    /** 
+     * Easing function applied to spatial properties (position, angle, size).
+     * Receives a value in [0, 1] and returns a value in [0, 1].
+     * Colors always use linear interpolation regardless of this setting.
+     * @type {function(number): number} 
+     */
+    this.easingFunction = easeOutCubic;
+
+    // --- L outline animation ---
+    /**
+     * Controls when the L outline starts fading in, as a fraction of the
+     * overall animation. E.g., 0.85 means it begins at 85% progress.
+     * @type {number}
+     */
+    this.lOutlineAppearThreshold = 0.85;
+
+    // --- Label animation ---
+    /** 
+     * Controls when the label starts fading in, as a fraction of the overall
+     * animation. E.g., 0.7 means the label begins appearing at 70% progress. 
+     * @type {number} 
+     */
+    this.labelAppearThreshold = 0.7;
+
+    /**
+     * The vertical slide distance (in label-font-size fractions) the label
+     * travels during its entrance animation.
+     * @type {number}
+     */
+    this.labelSlideDistanceFraction = 0.4;
   }
 
+  // --- Getters ---
+
+  /**
+   * Gets the final assembled height of the logo (including the label if visible).
+   * @returns {number}
+   */
   get finalHeight(){ return this.makeLabLogo.height; }
+
+  /**
+   * Gets the final assembled width of the logo.
+   * @returns {number}
+   */
   get finalWidth(){ return this.makeLabLogo.width; }
 
   
@@ -2455,7 +2645,7 @@ class MakeabilityLabLogoExploder{
   }
 
   /**
-   * Sets the final size of the logo at the end state
+   * Sets the final size of the logo at the end state.
    *
    * @param {number} finalWidth - The desired width of the logo.
    */
@@ -2499,9 +2689,8 @@ class MakeabilityLabLogoExploder{
    *
    * @param {number} canvasWidth - The width of the canvas.
    * @param {number} canvasHeight - The height of the canvas.
-   * @param {boolean} [alignToGrid=false] - Whether to align the center position to the grid.a   * @returns {number} The X center position, optionally aligned to the grid.n(xCent on the given width.
-   * 
-  */
+   * @param {boolean} [alignToGrid=false] - Whether to align the center position to the grid.
+   */
   centerLogo(canvasWidth, canvasHeight, alignedToGrid=false){
     this.makeLabLogo.centerLogo(canvasWidth, canvasHeight, alignedToGrid);
     this.makeLabLogoAnimated.centerLogo(canvasWidth, canvasHeight, alignedToGrid);
@@ -2511,8 +2700,8 @@ class MakeabilityLabLogoExploder{
    * Resets the state of the logo exploder with new dimensions and randomizes the 
    * positions, angles, and sizes of the triangles.
    *
-   * @param {number} canvasWidth - The drawing area width
-   * @param {number} canvasHeight - The drawing area height
+   * @param {number} canvasWidth - The drawing area width.
+   * @param {number} canvasHeight - The drawing area height.
    */
   reset(canvasWidth, canvasHeight){
 
@@ -2550,22 +2739,33 @@ class MakeabilityLabLogoExploder{
    * @param {number} lerpAmt - The interpolation amount, a value between 0 and 1.
    *
    * This function performs the following operations:
-   * 1. Toggles the visibility of the logo outline based on the lerpAmt.
-   * 2. Interpolates the position, angle, and size of each triangle in the logo from their
+   * 1. Animates the L outline opacity (fades in after lOutlineAppearThreshold).
+   * 2. Interpolates the position, angle, and size of each triangle from their
    *    original random locations to their final static positions.
-   * 3. Interpolates the color of each triangle in the logo from white to their original colors.
+   * 3. Interpolates the color of each triangle from the start colors to their
+   *    original colors.
    */
   update(lerpAmt){
-    if(lerpAmt >= 1){
+    if (this.originalRandomTriLocs.length === 0) return;
+
+    // Apply easing to spatial properties
+    const t = this.easingFunction(lerpAmt);
+
+    // --- L outline: fade in after threshold ---
+    if (lerpAmt >= this.lOutlineAppearThreshold) {
       this.makeLabLogoAnimated.isLOutlineVisible = true;
-      //this.makeLabLogoAnimated.areLTriangleStrokesVisible = false;
-    }else {
+      const lOutlineProgress = Math.min(
+        (lerpAmt - this.lOutlineAppearThreshold) / (1 - this.lOutlineAppearThreshold),
+        1
+      );
+      this.makeLabLogoAnimated.lOutlineOpacity = this.easingFunction(lOutlineProgress);
+    } else {
       this.makeLabLogoAnimated.isLOutlineVisible = false;
-      //this.makeLabLogoAnimated.areLTriangleStrokesVisible = true;
+      this.makeLabLogoAnimated.lOutlineOpacity = 0;
     }
 
     const staticTriangles = this.makeLabLogo.getAllTriangles(true);
-    let animatedTriangles = this.makeLabLogoAnimated.getAllTriangles(true);
+    const animatedTriangles = this.makeLabLogoAnimated.getAllTriangles(true);
 
     for (let i = 0; i < this.originalRandomTriLocs.length; i++) {
       const endX = staticTriangles[i].x;
@@ -2584,36 +2784,74 @@ class MakeabilityLabLogoExploder{
       const startFillColor = this.originalRandomTriLocs[i].fillColor;
       const startStrokeWidth = this.originalRandomTriLocs[i].strokeWidth;
   
-      const newX = lerp(startX, endX, lerpAmt);
-      const newY = lerp(startY, endY, lerpAmt);
-      const newAngle = lerp(startAngle, endAngle, lerpAmt);
-      const newSize = lerp(startSize, endSize, lerpAmt);
-      const newStrokeWidth = lerp(startStrokeWidth, endStrokeWidth, lerpAmt);
-      const newStrokeColor = lerpColor(startStrokeColor, endStrokeColor, lerpAmt);
-      const newFillColor = lerpColor(startFillColor, endFillColor, lerpAmt);
+      // Apply easing (t) to spatial properties
+      animatedTriangles[i].x = lerp(startX, endX, t);
+      animatedTriangles[i].y = lerp(startY, endY, t);
+      animatedTriangles[i].angle = lerp(startAngle, endAngle, t);
+      animatedTriangles[i].size = lerp(startSize, endSize, t);
       
-      animatedTriangles[i].x = newX;
-      animatedTriangles[i].y = newY;
-      animatedTriangles[i].angle = newAngle;
-      animatedTriangles[i].size = newSize;
-      animatedTriangles[i].strokeWidth = newStrokeWidth;
-      animatedTriangles[i].strokeColor = newStrokeColor;
-      animatedTriangles[i].fillColor = newFillColor;
-
-      //console.log(`Triangle ${i}`, JSON.stringify(animatedTriangles[i]));
+      // Apply linear interpolation for visual style properties
+      animatedTriangles[i].strokeWidth = lerp(startStrokeWidth, endStrokeWidth, lerpAmt);
+      animatedTriangles[i].strokeColor = lerpColor(startStrokeColor, endStrokeColor, lerpAmt);
+      animatedTriangles[i].fillColor = lerpColor(startFillColor, endFillColor, lerpAmt);
     }
+
+    // Cache the current lerpAmt so draw() can use it for the label
+    this._currentLerpAmt = lerpAmt;
   }
 
   /**
    * Draws the MakeLab logo and its animated version on the provided canvas context.
+   * The base class draw() handles triangles and outlines (with opacity).
+   * The animated logo's label is drawn separately with fade-in and slide-up effects.
    *
-   * @param {CanvasRenderingContext2D} ctx - The canvas rendering context where the logos will be drawn.
+   * @param {CanvasRenderingContext2D} ctx - The canvas rendering context.
    */
   draw(ctx){
+    // Draw the static target logo (invisible by default, but respects .visible)
     this.makeLabLogo.draw(ctx);
+
+    // Draw the animated logo — but suppress its label so we can draw it
+    // ourselves with animation effects via _drawAnimatedLabel
+    const savedLabelVisible = this.makeLabLogoAnimated.isLabelVisible;
+    this.makeLabLogoAnimated.isLabelVisible = false;
     this.makeLabLogoAnimated.draw(ctx);
+    this.makeLabLogoAnimated.isLabelVisible = savedLabelVisible;
+
+    // Draw the animated label with fade-in / slide-up
+    if (savedLabelVisible) {
+      this._drawAnimatedLabel(ctx);
+    }
   }
-  
+
+  /**
+   * Draws the label with a fade-in and slide-up animation. Delegates the actual
+   * text rendering to the base class's drawLabel(), passing animated opacity and
+   * yOffset values.
+   *
+   * @param {CanvasRenderingContext2D} ctx - The canvas rendering context.
+   * @private
+   */
+  _drawAnimatedLabel(ctx) {
+    const lerpAmt = this._currentLerpAmt ?? 0;
+    if (lerpAmt <= this.labelAppearThreshold) return;
+
+    // Compute animation progress within the label's appearance window
+    const labelProgress = Math.min(
+      (lerpAmt - this.labelAppearThreshold) / (1 - this.labelAppearThreshold),
+      1
+    );
+    const easedProgress = this.easingFunction(labelProgress);
+
+    // Slide-up: starts offset downward, eases to 0
+    const fontSize = this.makeLabLogoAnimated.labelFontSize;
+    const slideOffset = fontSize * this.labelSlideDistanceFraction * (1 - easedProgress);
+
+    this.makeLabLogoAnimated.drawLabel(ctx, {
+      opacity: easedProgress,
+      yOffset: slideOffset
+    });
+  }
 }
 
 export { Cell, Grid, MakeabilityLabLogo, MakeabilityLabLogoColorer, MakeabilityLabLogoExploder, ORIGINAL_COLOR_ARRAY, OriginalColorPaletteRGB, Triangle, TriangleDir };

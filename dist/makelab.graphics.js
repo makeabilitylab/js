@@ -60,14 +60,6 @@ function lerpColor(startColor, endColor, amt) {
  * @returns {Object} An object with properties r, g, b, and optionally a.
  * @throws {Error} If the color string format is invalid.
  */
-/**
- * Converts a color string (hex, rgb, or rgba) to an object with r, g, b, and optionally a properties.
- * If the input is already an object, it returns the input as is.
- *
- * @param {string|Object} colorStr - The color string or object to convert.
- * @returns {Object} An object with properties r, g, b, and optionally a.
- * @throws {Error} If the color string format is invalid.
- */
 function convertColorStringToObject(colorStr) {
   if (typeof colorStr === 'string') {
     // Handle HTML color names
@@ -581,7 +573,7 @@ class LineSegment {
 
     const dotProduct = Math.min(Math.max(d2.dotProduct(d1.normalize()), 0), l1); // Constrain dot product between 0 and l1
 
-    return this.pt1.add(d1.multiply(dotProduct)); // Project p onto the line segment
+    return this.pt1.add(d1.normalize().multiply(dotProduct));
   }
 
   /**
