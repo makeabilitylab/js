@@ -1,32 +1,69 @@
-import { MakeabilityLabLogo, Grid  } from '/dist/makelab.logo.js';
+import { MakeabilityLabLogo, Grid } from '../../../lib/logo/makelab-logo.js'; 
 
 const div = document.querySelector('.container');
 const canvas = document.getElementById('myCanvas');
-canvas.width = 1000;
-canvas.height = 1000;
 const ctx = canvas.getContext('2d');
 
 let backgroundColor = "rgb(250, 250, 250)";
-
-ctx.fillStyle = backgroundColor; // Set the fill style to gray
-ctx.fillRect(0, 0, canvas.width, canvas.height); // Fill the entire canvas with the gray color
-
 let triangleSize = 100;
 let makeLabGrid, xLogo, yLogo, makeLabLogo;
 
-// Initial resize
+// Store logical dimensions for drawing logic
+let logicalWidth, logicalHeight;
+
+// Initial setup
 resizeCanvas();
 printMenu();
 
 function draw(ctx){
-  // clear canvas
+  // clear canvas using logical dimensions
   ctx.fillStyle = backgroundColor;
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.fillRect(0, 0, logicalWidth, logicalHeight);
 
   // draw grid and logo
   makeLabGrid.draw(ctx);
   makeLabLogo.draw(ctx);
 }
+
+function recreateGraphicalObjects(){
+  // Use logical coordinates for object placement
+  makeLabGrid = new Grid(logicalWidth, logicalHeight, triangleSize);
+  xLogo = MakeabilityLabLogo.getGridXCenterPosition(triangleSize, logicalWidth);
+  yLogo = MakeabilityLabLogo.getGridYCenterPosition(triangleSize, logicalHeight);
+  makeLabLogo = new MakeabilityLabLogo(xLogo, yLogo, triangleSize);
+  window.makeLabLogo = makeLabLogo;
+}
+
+function resizeCanvas() {
+  // 1. Determine logical size from the container
+  logicalWidth = div.clientWidth;
+  logicalHeight = div.clientHeight;
+
+  // 2. Determine physical size based on device pixel ratio
+  const dpr = window.devicePixelRatio || 1;
+
+  // 3. Scale the drawing buffer
+  canvas.width = logicalWidth * dpr;
+  canvas.height = logicalHeight * dpr;
+
+  // 4. Force the CSS display size to match logical size
+  canvas.style.width = `${logicalWidth}px`;
+  canvas.style.height = `${logicalHeight}px`;
+
+  // 5. Reset and apply scaling to the context
+  ctx.setTransform(1, 0, 0, 1, 0, 0); 
+  ctx.scale(dpr, dpr);
+
+  console.log(`Resized: Logical(${logicalWidth}x${logicalHeight}) DPR: ${dpr}`);
+  
+  recreateGraphicalObjects();
+  draw(ctx);
+}
+
+// Event listener for window resize
+window.addEventListener('resize', resizeCanvas);
+
+// --- Keyboard Controls (Original logic maintained) ---
 
 function printMenu(){
   console.log("Press '+' to increase triangle size. Currently set to: ", triangleSize);
@@ -36,87 +73,56 @@ function printMenu(){
   console.log("Press 'l' to toggle L outline. Currently set to: ", makeLabLogo.isLOutlineVisible);
   console.log("Press 'k' to toggle L triangle strokes. Currently set to: ", makeLabLogo.areLTriangleStrokesVisible);
   console.log("Press 'h' to toggle Makeability Lab logo. Currently set to: ", makeLabLogo.visible);
+  console.log("Press 'b' to toggle the text label.");
   console.log("Press 'r' to refresh the canvas.");
   console.log("");
-  console.log("Type printMenu() to see this menu again.");
 }
 
 document.addEventListener('keydown', function(event) {
   const key = event.key;
-  console.log(`keydown: ${key}`);
   switch (key) {
     case '=':
     case "+":
       triangleSize += 5;
-      console.log(`triangleSize: ${triangleSize}`);
       recreateGraphicalObjects();
       draw(ctx);
       break;
-
     case '-':
     case "_":
-      triangleSize -= 5;
-      if(triangleSize < 5){
-        triangleSize = 5;
-      }
-      console.log(`triangleSize: ${triangleSize}`);
+      triangleSize = Math.max(5, triangleSize - 5);
       recreateGraphicalObjects();
       draw(ctx);
       break;
-
     case 'g':
       makeLabGrid.visible = !makeLabGrid.visible;
-      console.log("Grid visibility is set to: ", makeLabGrid.visible);
       draw(ctx);
       break;
-
     case 'm':
       makeLabLogo.isMOutlineVisible = !makeLabLogo.isMOutlineVisible;
-      console.log("M outline visible: ", makeLabLogo.isMOutlineVisible);
       draw(ctx);
       break;
-
     case 'l':
       makeLabLogo.isLOutlineVisible = !makeLabLogo.isLOutlineVisible;
-      console.log("L outline visible: ", makeLabLogo.isLOutlineVisible);
       draw(ctx);
       break;
-
     case 'k':
       makeLabLogo.areLTriangleStrokesVisible = !makeLabLogo.areLTriangleStrokesVisible;
-      console.log("L triangle strokes visible: ", makeLabLogo.areLTriangleStrokesVisible);
       draw(ctx);
       break;
-
     case 'h':
       makeLabLogo.visible = !makeLabLogo.visible;
-      console.log("Makeability Lab logo visible: ", makeLabLogo.visible);
       draw(ctx);
       break;
-
     case 'r':
-      console.log("Refresh...");
       draw(ctx);
       break;
+    case 'b': // 'b' for "Brand" or "Bottom label"
+      makeLabLogo.isLabelVisible = !makeLabLogo.isLabelVisible;
+      console.log("Text label visible:", makeLabLogo.isLabelVisible);
+      // Crucial: Recenter the logo because the height changed
+      makeLabLogo.centerLogo(logicalWidth, logicalHeight);
       
+      draw(ctx);
+      break; 
   }
 });
-
-function recreateGraphicalObjects(){
-  makeLabGrid = new Grid(canvas.width, canvas.height, triangleSize);
-  xLogo = MakeabilityLabLogo.getXCenterPosition(triangleSize, canvas.width);
-  yLogo = MakeabilityLabLogo.getYCenterPosition(triangleSize, canvas.height);
-  makeLabLogo = new MakeabilityLabLogo(xLogo, yLogo, triangleSize);
-  window.makeLabLogo = makeLabLogo;
-}
-
-function resizeCanvas() {
-  console.log(`resizeCanvas: ${div.clientWidth}, ${div.clientHeight} and prev canvas: ${canvas.width}, ${canvas.height}`);
-  canvas.width = div.clientWidth;
-  canvas.height = div.clientHeight;
-  recreateGraphicalObjects();
-  draw(ctx);
-}
-
-// Event listener for window resize
-window.addEventListener('resize', resizeCanvas);
