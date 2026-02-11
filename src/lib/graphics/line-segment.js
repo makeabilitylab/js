@@ -182,7 +182,7 @@ export class LineSegment {
 
     const dotProduct = Math.min(Math.max(d2.dotProduct(d1.normalize()), 0), l1); // Constrain dot product between 0 and l1
 
-    return this.pt1.add(d1.multiply(dotProduct)); // Project p onto the line segment
+    return this.pt1.add(d1.normalize().multiply(dotProduct));
   }
 
   /**
