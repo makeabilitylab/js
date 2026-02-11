@@ -48,3 +48,21 @@ export function random(min, max) {
   const upper = Math.max(min, max);
   return Math.random() * (upper - lower) + lower;
 }
+
+// --- Easing functions ---
+// Each takes a value t in [0, 1] and returns a value in [0, 1].
+// See https://easings.net/ for visualizations.
+
+/** @param {number} t @returns {number} */
+export function easeOutCubic(t) { return 1 - Math.pow(1 - t, 3); }
+
+/** @param {number} t @returns {number} */
+export function easeOutQuad(t) { return 1 - (1 - t) * (1 - t); }
+
+/** @param {number} t @returns {number} */
+export function easeInOutCubic(t) {
+  return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+}
+
+/** @param {number} t @returns {number} */
+export function easeInCubic(t) { return t * t * t; }
