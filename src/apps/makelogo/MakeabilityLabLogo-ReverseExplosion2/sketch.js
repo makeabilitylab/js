@@ -52,15 +52,16 @@ function setupCanvas() {
   ctx.scale(dpr, dpr);
 
   // 6. Calculate centered position
-  const xLogo = MakeabilityLabLogo.getXCenterPosition(TRIANGLE_SIZE, logicalWidth);
-  const yLogo = MakeabilityLabLogo.getYCenterPosition(TRIANGLE_SIZE, logicalHeight);
+  const xLogo = MakeabilityLabLogo.getGridXCenterPosition(TRIANGLE_SIZE, logicalWidth);
+  const yLogo = MakeabilityLabLogo.getGridYCenterPosition(TRIANGLE_SIZE, logicalHeight);
 
   // 7. Initialize or Update the Exploder
   if (!makeLabLogoExploder) {
-    makeLabLogoExploder = new MakeabilityLabLogoExploder(xLogo, yLogo, TRIANGLE_SIZE);
-    window.makeLabLogoExploder = makeLabLogoExploder; // Keep debug hook
+    makeLabLogoExploder = new MakeabilityLabLogoExploder(0, 0, TRIANGLE_SIZE);
+    makeLabLogoExploder.centerLogo(logicalWidth, logicalHeight);
+    window.makeLabLogoExploder = makeLabLogoExploder;
   } else {
-    makeLabLogoExploder.setLogoPosition(xLogo, yLogo);
+    makeLabLogoExploder.centerLogo(logicalWidth, logicalHeight);
   }
 
   // CRITICAL: We must reset the explosion bounds using logical dimensions.

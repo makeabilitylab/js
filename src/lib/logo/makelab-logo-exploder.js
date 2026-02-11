@@ -32,6 +32,12 @@ export class MakeabilityLabLogoExploder{
     this.makeLabLogo.setLTriangleStrokeColor('rgb(240, 240, 240)'); // barely noticeable
     this.makeLabLogoAnimated.areLTriangleStrokesVisible = true;
 
+    // Enable label on both logos so height/centering calculations are consistent.
+    // The target logo is invisible so its label won't render; only the animated
+    // logo's label is drawn (with animation via _drawAnimatedLabel).
+    this.makeLabLogo.isLabelVisible = true;
+    this.makeLabLogoAnimated.isLabelVisible = true;
+
     /** @type {Array<Object>} Snapshot of each triangle's randomized start state */
     this.originalRandomTriLocs = [];
 
@@ -56,13 +62,15 @@ export class MakeabilityLabLogoExploder{
      */
     this.easingFunction = easeOutCubic;
 
-    // --- Label text ---
-    this.isLabelVisible = true;
-    this.labelText = "MAKEABILITY LAB"; // All caps
-    this.labelBoldUntilIndex = 4; // Bolds the first 4 characters ("MAKE")
-    this.labelFontFamily = "Inter, Roboto, system-ui, -apple-system, sans-serif"; // Modern, cool font stack
-    this.labelColor = "black";
+    // --- L outline animation ---
+    /**
+     * Controls when the L outline starts fading in, as a fraction of the
+     * overall animation. E.g., 0.85 means it begins at 85% progress.
+     * @type {number}
+     */
+    this.lOutlineAppearThreshold = 0.85;
 
+    // --- Label animation ---
     /** 
      * Controls when the label starts fading in, as a fraction of the overall
      * animation. E.g., 0.7 means the label begins appearing at 70% progress. 
@@ -71,22 +79,25 @@ export class MakeabilityLabLogoExploder{
     this.labelAppearThreshold = 0.7;
 
     /**
-     * Vertical gap in pixels between the bottom of the logo and the label.
+     * The vertical slide distance (in label-font-size fractions) the label
+     * travels during its entrance animation.
      * @type {number}
      */
-    this.labelGap = 8;
-
-    /**
-     * Label font size as a fraction of the logo width. The actual pixel size
-     * is computed dynamically so the text scales with the logo.
-     * @type {number}
-     */
-    this.labelFontSizeFraction = 0.09;
+    this.labelSlideDistanceFraction = 0.4;
   }
 
   // --- Getters ---
 
+  /**
+   * Gets the final assembled height of the logo (including the label if visible).
+   * @returns {number}
+   */
   get finalHeight(){ return this.makeLabLogo.height; }
+
+  /**
+   * Gets the final assembled width of the logo.
+   * @returns {number}
+   */
   get finalWidth(){ return this.makeLabLogo.width; }
 
   
@@ -207,10 +218,10 @@ export class MakeabilityLabLogoExploder{
    * @param {number} lerpAmt - The interpolation amount, a value between 0 and 1.
    *
    * This function performs the following operations:
-   * 1. Toggles the visibility of the logo outline based on the lerpAmt.
-   * 2. Interpolates the position, angle, and size of each triangle in the logo from their
+   * 1. Animates the L outline opacity (fades in after lOutlineAppearThreshold).
+   * 2. Interpolates the position, angle, and size of each triangle from their
    *    original random locations to their final static positions.
-   * 3. Interpolates the color of each triangle in the logo from the start colors to their
+   * 3. Interpolates the color of each triangle from the start colors to their
    *    original colors.
    */
   update(lerpAmt){
@@ -219,10 +230,17 @@ export class MakeabilityLabLogoExploder{
     // Apply easing to spatial properties
     const t = this.easingFunction(lerpAmt);
 
-    if(lerpAmt >= 1){
+    // --- L outline: fade in after threshold ---
+    if (lerpAmt >= this.lOutlineAppearThreshold) {
       this.makeLabLogoAnimated.isLOutlineVisible = true;
-    }else{
+      const lOutlineProgress = Math.min(
+        (lerpAmt - this.lOutlineAppearThreshold) / (1 - this.lOutlineAppearThreshold),
+        1
+      );
+      this.makeLabLogoAnimated.lOutlineOpacity = this.easingFunction(lOutlineProgress);
+    } else {
       this.makeLabLogoAnimated.isLOutlineVisible = false;
+      this.makeLabLogoAnimated.lOutlineOpacity = 0;
     }
 
     const staticTriangles = this.makeLabLogo.getAllTriangles(true);
@@ -263,78 +281,54 @@ export class MakeabilityLabLogoExploder{
 
   /**
    * Draws the MakeLab logo and its animated version on the provided canvas context.
-   * When the animation is near completion, also draws the "Makeability Lab" label
-   * with a fade-in and slide-up effect.
+   * The base class draw() handles triangles and outlines (with opacity).
+   * The animated logo's label is drawn separately with fade-in and slide-up effects.
    *
-   * @param {CanvasRenderingContext2D} ctx - The canvas rendering context where the logos will be drawn.
+   * @param {CanvasRenderingContext2D} ctx - The canvas rendering context.
    */
   draw(ctx){
+    // Draw the static target logo (invisible by default, but respects .visible)
     this.makeLabLogo.draw(ctx);
-    this.makeLabLogoAnimated.draw(ctx);
 
-    if (this.isLabelVisible) {
-      this._drawLabel(ctx);
+    // Draw the animated logo — but suppress its label so we can draw it
+    // ourselves with animation effects via _drawAnimatedLabel
+    const savedLabelVisible = this.makeLabLogoAnimated.isLabelVisible;
+    this.makeLabLogoAnimated.isLabelVisible = false;
+    this.makeLabLogoAnimated.draw(ctx);
+    this.makeLabLogoAnimated.isLabelVisible = savedLabelVisible;
+
+    // Draw the animated label with fade-in / slide-up
+    if (savedLabelVisible) {
+      this._drawAnimatedLabel(ctx);
     }
   }
 
   /**
-   * Draws the "MAKEABILITY LAB" label with "MAKE" bolded, matched to logo width.
+   * Draws the label with a fade-in and slide-up animation. Delegates the actual
+   * text rendering to the base class's drawLabel(), passing animated opacity and
+   * yOffset values.
+   *
    * @param {CanvasRenderingContext2D} ctx - The canvas rendering context.
    * @private
    */
-  _drawLabel(ctx) {
+  _drawAnimatedLabel(ctx) {
     const lerpAmt = this._currentLerpAmt ?? 0;
     if (lerpAmt <= this.labelAppearThreshold) return;
 
+    // Compute animation progress within the label's appearance window
     const labelProgress = Math.min(
       (lerpAmt - this.labelAppearThreshold) / (1 - this.labelAppearThreshold),
       1
     );
     const easedProgress = this.easingFunction(labelProgress);
 
-    const logoWidth = this.makeLabLogoAnimated.width;
-    const targetWidth = logoWidth;
+    // Slide-up: starts offset downward, eases to 0
+    const fontSize = this.makeLabLogoAnimated.labelFontSize;
+    const slideOffset = fontSize * this.labelSlideDistanceFraction * (1 - easedProgress);
 
-    // Dynamically split based on the index
-    const part1 = this.labelText.substring(0, this.labelBoldUntilIndex);
-    const part2 = this.labelText.substring(this.labelBoldUntilIndex);
-
-    // 1. Determine font size to match logo width
-    // We measure at 100px to find the ratio, then scale
-    ctx.save();
-    const testFontSize = 100;
-    ctx.font = `bold ${testFontSize}px ${this.labelFontFamily}`;
-    const widthPart1 = ctx.measureText(part1).width;
-    ctx.font = `${testFontSize}px ${this.labelFontFamily}`;
-    const widthPart2 = ctx.measureText(part2).width;
-    
-    const totalMeasuredWidth = widthPart1 + widthPart2;
-    const scaledFontSize = (targetWidth / totalMeasuredWidth) * testFontSize;
-
-    // 2. Setup Animation Positioning
-    const logoX = this.makeLabLogoAnimated.x;
-    const logoY = this.makeLabLogoAnimated.y;
-    const logoHeight = this.makeLabLogoAnimated.height;
-    
-    const slideOffset = scaledFontSize * 0.4;
-    const targetY = logoY + logoHeight + this.labelGap + scaledFontSize;
-    const currentY = lerp(targetY + slideOffset, targetY, easedProgress);
-
-    // 3. Draw
-    ctx.globalAlpha = easedProgress;
-    ctx.textBaseline = 'alphabetic';
-    ctx.fillStyle = this.labelColor;
-
-    // Draw Part 1: Bold
-    ctx.font = `bold ${scaledFontSize}px ${this.labelFontFamily}`;
-    ctx.textAlign = 'left';
-    ctx.fillText(part1, logoX, currentY);
-
-    // Draw Part 2: Regular
-    const part1ActualWidth = ctx.measureText(part1).width;
-    ctx.font = `${scaledFontSize}px ${this.labelFontFamily}`;
-    ctx.fillText(part2, logoX + part1ActualWidth, currentY);
-
-    ctx.restore();
+    this.makeLabLogoAnimated.drawLabel(ctx, {
+      opacity: easedProgress,
+      yOffset: slideOffset
+    });
   }
 }

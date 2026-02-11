@@ -26,6 +26,34 @@ export class MakeabilityLabLogo {
     this.areLTriangleStrokesVisible = false;
 
     this.drawBoundingBox = false;
+
+    // --- Outline opacity (0–1) for animated fade-in support ---
+    this.lOutlineOpacity = 1.0;
+    this.mOutlineOpacity = 1.0;
+
+    // --- Label ---
+    /** Whether the label is visible and included in the logo's bounding box / height. */
+    this.isLabelVisible = false;
+    this.labelText = "MAKEABILITY LAB";
+    this.labelBoldUntilIndex = 4; // Bolds "MAKE"
+    this.labelFontFamily = "Inter, Roboto, system-ui, -apple-system, sans-serif";
+    this.labelColor = "black";
+
+    /**
+     * Vertical gap in pixels between the bottom of the logo grid and the label.
+     * @type {number}
+     */
+    this.labelGap = 8;
+
+    /**
+     * Label font size as a fraction of logo width. Used for bounding-box and
+     * height calculations (which don't have access to a canvas context).
+     * At draw time the actual font size is computed via measureText so the
+     * label spans exactly the logo width; this fraction should approximate
+     * that rendered size so centering / layout is accurate.
+     * @type {number}
+     */
+    this.labelFontSizeFraction = 0.09;
   }
 
   /**
@@ -44,17 +72,18 @@ export class MakeabilityLabLogo {
    * @param {number} triangleSize - The size of each triangle.
    * @returns {number} The total width of the MakeabilityLabLogo.
    */
-  static getWidth(triangleSize){
+  static getGridWidth(triangleSize){
     return MakeabilityLabLogo.numCols * triangleSize;
   }
 
   /**
-   * Calculates the height of the MakeabilityLabLogo based on the size of the triangles.
+   * Calculates the grid height of the MakeabilityLabLogo (excluding the label)
+   * based on the size of the triangles.
    *
    * @param {number} triangleSize - The size of each triangle.
-   * @returns {number} The total height of the logo.
+   * @returns {number} The grid height of the logo (numRows × triangleSize).
    */
-  static getHeight(triangleSize){
+  static getGridHeight(triangleSize){
     return MakeabilityLabLogo.numRows * triangleSize;
   }
 
@@ -63,12 +92,11 @@ export class MakeabilityLabLogo {
    *
    * @param {number} triangleSize - The size of the triangle used in the logo.
    * @param {number} canvasWidth - The width of the canvas.
-   * @param {boolean} [alignToGrid=false] - Whether to align the center position to the grid.a   
-   *
-   * @param {number} logoWidth - The width of the logo.
+   * @param {boolean} [alignToGrid=false] - Whether to align the center position to the grid.
+   * @returns {number} The x-coordinate for centering the logo.
    */
-  static getXCenterPosition(triangleSize, canvasWidth, alignToGrid = false){
-    const xCenter = (canvasWidth - MakeabilityLabLogo.getWidth(triangleSize)) / 2;
+  static getGridXCenterPosition(triangleSize, canvasWidth, alignToGrid = false){
+    const xCenter = (canvasWidth - MakeabilityLabLogo.getGridWidth(triangleSize)) / 2;
     
     if(alignToGrid){
       return Math.round(xCenter / triangleSize) * triangleSize;
@@ -78,16 +106,16 @@ export class MakeabilityLabLogo {
   }
 
   /**
-   * Calculates the y-coordinate for centering the MakeabilityLabLogo on the canvas.
+   * Calculates the y-coordinate for centering the logo grid (excluding the label)
+   * on the canvas. For label-aware centering, use the instance method centerLogo().
    *
    * @param {number} triangleSize - The size of each triangle.
-   * @param {number} canvasHeight - The width of the canvas.
-   * @param {boolean} [alignToGrid=false] - Whether to align the center position to the grid.a   
-   *
-   * @returns {number} The y-coordinate for centering the logo.
+   * @param {number} canvasHeight - The height of the canvas.
+   * @param {boolean} [alignToGrid=false] - Whether to align the center position to the grid.
+   * @returns {number} The y-coordinate for centering the logo grid.
    */
-  static getYCenterPosition(triangleSize, canvasHeight, alignToGrid=false){
-    const yCenter = (canvasHeight - MakeabilityLabLogo.getHeight(triangleSize)) / 2;
+  static getGridYCenterPosition(triangleSize, canvasHeight, alignToGrid=false){
+    const yCenter = (canvasHeight - MakeabilityLabLogo.getGridHeight(triangleSize)) / 2;
     
     if(alignToGrid){
       return Math.round(yCenter / triangleSize) * triangleSize;
@@ -111,7 +139,9 @@ export class MakeabilityLabLogo {
   }
 
   /**
-   * Calculates the bounding box for the logo dynamically that encompasses all triangles.
+   * Calculates the bounding box for the logo dynamically that encompasses all triangles
+   * and accounts for stroke widths and label height (if visible). 
+   * 
    * Keeps track of which triangles contribute to the minX, minY, maxX, and maxY values.
    *
    * @returns {Object} An object representing the bounding box with the following properties:
@@ -163,11 +193,14 @@ export class MakeabilityLabLogo {
 
     const padding = Math.max(this.mOutlineStrokeWidth, this.lOutlineStrokeWidth) / 2;
 
+    // Extend bounding box to include the label when visible
+    const labelExtra = this.labelHeight; // 0 when label is hidden
+
     return {
       x: minX - padding,
       y: minY - padding,
       width: (maxX - minX) + 2 * padding,
-      height: (maxY - minY) + 2 * padding,
+      height: (maxY - minY) + 2 * padding + labelExtra,
       minXTriangle,
       minYTriangle,
       maxXTriangle,
@@ -232,12 +265,29 @@ export class MakeabilityLabLogo {
   get width(){ return MakeabilityLabLogo.numCols * this.makeLabLogoArray[0][0].size }
 
   /**
-   * Gets the height of the MakeabilityLab logo.
-   * The height is calculated as the number of rows in the logo multiplied by the size of the first element in the logo array.
-   * 
-   * @returns {number} The height of the MakeabilityLab logo.
+   * Gets the height of the logo grid only (4 rows × cellSize), excluding the label.
+   * @returns {number}
    */
-  get height(){ return MakeabilityLabLogo.numRows * this.makeLabLogoArray[0][0].size }
+  get logoGridHeight(){ return MakeabilityLabLogo.numRows * this.makeLabLogoArray[0][0].size }
+
+  /**
+   * Gets the approximate font size of the label in pixels.
+   * Based on labelFontSizeFraction × logo width.
+   * @returns {number}
+   */
+  get labelFontSize(){ return this.width * this.labelFontSizeFraction; }
+
+  /**
+   * Gets the vertical space the label occupies (gap + font size), or 0 if hidden.
+   * @returns {number}
+   */
+  get labelHeight(){ return this.isLabelVisible ? this.labelGap + this.labelFontSize : 0; }
+
+  /**
+   * Gets the total height of the MakeabilityLab logo, including the label if visible.
+   * @returns {number}
+   */
+  get height(){ return this.logoGridHeight + this.labelHeight; }
 
   /**
    * Getter for the default colors state.
@@ -264,7 +314,18 @@ export class MakeabilityLabLogo {
     if(this.isMOutlineVisible){
       adjustedHeight -= this.mOutlineStrokeWidth / 2.0;
     }
-    const triangleSize = Math.min(canvasWidth / MakeabilityLabLogo.numCols, adjustedHeight / MakeabilityLabLogo.numRows);
+
+    // When the label is visible its height depends on triangleSize
+    // (labelFontSize = numCols * triangleSize * labelFontSizeFraction),
+    // so we solve for triangleSize algebraically.
+    let effectiveRows = MakeabilityLabLogo.numRows;
+    if (this.isLabelVisible) {
+      adjustedHeight -= this.labelGap;
+      effectiveRows += MakeabilityLabLogo.numCols * this.labelFontSizeFraction;
+    }
+
+    const triangleSize = Math.min(canvasWidth / MakeabilityLabLogo.numCols,
+                                   adjustedHeight / effectiveRows);
     this.setTriangleSize(triangleSize);
     this.centerLogo(canvasWidth, canvasHeight, alignToGrid);
   }
@@ -277,8 +338,13 @@ export class MakeabilityLabLogo {
    * @param {boolean} [alignToGrid=false] - Whether to align the logo to the grid.
    */
   centerLogo(canvasWidth, canvasHeight, alignToGrid=false){
-    const xCenter = MakeabilityLabLogo.getXCenterPosition(this.cellSize, canvasWidth, alignToGrid);
-    const yCenter = MakeabilityLabLogo.getYCenterPosition(this.cellSize, canvasHeight, alignToGrid);
+    const xCenter = MakeabilityLabLogo.getGridXCenterPosition(this.cellSize, canvasWidth, alignToGrid);
+
+    // Center the full height (grid + label) vertically
+    let yCenter = (canvasHeight - this.height) / 2;
+    if (alignToGrid) {
+      yCenter = Math.round(yCenter / this.cellSize) * this.cellSize;
+    }
     this.setLogoPosition(xCenter, yCenter);
   }
 
@@ -613,6 +679,7 @@ export class MakeabilityLabLogo {
 
     if(this.isMOutlineVisible){
       ctx.save();
+      ctx.globalAlpha = this.mOutlineOpacity;
       ctx.strokeStyle = this.mOutlineColor;
       ctx.lineWidth = this.mOutlineStrokeWidth;
       ctx.beginPath();
@@ -627,6 +694,7 @@ export class MakeabilityLabLogo {
 
     if(this.isLOutlineVisible){
       ctx.save();
+      ctx.globalAlpha = this.lOutlineOpacity;
       ctx.strokeStyle = this.lOutlineColor;
       ctx.lineWidth = this.lOutlineStrokeWidth;
       ctx.beginPath();
@@ -639,7 +707,60 @@ export class MakeabilityLabLogo {
       ctx.restore();
     }
 
+    this.drawLabel(ctx);
     
+  }
+
+  /**
+   * Draws the "MAKEABILITY LAB" label below the logo grid, with the first
+   * `labelBoldUntilIndex` characters rendered in bold. The font is scaled so
+   * the full label spans exactly the logo width.
+   *
+   * Callers can pass optional overrides for animated rendering (e.g. fade-in
+   * or slide-up effects) without mutating the logo's own properties.
+   *
+   * @param {CanvasRenderingContext2D} ctx - The canvas rendering context.
+   * @param {Object} [options]
+   * @param {number} [options.opacity=1.0] - Label opacity (0–1).
+   * @param {number} [options.yOffset=0]  - Additional vertical offset in pixels
+   *                                         (positive = downward).
+   */
+  drawLabel(ctx, { opacity = 1.0, yOffset = 0 } = {}) {
+    if (!this.isLabelVisible || opacity <= 0) return;
+
+    const part1 = this.labelText.substring(0, this.labelBoldUntilIndex);
+    const part2 = this.labelText.substring(this.labelBoldUntilIndex);
+
+    // Measure at a reference size and scale to span the logo width exactly
+    const testFontSize = 100;
+    ctx.save();
+
+    ctx.font = `bold ${testFontSize}px ${this.labelFontFamily}`;
+    const widthPart1 = ctx.measureText(part1).width;
+    ctx.font = `${testFontSize}px ${this.labelFontFamily}`;
+    const widthPart2 = ctx.measureText(part2).width;
+
+    const totalMeasuredWidth = widthPart1 + widthPart2;
+    const fontSize = (this.width / totalMeasuredWidth) * testFontSize;
+
+    // Position: below the grid, offset by gap + font size (alphabetic baseline)
+    const labelY = this.y + this.logoGridHeight + this.labelGap + fontSize + yOffset;
+
+    ctx.globalAlpha = opacity;
+    ctx.textBaseline = 'alphabetic';
+    ctx.fillStyle = this.labelColor;
+
+    // Bold part
+    ctx.font = `bold ${fontSize}px ${this.labelFontFamily}`;
+    ctx.textAlign = 'left';
+    ctx.fillText(part1, this.x, labelY);
+
+    // Regular part
+    const part1ActualWidth = ctx.measureText(part1).width;
+    ctx.font = `${fontSize}px ${this.labelFontFamily}`;
+    ctx.fillText(part2, this.x + part1ActualWidth, labelY);
+
+    ctx.restore();
   }
 
   /**
