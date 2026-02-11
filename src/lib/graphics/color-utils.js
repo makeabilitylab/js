@@ -36,14 +36,6 @@ export function lerpColor(startColor, endColor, amt) {
  * @returns {Object} An object with properties r, g, b, and optionally a.
  * @throws {Error} If the color string format is invalid.
  */
-/**
- * Converts a color string (hex, rgb, or rgba) to an object with r, g, b, and optionally a properties.
- * If the input is already an object, it returns the input as is.
- *
- * @param {string|Object} colorStr - The color string or object to convert.
- * @returns {Object} An object with properties r, g, b, and optionally a.
- * @throws {Error} If the color string format is invalid.
- */
 export function convertColorStringToObject(colorStr) {
   if (typeof colorStr === 'string') {
     // Handle HTML color names
