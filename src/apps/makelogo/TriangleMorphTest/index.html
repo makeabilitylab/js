@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <link rel="stylesheet" type="text/css" href="style.css">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Makeability Lab Shape Morph</title>
+  
+</head>
+<body>
+  <div id="controls">
+    <label for="shapeSelect">Holiday:</label>
+    <select id="shapeSelect">
+      <option value="art_data/heart.json">Heart</option>
+      <option value="art_data/santa.json">Santa</option>
+      <option value="art_data/jack-o-lantern.json">Jack-O-Lantern</option>
+      <option value="art_data/pumpkin.json">Pumpkin</option>
+      <option value="art_data/shamrock.json">St. Patrick's Day Shamrock</option>
+    </select>
+  </div>
+
+  <div class="container">
+    <canvas id="myCanvas"></canvas>
+  </div>
+  
+  <script type="module" src="sketch.js"></script>
+</body>
+</html>
