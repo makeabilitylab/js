@@ -1,7 +1,7 @@
 const path = require('path');
 
 module.exports = {
-    entry: './src/lib/makelab-index.js', // Adjust this path to your main entry file
+    entry: './src/lib/index.js', // Adjust this path to your main entry file
     resolve: {
       alias: {
         '@lib': path.resolve(__dirname, 'src/lib'),
