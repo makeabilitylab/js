@@ -1,5 +1,6 @@
 {
   "name": "Shamrock",
+  "message": "Happy St. Patrick's Day!",
   "numCols": 10,
   "numRows": 9,
   "directionPattern": "alternating",

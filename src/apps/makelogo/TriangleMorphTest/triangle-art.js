@@ -54,6 +54,14 @@ export class TriangleArt {
 
     /** @type {boolean} */
     this.visible = true;
+
+    this.showMessage = true;
+
+    /** @type {string} CSS color for the message text. Falls back to palette's first entry base, then black. */
+    this.messageColor = data.messageColor ?? TriangleArt._defaultMessageColor(data);
+
+    console.log("Initialized TriangleArt with name: ", this.name);
+    console.log("Message: ", this.message);
   }
 
   // -----------------------------------------------------------------------
@@ -87,6 +95,8 @@ export class TriangleArt {
   get numCols() { return this.data.numCols; }
   get width() { return this.numCols * this.triangleSize; }
   get height() { return this.numRows * this.triangleSize; }
+  get name() { return this.data.name ?? ''; }
+  get message() { return this.data.message ?? ''; }
 
   // -----------------------------------------------------------------------
   // Triangle access
@@ -152,11 +162,43 @@ export class TriangleArt {
    */
   draw(ctx) {
     if (!this.visible) return;
+
+    if (this.showMessage && this.message){
+      this.drawMessage(ctx);
+      console.log("Drawing message: ", this.message);
+    }else{
+      console.log("Message hidden or empty, skipping drawMessage.");
+    }
+
     for (const row of this.artArray) {
       for (const cell of row) {
         cell.draw(ctx);
       }
     }
+  }
+
+  /**
+   * Draws the message string centered just above the artwork.
+   *
+   * @param {CanvasRenderingContext2D} ctx
+   * @param {number} [alpha=1] - Opacity 0–1, modulates messageColor.
+   * @param {number|null} [x=null] - Center x override; defaults to grid center.
+   * @param {number|null} [y=null] - Baseline y override; defaults to just above grid.
+   */
+  drawMessage(ctx, alpha = 1, x = null, y = null) {
+    if (!this.message) return;
+    const fontSize = Math.round(this.triangleSize * 0.7);
+    const cx = x ?? (this.x + this.width / 2);
+    const cy = y ?? (this.y - fontSize);
+
+    ctx.save();
+    ctx.globalAlpha = Math.max(0, Math.min(1, alpha));
+    ctx.font = `bold ${fontSize}px sans-serif`;
+    ctx.fillStyle = this.messageColor;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'alphabetic';
+    ctx.fillText(this.message, cx, cy);
+    ctx.restore();
   }
 
   // -----------------------------------------------------------------------
@@ -433,5 +475,15 @@ export class TriangleArt {
       return randomGaussian(jitter.brightnessMean ?? 99, jitter.brightnessSd ?? 1);
     }
     return random(jitter.brightness[0], jitter.brightness[1]);
+  }
+
+  /**
+   * 
+   * @param {*} data 
+   * @returns 
+   */
+  static _defaultMessageColor(data) {
+    const keys = Object.keys(data.palette ?? {});
+    return keys.length > 0 ? data.palette[keys[0]].base : '#000000';
   }
 }

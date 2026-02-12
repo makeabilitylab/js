@@ -1,5 +1,6 @@
 {
   "name": "Pumpkin",
+  "message": "Happy Thanksgiving!",
   "numCols": 10,
   "numRows": 9,
   "directionPattern": "alternating",

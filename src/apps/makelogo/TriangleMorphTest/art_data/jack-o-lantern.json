@@ -1,5 +1,6 @@
 {
   "name": "Jack-o-Lantern",
+  "message": "Happy Halloween!",
   "numCols": 10,
   "numRows": 9,
   "directionPattern": "alternating",

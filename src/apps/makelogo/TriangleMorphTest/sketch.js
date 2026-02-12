@@ -6,6 +6,11 @@
  * 4. Morphs it into the Makeability Lab Logo
  */
 
+// In the future, we could consider:
+// 4th of July — star shape (5-pointed), red/white/blue
+// 🦃 Thanksgiving (Nov) — turkey? Might be tough at this resolution. A fall leaf could work better — maple leaf shape in red/orange/yellow
+// ⭐ New Year's — star or firework burst
+// 🌸 Spring/Cherry Blossom — simple flower shape, pink (could double for UW cherry blossom season)
 
 import { 
   MakeabilityLabLogo, Grid, Triangle, ORIGINAL_COLOR_ARRAY, 
@@ -28,6 +33,7 @@ let mouseX = 0;
 let makeLabLogoStatic = null;
 let currentTriangleArt = null; 
 let makeLabGrid = null;
+let currentLerpAmt = 0;
 
 // The Morph Data
 let animatedTriangles = []; 
@@ -108,6 +114,7 @@ function setupCanvas(artData) {
   
   makeLabLogoStatic = new MakeabilityLabLogo(logoX, logoY, TRIANGLE_SIZE);
   makeLabLogoStatic.visible = false;
+  makeLabLogoStatic.isLabelVisible = true;
   
   // Re-map the triangles for the new layout
   createAnimationMapping();
@@ -168,36 +175,45 @@ function createAnimationMapping() {
 function updateAnimation() {
   const smallBuffer = WIDTH_MARGIN_PCT * logicalWidth;
   const effectiveWidth = logicalWidth - 2 * smallBuffer;
-  
-  // Calculate morph progress (0.0 to 1.0) based on Mouse X
-  const lerpAmt = map(mouseX, smallBuffer, effectiveWidth, 0, 1, true);
+  currentLerpAmt = map(mouseX, smallBuffer, effectiveWidth, 0, 1, true);
 
   for (const tri of animatedTriangles) {
-    tri.x = lerp(tri._originState.x, tri._destState.x, lerpAmt);
-    tri.y = lerp(tri._originState.y, tri._destState.y, lerpAmt);
-    tri.fillColor = lerpColor(tri._originState.fill, tri._destState.fill, lerpAmt);
-    tri.strokeColor = lerpColor(tri._originState.stroke, tri._destState.stroke, lerpAmt);
+    tri.x = lerp(tri._originState.x, tri._destState.x, currentLerpAmt);
+    tri.y = lerp(tri._originState.y, tri._destState.y, currentLerpAmt);
+    tri.fillColor = lerpColor(tri._originState.fill, tri._destState.fill, currentLerpAmt);
+    tri.strokeColor = lerpColor(tri._originState.stroke, tri._destState.stroke, currentLerpAmt);
   }
 }
 
 function drawLoop() {
-  // Clear Screen
+  // Clear screen first
   ctx.fillStyle = 'rgb(250, 250, 250)';
   ctx.fillRect(0, 0, logicalWidth, logicalHeight);
 
-  updateAnimation();
+  updateAnimation(); // sets currentLerpAmt
 
   if (makeLabGrid && makeLabGrid.visible) makeLabGrid.draw(ctx);
-  
-  // Draw the animated morphing triangles
-  for (const tri of animatedTriangles) {
-    tri.draw(ctx);
-  }
 
-  // Draw Logo Overlay (Debugging: press 'h' to toggle)
+  for (const tri of animatedTriangles) tri.draw(ctx);
+
   if (makeLabLogoStatic && makeLabLogoStatic.visible) makeLabLogoStatic.draw(ctx);
 
+  // Labels: art message fades out, logo label fades in
+  if (currentTriangleArt?.message) currentTriangleArt.drawMessage(ctx, 1 - currentLerpAmt);
+  drawLogoLabel(ctx, currentLerpAmt);
+
   requestAnimationFrame(drawLoop);
+}
+
+const LABEL_APPEAR_THRESHOLD = 0.7;
+const LABEL_SLIDE_FRACTION = 0.4;
+
+function drawLogoLabel(ctx, lerpAmt) {
+  if (lerpAmt <= LABEL_APPEAR_THRESHOLD) return;
+  const progress = (lerpAmt - LABEL_APPEAR_THRESHOLD) / (1 - LABEL_APPEAR_THRESHOLD);
+  const eased = progress * progress * (3 - 2 * progress); // smoothstep
+  const slideOffset = makeLabLogoStatic.labelFontSize * LABEL_SLIDE_FRACTION * (1 - eased);
+  makeLabLogoStatic.drawLabel(ctx, { opacity: eased, yOffset: slideOffset });
 }
 
 // --- Inputs ---

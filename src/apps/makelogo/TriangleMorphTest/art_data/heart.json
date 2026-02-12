@@ -1,5 +1,6 @@
 {
   "name": "Valentine Heart",
+  "message": "Happy Valentine's Day!",
   "numCols": 10,
   "numRows": 10,
   "directionPattern": "alternating",
