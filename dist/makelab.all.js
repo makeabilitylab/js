@@ -1167,7 +1167,7 @@ class MakeabilityLabLogo {
    *
    * @param {number} triangleSize - The new size to set for all triangles.
    */
-  setTriangleSize(triangleSize){
+  setTriangleSize(newSize){
     const oldSize = this.cellSize;
     if (oldSize === newSize) return;
     const originX = this.x, originY = this.y;
