@@ -1,82 +1,99 @@
+/**
+ * @file sketch.js
+ * @description A minimal demo for rendering the Makeability Lab logo on a 2D canvas.
+ * Handles high-DPI scaling and basic keyboard interactions for logo debugging.
+ * 
+ * See all demos: https://makeabilitylab.github.io/js/
+ * 
+ * By Professor Jon E. Froehlich
+ * https://jonfroehlich.github.io/
+ * http://makeabilitylab.cs.washington.edu
+ * 
+ */
+
 import { MakeabilityLabLogo, Grid } from '../../../lib/logo/makelab-logo.js';
-// import { MakeabilityLabLogo, Grid  } from '/dist/makelab.logo.js';
 
 const canvas = document.getElementById('myCanvas');
-canvas.width = 1000;
-canvas.height = 1000;
 const ctx = canvas.getContext('2d');
 
-ctx.fillStyle = "rgb(250, 250, 250)"; // Set the fill style to gray
-ctx.fillRect(0, 0, canvas.width, canvas.height); // Fill the entire canvas with the gray color
+const BACKGROUND_COLOR = "rgb(250, 250, 250)";
 
-const TRIANGLE_SIZE = 100;
-let makeLabGrid = new Grid(canvas.width, canvas.height, TRIANGLE_SIZE);
-let xLogo = MakeabilityLabLogo.getXCenterPosition(TRIANGLE_SIZE, canvas.width);
-let yLogo = MakeabilityLabLogo.getYCenterPosition(TRIANGLE_SIZE, canvas.height);
-let makeLabLogo = new MakeabilityLabLogo(xLogo, yLogo, TRIANGLE_SIZE);
-window.makeLabLogo = makeLabLogo;
+let makeLabGrid;
+let makeLabLogo;
 
-draw(ctx);
-printMenuToConsole();
+/**
+ * Initializes canvas resolution and logo objects once.
+ */
+function setup() {
+  // 1. Determine the high-DPI scaling factor
+  const dpr = window.devicePixelRatio || 1;
+  const rect = canvas.getBoundingClientRect();
 
-function draw(ctx){
-  // clear canvas
-  ctx.fillStyle = "rgb(250, 250, 250)";
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  // 2. Set internal drawing surface size (physical pixels)
+  canvas.width = rect.width * dpr;
+  canvas.height = rect.height * dpr;
 
-  // draw grid and logo
-  makeLabGrid.draw(ctx);
-  makeLabLogo.draw(ctx);
+  // 3. Scale the context so coordinates match CSS pixels
+  ctx.scale(dpr, dpr);
+
+  // 4. Initialize the logo and scale it to fit the fixed canvas
+  // fitToCanvas handles centering and calculating the correct triangle size
+  makeLabLogo = new MakeabilityLabLogo(0, 0, 10); 
+  makeLabLogo.fitToCanvas(rect.width, rect.height);
+
+  // 5. Initialize the grid using the computed triangle size from the logo
+  makeLabGrid = new Grid(rect.width, rect.height, makeLabLogo.cellSize,
+                       undefined, undefined, makeLabLogo.x, makeLabLogo.y);
+  
+  // Expose to window for console interaction
+  window.makeLabLogo = makeLabLogo;
+
+  draw();
+  printMenuToConsole();
 }
 
-function printMenuToConsole(){
-  console.log("Press 'g' to toggle grid. Currently set to: ", makeLabGrid.visible);
-  console.log("Press 'm' to toggle M outline. Currently set to: ", makeLabLogo.isMOutlineVisible);
-  console.log("Press 'l' to toggle L outline. Currently set to: ", makeLabLogo.isLOutlineVisible);
-  console.log("Press 'k' to toggle L triangle strokes. Currently set to: ", makeLabLogo.areLTriangleStrokesVisible);
-  console.log("Press 'h' to toggle Makeability Lab logo. Currently set to: ", makeLabLogo.visible);
-  console.log("Press 'r' to refresh the canvas.");
-  console.log("");
-  console.log("Type printMenu() to see this menu again.");
+/**
+ * Renders the grid and logo to the canvas.
+ */
+function draw() {
+  const rect = canvas.getBoundingClientRect();
+  
+  // Clear the background
+  ctx.fillStyle = BACKGROUND_COLOR;
+  ctx.fillRect(0, 0, rect.width, rect.height);
+
+  // Draw components if they are set to visible
+  if (makeLabGrid && makeLabGrid.visible) makeLabGrid.draw(ctx);
+  if (makeLabLogo && makeLabLogo.visible) makeLabLogo.draw(ctx);
 }
 
-document.addEventListener('keydown', function(event) {
-  const key = event.key;
+/**
+ * Logs keyboard shortcuts for the logo demo.
+ */
+function printMenuToConsole() {
+  console.log("Press 'g' to toggle grid.");
+  console.log("Press 'm' to toggle M outline.");
+  console.log("Press 'l' to toggle L outline.");
+  console.log("Press 'k' to toggle L triangle strokes.");
+  console.log("Press 'h' to toggle Logo visibility.");
+  console.log("Type window.makeLabLogo in the console to interact with the logo object directly.");
+}
 
-  switch (key) {
-    case 'g':
-      makeLabGrid.visible = !makeLabGrid.visible;
-      console.log("Grid visibility is set to: ", makeLabGrid.visible);
-      draw(ctx);
-      break;
+// Keyboard interaction for toggling logo properties
+document.addEventListener('keydown', (event) => {
+  if (!makeLabLogo || !makeLabGrid) return;
 
-    case 'm':
-      makeLabLogo.isMOutlineVisible = !makeLabLogo.isMOutlineVisible;
-      console.log("M outline visible: ", makeLabLogo.isMOutlineVisible);
-      draw(ctx);
-      break;
-
-    case 'l':
-      makeLabLogo.isLOutlineVisible = !makeLabLogo.isLOutlineVisible;
-      console.log("L outline visible: ", makeLabLogo.isLOutlineVisible);
-      draw(ctx);
-      break;
-
-    case 'k':
-      makeLabLogo.areLTriangleStrokesVisible = !makeLabLogo.areLTriangleStrokesVisible;
-      console.log("L triangle strokes visible: ", makeLabLogo.areLTriangleStrokesVisible);
-      draw(ctx);
-      break;
-
-    case 'h':
-      makeLabLogo.visible = !makeLabLogo.visible;
-      console.log("Makeability Lab logo visible: ", makeLabLogo.visible);
-      draw(ctx);
-      break;
-    
-    case 'r':
-      draw(ctx);
-      break;
-      
+  switch (event.key.toLowerCase()) {
+    case 'g': makeLabGrid.visible = !makeLabGrid.visible; break;
+    case 'm': makeLabLogo.isMOutlineVisible = !makeLabLogo.isMOutlineVisible; break;
+    case 'l': makeLabLogo.isLOutlineVisible = !makeLabLogo.isLOutlineVisible; break;
+    case 'k': makeLabLogo.areLTriangleStrokesVisible = !makeLabLogo.areLTriangleStrokesVisible; break;
+    case 'h': makeLabLogo.visible = !makeLabLogo.visible; break;
+    case 'r': break; 
+    default: return;
   }
+  draw();
 });
+
+// Run initialization
+setup();

@@ -25,12 +25,16 @@ function draw(ctx){
   makeLabLogo.draw(ctx);
 }
 
-function recreateGraphicalObjects(){
-  // Use logical coordinates for object placement
-  makeLabGrid = new Grid(logicalWidth, logicalHeight, triangleSize);
-  xLogo = MakeabilityLabLogo.getGridXCenterPosition(triangleSize, logicalWidth);
-  yLogo = MakeabilityLabLogo.getGridYCenterPosition(triangleSize, logicalHeight);
+function recreateGraphicalObjects() {
+  const strokePadding = makeLabLogo 
+    ? makeLabLogo.mOutlineStrokeWidth 
+    : MakeabilityLabLogo.DEFAULT_M_OUTLINE_STROKE_WIDTH;
+
+  xLogo = MakeabilityLabLogo.getGridXCenterPosition(triangleSize, logicalWidth, false, strokePadding);
+  yLogo = MakeabilityLabLogo.getGridYCenterPosition(triangleSize, logicalHeight, false, strokePadding);
   makeLabLogo = new MakeabilityLabLogo(xLogo, yLogo, triangleSize);
+  makeLabGrid = new Grid(logicalWidth, logicalHeight, triangleSize,
+                         undefined, undefined, xLogo, yLogo);
   window.makeLabLogo = makeLabLogo;
 }
 
