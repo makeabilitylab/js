@@ -11,19 +11,17 @@ import { lerp } from '../math/math-utils.js';
  * @returns {string} The interpolated color in rgba format.
  */
 export function lerpColor(startColor, endColor, amt) {
-  // console.log(`lerpColor: startColor: ${startColor}, endColor: ${endColor}, amt: ${amt}`);
-
-  // Ensure both colors are objects with r, g, b, and optionally a properties
   startColor = convertColorStringToObject(startColor);
   endColor = convertColorStringToObject(endColor);
 
-  // Clamp values between 0 and 255 to ensure valid CSS strings
-  const clamp = (val) => Math.min(255, Math.max(0, val));
+  const clamp = (val, min, max) => Math.min(max, Math.max(min, val));
 
-  const r = Math.round(lerp(startColor.r, endColor.r, amt));
-  const g = Math.round(lerp(startColor.g, endColor.g, amt));
-  const b = Math.round(lerp(startColor.b, endColor.b, amt));
-  const a = lerp(startColor.a || 1, endColor.a || 1, amt); // Default to 1 if a property is missing
+  const r = clamp(Math.round(lerp(startColor.r, endColor.r, amt)), 0, 255);
+  const g = clamp(Math.round(lerp(startColor.g, endColor.g, amt)), 0, 255);
+  const b = clamp(Math.round(lerp(startColor.b, endColor.b, amt)), 0, 255);
+  
+  // Alpha typically ranges from 0.0 to 1.0
+  const a = clamp(lerp(startColor.a ?? 1, endColor.a ?? 1, amt), 0, 1);
 
   return `rgba(${r}, ${g}, ${b}, ${a})`;
 }
@@ -88,6 +86,132 @@ export function convertColorStringToObject(colorStr) {
 
   // If it's already an object, return it
   return colorStr;
+}
+
+// --- HSV/RGB conversion and color manipulation ---
+// Adapted from https://stackoverflow.com/a/17243070 and https://stackoverflow.com/a/5624139
+
+/**
+ * Converts HSV (hue, saturation, value) to RGB (red, green, blue).
+ * 
+ * @param {number} h - Hue value between 0 and 1.
+ * @param {number} s - Saturation value between 0 and 1.
+ * @param {number} v - Value (brightness) between 0 and 1.
+ * @param {boolean} [returnRounded=true] - Whether to round RGB values to integers.
+ * @returns {{r: number, g: number, b: number}} RGB object with values 0–255.
+ * 
+ * @example
+ * hsvToRgb(0, 1, 1);       // { r: 255, g: 0, b: 0 }  (pure red)
+ * hsvToRgb(0.33, 1, 0.5);  // greenish, half brightness
+ */
+export function hsvToRgb(h, s, v, returnRounded = true) {
+  let r, g, b;
+  const i = Math.floor(h * 6);
+  const f = h * 6 - i;
+  const p = v * (1 - s);
+  const q = v * (1 - f * s);
+  const t = v * (1 - (1 - f) * s);
+
+  switch (i % 6) {
+    case 0: r = v; g = t; b = p; break;
+    case 1: r = q; g = v; b = p; break;
+    case 2: r = p; g = v; b = t; break;
+    case 3: r = p; g = q; b = v; break;
+    case 4: r = t; g = p; b = v; break;
+    case 5: r = v; g = p; b = q; break;
+  }
+
+  if (returnRounded) {
+    return { r: Math.round(r * 255), g: Math.round(g * 255), b: Math.round(b * 255) };
+  }
+  return { r: r * 255, g: g * 255, b: b * 255 };
+}
+
+/**
+ * Converts RGB (red, green, blue) to HSV (hue, saturation, value).
+ * 
+ * @param {number} r - Red value between 0 and 255 (inclusive).
+ * @param {number} g - Green value between 0 and 255 (inclusive).
+ * @param {number} b - Blue value between 0 and 255 (inclusive).
+ * @returns {{h: number, s: number, v: number}} HSV object with values 0–1.
+ * 
+ * @example
+ * rgbToHsv(255, 0, 0);  // { h: 0, s: 1, v: 1 }  (pure red)
+ */
+export function rgbToHsv(r, g, b) {
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  const d = max - min;
+  let h;
+  const s = max === 0 ? 0 : d / max;
+  const v = max / 255;
+
+  switch (max) {
+    case min: h = 0; break;
+    case r: h = (g - b) + d * (g < b ? 6 : 0); h /= 6 * d; break;
+    case g: h = (b - r) + d * 2; h /= 6 * d; break;
+    case b: h = (r - g) + d * 4; h /= 6 * d; break;
+  }
+
+  return { h, s, v };
+}
+
+/**
+ * Changes the HSV brightness (value) of a color while preserving hue and saturation.
+ * 
+ * @param {string|Object} color - CSS color string or {r, g, b, a} object.
+ * @param {number} newBrightnessPercent - New brightness as a percentage (0–100).
+ * @returns {string} The adjusted color as an rgba() string.
+ * 
+ * @example
+ * changeColorBrightness("#cc4133", 80);  // darken to 80% brightness
+ * changeColorBrightness("rgb(255,255,255)", 50);  // mid-gray
+ */
+export function changeColorBrightness(color, newBrightnessPercent) {
+  const rgb = convertColorStringToObject(color);
+  const hsv = rgbToHsv(rgb.r, rgb.g, rgb.b);
+  hsv.v = newBrightnessPercent / 100;
+  const newRgb = hsvToRgb(hsv.h, hsv.s, hsv.v);
+  return `rgba(${newRgb.r}, ${newRgb.g}, ${newRgb.b}, ${rgb.a ?? 1})`;
+}
+
+/**
+ * Changes both the HSV saturation and brightness (value) of a color 
+ * while preserving hue.
+ *
+ * @param {string|Object} color - CSS color string or {r, g, b, a} object.
+ * @param {number} newSaturationPercent - New saturation as a percentage (0–100).
+ * @param {number} newBrightnessPercent - New brightness as a percentage (0–100).
+ * @returns {string} The adjusted color as an rgba() string.
+ * 
+ * @example
+ * changeColorSaturationAndBrightness("#fdf2d0", 25, 99);
+ */
+export function changeColorSaturationAndBrightness(color, newSaturationPercent, newBrightnessPercent) {
+  const rgb = convertColorStringToObject(color);
+  const hsv = rgbToHsv(rgb.r, rgb.g, rgb.b);
+  hsv.s = newSaturationPercent / 100;
+  hsv.v = newBrightnessPercent / 100;
+  const newRgb = hsvToRgb(hsv.h, hsv.s, hsv.v);
+  return `rgba(${newRgb.r}, ${newRgb.g}, ${newRgb.b}, ${rgb.a ?? 1})`;
+}
+
+/**
+ * Converts a hex color string to an RGB object.
+ *
+ * @param {string} hex - Hex color string (e.g., "#cc4133" or "cc4133").
+ * @returns {{r: number, g: number, b: number}|null} RGB object or null if invalid.
+ */
+export function hexStringToRgb(hex) {
+  const shorthandRegex = /^#?([a-f\d])([a-f\d])([a-f\d])$/i;
+  hex = hex.replace(shorthandRegex, (m, r, g, b) => r + r + g + g + b + b);
+
+  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  return result ? {
+    r: parseInt(result[1], 16),
+    g: parseInt(result[2], 16),
+    b: parseInt(result[3], 16)
+  } : null;
 }
 
 const HTML_COLOR_NAMES = {
@@ -233,4 +357,3 @@ const HTML_COLOR_NAMES = {
   yellow: { r: 255, g: 255, b: 0, a: 1 },
   yellowgreen: { r: 154, g: 205, b: 50, a: 1 }
 };
-  
