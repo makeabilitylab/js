@@ -1,7 +1,8 @@
 import os
 from pathlib import Path
 
-apps_dir = Path("apps")
+apps_dir = Path("src/apps")
+print(f"CWD: {os.getcwd()}, apps exists: {apps_dir.exists()}, files: {list(apps_dir.rglob('index.html'))}")
 entries = []
 
 for index_file in sorted(apps_dir.rglob("index.html")):
