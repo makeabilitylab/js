@@ -1,4 +1,4 @@
-import { MakeabilityLabLogoExploder } from '../../../lib/logo/makelab-logo-exploder.js';
+import { MakeabilityLabLogoMorpher } from '../../../lib/logo/makelab-logo-morpher.js';
 import { MakeabilityLabLogo } from '../../../lib/logo/makelab-logo.js'; 
 
 // --- Constants & Globals ---
@@ -57,7 +57,7 @@ function setupCanvas() {
 
   // 7. Initialize or Update the Exploder
   if (!makeLabLogoExploder) {
-    makeLabLogoExploder = new MakeabilityLabLogoExploder(0, 0, TRIANGLE_SIZE);
+    makeLabLogoExploder = new MakeabilityLabLogoMorpher(0, 0, TRIANGLE_SIZE);
     makeLabLogoExploder.centerLogo(logicalWidth, logicalHeight);
     window.makeLabLogoExploder = makeLabLogoExploder;
   } else {

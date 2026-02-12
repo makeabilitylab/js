@@ -699,38 +699,67 @@ static getGridYCenterPosition(triangleSize, canvasHeight, alignToGrid = false, s
       }
     }
 
-    if(this.isMOutlineVisible){
-      ctx.save();
-      ctx.globalAlpha = this.mOutlineOpacity;
-      ctx.strokeStyle = this.mOutlineColor;
-      ctx.lineWidth = this.mOutlineStrokeWidth;
-      ctx.beginPath();
-      let mPoints = this.getMOutlinePoints();
-      for (const [x, y] of mPoints) {
-        ctx.lineTo(x, y);
-      }
-      ctx.closePath();
-      ctx.stroke();
-      ctx.restore();
-    }
-
-    if(this.isLOutlineVisible){
-      ctx.save();
-      ctx.globalAlpha = this.lOutlineOpacity;
-      ctx.strokeStyle = this.lOutlineColor;
-      ctx.lineWidth = this.lOutlineStrokeWidth;
-      ctx.beginPath();
-      let lPoints = this.getLOutlinePoints();
-      for (const [x, y] of lPoints) {
-        ctx.lineTo(x, y);
-      }
-      ctx.closePath();
-      ctx.stroke();
-      ctx.restore();
-    }
+    this.drawMOutline(ctx);
+    this.drawLOutline(ctx);
 
     this.drawLabel(ctx);
     
+  }
+
+  // ---------------------------------------------------------------------------
+  // Outline drawing — public focused methods
+  //
+  // These draw only their respective outline stroke, respecting the visibility
+  // flag and opacity property. They do not draw triangles, the other outline,
+  // or the label.
+  //
+  // Useful for callers (e.g. MakeabilityLabLogoMorpher) that manage their own
+  // triangle rendering and need the outlines as clean overlays without the
+  // side-effects of calling the full draw() method.
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Draws only the M outline stroke.
+   * No-ops when isMOutlineVisible is false or mOutlineOpacity is 0.
+   *
+   * @param {CanvasRenderingContext2D} ctx
+   */
+  drawMOutline(ctx) {
+    if (!this.isMOutlineVisible || this.mOutlineOpacity <= 0) return;
+
+    ctx.save();
+    ctx.globalAlpha = this.mOutlineOpacity;
+    ctx.strokeStyle = this.mOutlineColor;
+    ctx.lineWidth   = this.mOutlineStrokeWidth;
+    ctx.beginPath();
+    for (const [x, y] of this.getMOutlinePoints()) {
+      ctx.lineTo(x, y);
+    }
+    ctx.closePath();
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  /**
+   * Draws only the L outline stroke.
+   * No-ops when isLOutlineVisible is false or lOutlineOpacity is 0.
+   *
+   * @param {CanvasRenderingContext2D} ctx
+   */
+  drawLOutline(ctx) {
+    if (!this.isLOutlineVisible || this.lOutlineOpacity <= 0) return;
+
+    ctx.save();
+    ctx.globalAlpha = this.lOutlineOpacity;
+    ctx.strokeStyle = this.lOutlineColor;
+    ctx.lineWidth   = this.lOutlineStrokeWidth;
+    ctx.beginPath();
+    for (const [x, y] of this.getLOutlinePoints()) {
+      ctx.lineTo(x, y);
+    }
+    ctx.closePath();
+    ctx.stroke();
+    ctx.restore();
   }
 
   /**

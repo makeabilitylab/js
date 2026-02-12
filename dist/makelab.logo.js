@@ -1288,38 +1288,67 @@ static getGridYCenterPosition(triangleSize, canvasHeight, alignToGrid = false, s
       }
     }
 
-    if(this.isMOutlineVisible){
-      ctx.save();
-      ctx.globalAlpha = this.mOutlineOpacity;
-      ctx.strokeStyle = this.mOutlineColor;
-      ctx.lineWidth = this.mOutlineStrokeWidth;
-      ctx.beginPath();
-      let mPoints = this.getMOutlinePoints();
-      for (const [x, y] of mPoints) {
-        ctx.lineTo(x, y);
-      }
-      ctx.closePath();
-      ctx.stroke();
-      ctx.restore();
-    }
-
-    if(this.isLOutlineVisible){
-      ctx.save();
-      ctx.globalAlpha = this.lOutlineOpacity;
-      ctx.strokeStyle = this.lOutlineColor;
-      ctx.lineWidth = this.lOutlineStrokeWidth;
-      ctx.beginPath();
-      let lPoints = this.getLOutlinePoints();
-      for (const [x, y] of lPoints) {
-        ctx.lineTo(x, y);
-      }
-      ctx.closePath();
-      ctx.stroke();
-      ctx.restore();
-    }
+    this.drawMOutline(ctx);
+    this.drawLOutline(ctx);
 
     this.drawLabel(ctx);
     
+  }
+
+  // ---------------------------------------------------------------------------
+  // Outline drawing — public focused methods
+  //
+  // These draw only their respective outline stroke, respecting the visibility
+  // flag and opacity property. They do not draw triangles, the other outline,
+  // or the label.
+  //
+  // Useful for callers (e.g. MakeabilityLabLogoMorpher) that manage their own
+  // triangle rendering and need the outlines as clean overlays without the
+  // side-effects of calling the full draw() method.
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Draws only the M outline stroke.
+   * No-ops when isMOutlineVisible is false or mOutlineOpacity is 0.
+   *
+   * @param {CanvasRenderingContext2D} ctx
+   */
+  drawMOutline(ctx) {
+    if (!this.isMOutlineVisible || this.mOutlineOpacity <= 0) return;
+
+    ctx.save();
+    ctx.globalAlpha = this.mOutlineOpacity;
+    ctx.strokeStyle = this.mOutlineColor;
+    ctx.lineWidth   = this.mOutlineStrokeWidth;
+    ctx.beginPath();
+    for (const [x, y] of this.getMOutlinePoints()) {
+      ctx.lineTo(x, y);
+    }
+    ctx.closePath();
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  /**
+   * Draws only the L outline stroke.
+   * No-ops when isLOutlineVisible is false or lOutlineOpacity is 0.
+   *
+   * @param {CanvasRenderingContext2D} ctx
+   */
+  drawLOutline(ctx) {
+    if (!this.isLOutlineVisible || this.lOutlineOpacity <= 0) return;
+
+    ctx.save();
+    ctx.globalAlpha = this.lOutlineOpacity;
+    ctx.strokeStyle = this.lOutlineColor;
+    ctx.lineWidth   = this.lOutlineStrokeWidth;
+    ctx.beginPath();
+    for (const [x, y] of this.getLOutlinePoints()) {
+      ctx.lineTo(x, y);
+    }
+    ctx.closePath();
+    ctx.stroke();
+    ctx.restore();
   }
 
   /**
@@ -2741,335 +2770,623 @@ const HTML_COLOR_NAMES = {
   yellowgreen: { r: 154, g: 205, b: 50, a: 1 }
 };
 
-class MakeabilityLabLogoExploder{
-  /**
-   * Creates a new MakeabilityLabLogoExploder instance.
-   *
-   * The exploder manages two internal MakeabilityLabLogo instances: a static "target"
-   * logo (makeLabLogo) and an animated logo (makeLabLogoAnimated). Call reset() to
-   * randomize particle positions, then update(lerpAmt) to interpolate between the
-   * exploded and assembled states.
-   *
-   * @param {number} x - The x-coordinate for the logo position.
-   * @param {number} y - The y-coordinate for the logo position.
-   * @param {number} triangleSize - The size of each triangle cell.
-   * @param {string} [startFillColor="rgb(255, 255, 255, 0.5)"] - Initial fill color for exploded triangles.
-   * @param {string} [startStrokeColor="rgba(0, 0, 0, 0.6)"] - Initial stroke color for exploded triangles.
-   */
-  constructor(x, y, triangleSize, startFillColor="rgb(255, 255, 255, 0.5)", 
-    startStrokeColor="rgba(0, 0, 0, 0.6)"){
+/**
+ * Array utility functions.
+ * 
+ * By Jon E. Froehlich
+ * https://jonfroehlich.github.io/
+ * http://makeabilitylab.cs.washington.edu
+ */
 
-    // Static "target" logo — invisible by default, used as the end-state reference
+/**
+ * Shuffles an array in place using the Fisher-Yates algorithm.
+ *
+ * @param {Array} array - The array to shuffle.
+ * @returns {Array} The same array, shuffled in place.
+ * 
+ * @example
+ * const arr = [1, 2, 3, 4, 5];
+ * shuffle(arr); // arr is now shuffled in place
+ */
+function shuffle(array) {
+  let currentIndex = array.length;
+
+  while (currentIndex !== 0) {
+    const randomIndex = Math.floor(Math.random() * currentIndex);
+    currentIndex--;
+    [array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]];
+  }
+
+  return array;
+}
+
+// =============================================================================
+// MakeabilityLabLogoMorpher
+// =============================================================================
+
+/**
+ * Animates a morph from a start arrangement of triangles into the assembled
+ * Makeability Lab logo.
+ *
+ * The start state can be set in two ways:
+ *
+ *   reset(canvasWidth, canvasHeight)
+ *     Scatters the logo's own triangles randomly across the canvas. Triangle
+ *     count matches the logo exactly. Good for the default "explode and
+ *     reassemble" effect.
+ *
+ *   resetFromArt(art, canvasWidth, canvasHeight)
+ *     Uses a TriangleArt instance as the start state. Every visible triangle
+ *     in the artwork is shown and individually morphs toward the logo, so
+ *     artwork of any size is displayed in full. Logo triangles are assigned
+ *     as destinations and recycled round-robin when the art has more.
+ *
+ * In both cases the animation is driven identically:
+ *
+ *   morpher.update(lerpAmt);  // 0 = start state, 1 = assembled logo
+ *   morpher.draw(ctx);
+ *
+ * @example
+ *   // Random explosion
+ *   const morpher = new MakeabilityLabLogoMorpher(x, y, triangleSize);
+ *   morpher.reset(canvasWidth, canvasHeight);
+ *   morpher.update(0);
+ *
+ * @example
+ *   // Holiday art morph
+ *   const art = await TriangleArt.fromURL('santa.json', artX, artY, size);
+ *   morpher.resetFromArt(art, canvasWidth, canvasHeight);
+ *   morpher.update(0);
+ */
+class MakeabilityLabLogoMorpher {
+
+  /**
+   * @param {number} x              - X position of the assembled logo.
+   * @param {number} y              - Y position of the assembled logo.
+   * @param {number} triangleSize   - Cell size for the logo triangles.
+   * @param {string} [startFillColor='rgb(255,255,255,0.5)']
+   *   Fill color used in random mode, and the fallback fill for any art-mode
+   *   triangle whose direction has no matching logo triangle.
+   * @param {string} [startStrokeColor='rgba(0,0,0,0.6)']
+   *   Stroke color counterpart to startFillColor.
+   */
+  constructor(x, y, triangleSize,
+    startFillColor   = 'rgb(255, 255, 255, 0.5)',
+    startStrokeColor = 'rgba(0, 0, 0, 0.6)') {
+
+    // ------------------------------------------------------------------
+    // Internal logo instances
+    // ------------------------------------------------------------------
+
+    /**
+     * The assembled "target" logo — never drawn directly (visible=false),
+     * but its triangles define the end state for every morph.
+     * @type {MakeabilityLabLogo}
+     */
     this.makeLabLogo = new MakeabilityLabLogo(x, y, triangleSize);
     this.makeLabLogo.visible = false;
 
-    // Animated logo — the one that moves from exploded → assembled
+    /**
+     * A second logo instance used solely for the L-outline overlay and label
+     * animations. Its triangles are NOT drawn — we draw _animTris instead.
+     * Keeping it as a full logo object gives us free access to drawLOutline()
+     * and drawLabel() with their built-in opacity/position tracking.
+     * @type {MakeabilityLabLogo}
+     */
     this.makeLabLogoAnimated = new MakeabilityLabLogo(x, y, triangleSize);
     this.makeLabLogoAnimated.isLOutlineVisible = false;
     this.makeLabLogoAnimated.isMOutlineVisible = false;
-    
-    this.makeLabLogo.setLTriangleStrokeColor('rgb(240, 240, 240)'); // barely noticeable
+    this.makeLabLogoAnimated.isLabelVisible    = true;
+
+    // Keep the L-triangle strokes subtle on the target logo
+    this.makeLabLogo.setLTriangleStrokeColor('rgb(240, 240, 240)');
     this.makeLabLogoAnimated.areLTriangleStrokesVisible = true;
 
-    // Enable label on both logos so height/centering calculations are consistent.
-    // The target logo is invisible so its label won't render; only the animated
-    // logo's label is drawn (with animation via _drawAnimatedLabel).
+    // Label must be enabled on the target too so height/centering calculations
+    // stay consistent between the two internal logos.
     this.makeLabLogo.isLabelVisible = true;
-    this.makeLabLogoAnimated.isLabelVisible = true;
 
-    /** @type {Array<Object>} Snapshot of each triangle's randomized start state */
-    this.originalRandomTriLocs = [];
+    // ------------------------------------------------------------------
+    // Animated triangle pool
+    // ------------------------------------------------------------------
 
-    // --- Explode flags: control which properties are randomized ---
-    this.explodeSize = true;
-    this.explodeX = true;
-    this.explodeY = true;
-    this.explodeAngle = true;
+    /**
+     * The active set of Triangle objects rendered each frame.
+     * Populated by reset() or resetFromArt(). Each triangle carries:
+     *   ._start  — snapshot of start-state properties
+     *   ._dest   — snapshot of end-state (logo) properties
+     * update() lerps between them; draw() renders them directly.
+     * @type {Triangle[]}
+     */
+    this._animTris = [];
+
+    // ------------------------------------------------------------------
+    // Art-mode message (set by resetFromArt, null otherwise)
+    // ------------------------------------------------------------------
+
+    /**
+     * Message string from the active TriangleArt (e.g. "Happy Holidays!").
+     * Drawn fading out as lerpAmt increases. Null when in random mode.
+     * @type {string|null}
+     */
+    this._artMessage      = null;
+
+    /** @type {string|null} */
+    this._artMessageColor = null;
+
+    /** @type {number|null} Font size used to draw the art message. */
+    this._artMessageFontSize = null;
+
+    // ------------------------------------------------------------------
+    // Random-mode explode flags
+    // Ignored by resetFromArt() — art positions are always used as-is.
+    // ------------------------------------------------------------------
+
+    this.explodeX           = true;
+    this.explodeY           = true;
+    this.explodeSize        = true;
+    this.explodeAngle       = true;
+    this.explodeFillColor   = true;
     this.explodeStrokeColor = true;
-    this.explodeFillColor = true;
     this.explodeStrokeWidth = true;
 
+    /** Fill color for random-mode start state / art-mode fallback. @type {string} */
     this.startFillColor = startFillColor;
+
+    /** Stroke color for random-mode start state / art-mode fallback. @type {string} */
     this.startStrokeColor = startStrokeColor;
 
-    // --- Easing ---
-    /** 
-     * Easing function applied to spatial properties (position, angle, size).
-     * Receives a value in [0, 1] and returns a value in [0, 1].
-     * Colors always use linear interpolation regardless of this setting.
-     * @type {function(number): number} 
+    // ------------------------------------------------------------------
+    // Easing
+    // ------------------------------------------------------------------
+
+    /**
+     * Applied to spatial properties (x, y, size, angle). Colors always
+     * interpolate linearly regardless of this setting.
+     * @type {function(number): number}
      */
     this.easingFunction = easeOutCubic;
 
-    // --- L outline animation ---
+    // ------------------------------------------------------------------
+    // L-outline animation
+    // ------------------------------------------------------------------
+
     /**
-     * Controls when the L outline starts fading in, as a fraction of the
-     * overall animation. E.g., 0.85 means it begins at 85% progress.
+     * Fraction of overall progress at which the L outline begins fading in.
+     * E.g. 0.85 → outline appears at 85% of the morph.
      * @type {number}
      */
     this.lOutlineAppearThreshold = 0.85;
 
-    // --- Label animation ---
-    /** 
-     * Controls when the label starts fading in, as a fraction of the overall
-     * animation. E.g., 0.7 means the label begins appearing at 70% progress. 
-     * @type {number} 
+    // ------------------------------------------------------------------
+    // Label animation
+    // ------------------------------------------------------------------
+
+    /**
+     * Fraction of overall progress at which the label begins fading in.
+     * @type {number}
      */
     this.labelAppearThreshold = 0.7;
 
     /**
-     * The vertical slide distance (in label-font-size fractions) the label
-     * travels during its entrance animation.
+     * Vertical slide distance during the label entrance, as a fraction of
+     * the label font size. Label slides upward as it fades in.
      * @type {number}
      */
     this.labelSlideDistanceFraction = 0.4;
+
+    // Internal: cached lerpAmt from the most recent update() call,
+    // used by the label / message draw helpers.
+    this._currentLerpAmt = 0;
   }
 
-  // --- Getters ---
+  // ===========================================================================
+  // Getters
+  // ===========================================================================
 
-  /**
-   * Gets the final assembled height of the logo (including the label if visible).
-   * @returns {number}
-   */
-  get finalHeight(){ return this.makeLabLogo.height; }
+  /** Final assembled width of the logo.                    @returns {number} */
+  get finalWidth()  { return this.makeLabLogo.width;  }
 
-  /**
-   * Gets the final assembled width of the logo.
-   * @returns {number}
-   */
-  get finalWidth(){ return this.makeLabLogo.width; }
+  /** Final assembled height of the logo (includes label). @returns {number} */
+  get finalHeight() { return this.makeLabLogo.height; }
 
-  
-  /**
-   * Adjusts the size of the logo to fit within the specified canvas dimensions.
-   *
-   * @param {number} canvasWidth - The width of the canvas to fit the logo into.
-   * @param {number} canvasHeight - The height of the canvas to fit the logo into.
-   * @param {boolean} [alignToGrid=false] - Optional parameter to align the logo to a grid.
-   */
-  fitToCanvas(canvasWidth, canvasHeight, alignToGrid=false){
-    this.makeLabLogo.fitToCanvas(canvasWidth, canvasHeight, alignToGrid);
-    this.makeLabLogoAnimated.fitToCanvas(canvasWidth, canvasHeight, alignToGrid);
+  // ===========================================================================
+  // Layout helpers — delegate symmetrically to both internal logos
+  // ===========================================================================
+
+  /** @param {number} w @param {number} h @param {boolean} [alignToGrid=false] */
+  fitToCanvas(w, h, alignToGrid = false) {
+    this.makeLabLogo.fitToCanvas(w, h, alignToGrid);
+    this.makeLabLogoAnimated.fitToCanvas(w, h, alignToGrid);
   }
 
-  /**
-   * Sets the size of the logo for both the static and animated versions.
-   *
-   * @param {number} logoWidth - The width to set for the logo.
-   */
-  setLogoSize(logoWidth){
+  /** @param {number} logoWidth */
+  setLogoSize(logoWidth) {
     this.makeLabLogo.setLogoSize(logoWidth);
     this.makeLabLogoAnimated.setLogoSize(logoWidth);
   }
 
-  /**
-   * Sets the final size of the logo at the end state.
-   *
-   * @param {number} finalWidth - The desired width of the logo.
-   */
-  setLogoSizeEndState(finalWidth){
+  /** Sets logo size on the end-state logo only. @param {number} finalWidth */
+  setLogoSizeEndState(finalWidth) {
     this.makeLabLogo.setLogoSize(finalWidth);
   }
 
-  /**
-   * Sets the x position for both the static and animated MakeLab logos.
-   *
-   * @param {number} x - The x-coordinate to set for the logos.
-   */
-  setXPosition(x){
+  /** @param {number} x */
+  setXPosition(x) {
     this.makeLabLogo.x = x;
     this.makeLabLogoAnimated.x = x;
   }
 
-  /**
-   * Sets the Y position for both static and animated MakeLab logos.
-   *
-   * @param {number} y - The Y coordinate to set.
-   */
-  setYPosition(y){
+  /** @param {number} y */
+  setYPosition(y) {
     this.makeLabLogo.y = y;
     this.makeLabLogoAnimated.y = y;
   }
 
-  /**
-   * Sets the position of the logo.
-   *
-   * @param {number} x - The x-coordinate for the logo position.
-   * @param {number} y - The y-coordinate for the logo position.
-   */
-  setLogoPosition(x, y){
+  /** @param {number} x @param {number} y */
+  setLogoPosition(x, y) {
     this.makeLabLogo.setLogoPosition(x, y);
     this.makeLabLogoAnimated.setLogoPosition(x, y);
   }
 
-  /**
-   * Centers the logo on the canvas.
-   *
-   * @param {number} canvasWidth - The width of the canvas.
-   * @param {number} canvasHeight - The height of the canvas.
-   * @param {boolean} [alignToGrid=false] - Whether to align the center position to the grid.
-   */
-  centerLogo(canvasWidth, canvasHeight, alignedToGrid=false){
-    this.makeLabLogo.centerLogo(canvasWidth, canvasHeight, alignedToGrid);
-    this.makeLabLogoAnimated.centerLogo(canvasWidth, canvasHeight, alignedToGrid);
+  /** @param {number} w @param {number} h @param {boolean} [alignedToGrid=false] */
+  centerLogo(w, h, alignedToGrid = false) {
+    this.makeLabLogo.centerLogo(w, h, alignedToGrid);
+    this.makeLabLogoAnimated.centerLogo(w, h, alignedToGrid);
   }
 
-  /**
-   * Resets the state of the logo exploder with new dimensions and randomizes the 
-   * positions, angles, and sizes of the triangles.
-   *
-   * @param {number} canvasWidth - The drawing area width.
-   * @param {number} canvasHeight - The drawing area height.
-   */
-  reset(canvasWidth, canvasHeight){
+  // ===========================================================================
+  // Start-state initialization
+  // ===========================================================================
 
-    this.originalRandomTriLocs = [];
-    const endStateTriangleSize = this.makeLabLogo.cellSize;
-   
-    const makeLabLogoTriangles = this.makeLabLogo.getAllTriangles();
-    const makeLabLogoAnimatedTriangles = this.makeLabLogoAnimated.getAllTriangles();
+  /**
+   * RANDOM MODE — scatters the logo's triangles randomly across the canvas.
+   *
+   * _animTris is populated from makeLabLogoAnimated's own triangles, so the
+   * count always equals the logo triangle count. The explode* flags control
+   * which properties are randomized vs. kept at their logo values.
+   *
+   * @param {number} canvasWidth
+   * @param {number} canvasHeight
+   */
+  reset(canvasWidth, canvasHeight) {
+    // Clear art-mode message — we're in random mode now
+    this._artMessage      = null;
+    this._artMessageColor = null;
+
+    const logoTris = this.makeLabLogo.getAllTriangles();
+    const animTris = this.makeLabLogoAnimated.getAllTriangles();
+    const endSize  = this.makeLabLogo.cellSize;
+
+    // Set all animated triangles to the neutral start color before scattering
     this.makeLabLogoAnimated.setColors(this.startFillColor, this.startStrokeColor);
-    for (let i = 0; i < makeLabLogoAnimatedTriangles.length; i++) {
-      const tri = makeLabLogoAnimatedTriangles[i];
-      let randSize = this.explodeSize ? random(endStateTriangleSize/2, endStateTriangleSize*3) : endStateTriangleSize;
-      tri.x = this.explodeX ? random(randSize, canvasWidth - randSize) : makeLabLogoTriangles[i].x;
-      tri.y = this.explodeY ? random(randSize, canvasHeight - randSize) : makeLabLogoTriangles[i].y;
-      tri.angle = this.explodeAngle ? random(0, 540) : 0;
-      tri.strokeColor = this.explodeStrokeColor ? makeLabLogoAnimatedTriangles[i].strokeColor : makeLabLogoTriangles[i].strokeColor;
-      tri.fillColor = this.explodeFillColor ? makeLabLogoAnimatedTriangles[i].fillColor : makeLabLogoTriangles[i].fillColor;
-      tri.strokeWidth = this.explodeStrokeWidth ? makeLabLogoAnimatedTriangles[i].strokeWidth : makeLabLogoTriangles[i].strokeWidth;
-      tri.size = randSize;
-      this.originalRandomTriLocs.push(
-        { x: tri.x, 
-          y: tri.y, 
-          angle: tri.angle, 
-          size: tri.size,
-          strokeColor: tri.strokeColor,
-          fillColor: tri.fillColor,
-          strokeWidth: tri.strokeWidth
-        });
-    }
+
+    this._animTris = animTris.map((tri, i) => {
+      const dest     = logoTris[i];
+      const randSize = this.explodeSize
+        ? random(endSize / 2, endSize * 3)
+        : endSize;
+
+      tri.x           = this.explodeX           ? random(randSize, canvasWidth  - randSize) : dest.x;
+      tri.y           = this.explodeY           ? random(randSize, canvasHeight - randSize) : dest.y;
+      tri.angle       = this.explodeAngle       ? random(0, 540)  : 0;
+      tri.size        = randSize;
+      tri.fillColor   = this.explodeFillColor   ? tri.fillColor   : dest.fillColor;
+      tri.strokeColor = this.explodeStrokeColor ? tri.strokeColor : dest.strokeColor;
+      tri.strokeWidth = this.explodeStrokeWidth ? tri.strokeWidth : dest.strokeWidth;
+
+      tri._start = _snapshot(tri);
+      tri._dest  = _snapshot(dest, 0 /* angle always 0 at destination */);
+      return tri;
+    });
   }
 
   /**
-   * Updates the state of the animated logo based on the provided interpolation amount.
+   * ART MODE — uses a TriangleArt instance as the start state.
    *
-   * @param {number} lerpAmt - The interpolation amount, a value between 0 and 1.
+   * Every visible art triangle gets an animated clone and a destination logo
+   * triangle of the same direction (recycled round-robin). This means artwork
+   * of any size is shown in full — even if it has far more triangles than the
+   * logo. Art triangles whose direction is absent from the logo are sent to a
+   * random position within the logo's bounding box so they still "join" the
+   * logo visually rather than flying off to a corner.
    *
-   * This function performs the following operations:
-   * 1. Animates the L outline opacity (fades in after lOutlineAppearThreshold).
-   * 2. Interpolates the position, angle, and size of each triangle from their
-   *    original random locations to their final static positions.
-   * 3. Interpolates the color of each triangle from the start colors to their
-   *    original colors.
+   * The explode* flags are intentionally ignored — art colors and positions
+   * are always used exactly as defined in the JSON.
+   *
+   * If the new art has the same triangle count as the current _animTris pool,
+   * the existing Triangle objects are reused in-place to reduce GC pressure.
+   *
+   * @param {TriangleArt} art
+   * @param {number} canvasWidth
+   * @param {number} canvasHeight
    */
-  update(lerpAmt){
-    if (this.originalRandomTriLocs.length === 0) return;
+  resetFromArt(art, canvasWidth, canvasHeight) {
+    // Store the art message so draw() can fade it out during the morph
+    this._artMessage         = art.message      ?? null;
+    this._artMessageColor    = art.messageColor ?? '#000000';
+    this._artMessageFontSize = art.triangleSize  * 0.7;
 
-    // Apply easing to spatial properties
-    const t = this.easingFunction(lerpAmt);
+    const endSize   = this.makeLabLogo.cellSize;
+    const logoBox   = this.makeLabLogo.getBoundingBox();
+    const sourceTris = art.getAllTriangles(); // only visible triangles
 
-    // --- L outline: fade in after threshold ---
+    // -----------------------------------------------------------------
+    // Build direction-grouped destination map from the logo triangles.
+    // Shuffle within each group so every call produces a fresh mapping.
+    // -----------------------------------------------------------------
+    const destByDir = _groupByDirection(this.makeLabLogo.getAllTriangles());
+    for (const group of destByDir.values()) shuffle(group);
+
+    const destIndex = new Map(); // round-robin index per direction
+
+    // -----------------------------------------------------------------
+    // Reuse existing Triangle objects if the count matches (reduces GC).
+    // Otherwise allocate fresh clones from the art triangles.
+    // -----------------------------------------------------------------
+    const reusingPool = this._animTris.length === sourceTris.length;
+
+    this._animTris = sourceTris.map((src, i) => {
+      // Reuse or clone
+      const tri = reusingPool ? this._animTris[i] : Triangle.createTriangle(src);
+
+      // Copy source position / color onto the (possibly reused) triangle
+      tri.x           = src.x;
+      tri.y           = src.y;
+      tri.size        = src.size ?? endSize;
+      tri.angle       = 0;  // art is flat — no initial rotation
+      tri.fillColor   = src.fillColor;
+      tri.strokeColor = src.strokeColor;
+      tri.strokeWidth = src.strokeWidth ?? 1;
+      tri.direction   = src.direction;
+      tri.visible     = true;
+
+      tri._start = _snapshot(tri);
+
+      // Assign destination: matching logo triangle (round-robin), or a
+      // random position within the logo bounding box as a graceful fallback.
+      const dests = destByDir.get(src.direction);
+
+      if (dests && dests.length > 0) {
+        const idx  = (destIndex.get(src.direction) ?? 0) % dests.length;
+        destIndex.set(src.direction, idx + 1);
+        tri._dest = _snapshot(dests[idx]);
+      } else {
+        // Fallback: converge to a random point inside the logo bounding box
+        // so unmatched triangles still appear to join the logo.
+        tri._dest = {
+          x:           random(logoBox.x, logoBox.x + logoBox.width),
+          y:           random(logoBox.y, logoBox.y + logoBox.height),
+          size:        endSize,
+          angle:       0,
+          fillColor:   this.startFillColor,
+          strokeColor: this.startStrokeColor,
+          strokeWidth: 1,
+        };
+      }
+
+      return tri;
+    });
+  }
+
+  // ===========================================================================
+  // Animation
+  // ===========================================================================
+
+  /**
+   * Interpolates all animated triangles from their start state toward the logo.
+   *
+   * Spatial properties (x, y, size, angle) use the configured easingFunction.
+   * Visual properties (colors, strokeWidth) always use linear interpolation
+   * for perceptually smooth color transitions.
+   *
+   * Also drives the L-outline opacity on makeLabLogoAnimated, which draw()
+   * uses for the overlay effect regardless of mode.
+   *
+   * @param {number} lerpAmt - Progress in [0, 1]: 0 = start state, 1 = logo.
+   */
+  update(lerpAmt) {
+    if (this._animTris.length === 0) return;
+
+    this._currentLerpAmt = lerpAmt;
+    const t = this.easingFunction(lerpAmt); // eased value for spatial props
+
+    // L outline: invisible below threshold, fades in above it
     if (lerpAmt >= this.lOutlineAppearThreshold) {
       this.makeLabLogoAnimated.isLOutlineVisible = true;
-      const lOutlineProgress = Math.min(
-        (lerpAmt - this.lOutlineAppearThreshold) / (1 - this.lOutlineAppearThreshold),
-        1
+      const outlineProgress = (lerpAmt - this.lOutlineAppearThreshold)
+                            / (1 - this.lOutlineAppearThreshold);
+      this.makeLabLogoAnimated.lOutlineOpacity = this.easingFunction(
+        Math.min(outlineProgress, 1)
       );
-      this.makeLabLogoAnimated.lOutlineOpacity = this.easingFunction(lOutlineProgress);
     } else {
       this.makeLabLogoAnimated.isLOutlineVisible = false;
-      this.makeLabLogoAnimated.lOutlineOpacity = 0;
+      this.makeLabLogoAnimated.lOutlineOpacity   = 0;
     }
 
-    const staticTriangles = this.makeLabLogo.getAllTriangles(true);
-    const animatedTriangles = this.makeLabLogoAnimated.getAllTriangles(true);
+    // Lerp every animated triangle toward its destination.
+    // When fully assembled (lerpAmt >= 1), skip interpolation and snap to dest
+    // to prevent redundant triangles from visually doubling up at logo positions.
+    if (lerpAmt >= 1) {
+      for (const tri of this._animTris) {
+        tri.visible = false; // suppress redundant art triangles entirely at end state
+      }
+    } else {
+      for (const tri of this._animTris) {
+        tri.visible = true;
+        const s = tri._start;
+        const d = tri._dest;
 
-    for (let i = 0; i < this.originalRandomTriLocs.length; i++) {
-      const endX = staticTriangles[i].x;
-      const endY = staticTriangles[i].y;
-      const endAngle = 0;
-      const endSize = staticTriangles[i].size;
-      const endStrokeColor = staticTriangles[i].strokeColor;
-      const endFillColor = staticTriangles[i].fillColor;
-      const endStrokeWidth = staticTriangles[i].strokeWidth;
-  
-      const startX = this.originalRandomTriLocs[i].x;
-      const startY = this.originalRandomTriLocs[i].y;
-      const startAngle = this.originalRandomTriLocs[i].angle;
-      const startSize = this.originalRandomTriLocs[i].size;
-      const startStrokeColor = this.originalRandomTriLocs[i].strokeColor;
-      const startFillColor = this.originalRandomTriLocs[i].fillColor;
-      const startStrokeWidth = this.originalRandomTriLocs[i].strokeWidth;
-  
-      // Apply easing (t) to spatial properties
-      animatedTriangles[i].x = lerp(startX, endX, t);
-      animatedTriangles[i].y = lerp(startY, endY, t);
-      animatedTriangles[i].angle = lerp(startAngle, endAngle, t);
-      animatedTriangles[i].size = lerp(startSize, endSize, t);
-      
-      // Apply linear interpolation for visual style properties
-      animatedTriangles[i].strokeWidth = lerp(startStrokeWidth, endStrokeWidth, lerpAmt);
-      animatedTriangles[i].strokeColor = lerpColor(startStrokeColor, endStrokeColor, lerpAmt);
-      animatedTriangles[i].fillColor = lerpColor(startFillColor, endFillColor, lerpAmt);
+        // Spatial: eased
+        tri.x     = lerp(s.x,     d.x,     t);
+        tri.y     = lerp(s.y,     d.y,     t);
+        tri.size  = lerp(s.size,  d.size,  t);
+        tri.angle = lerp(s.angle, d.angle, t);
+
+        // Visual: linear
+        tri.strokeWidth = lerp(s.strokeWidth,             d.strokeWidth,             lerpAmt);
+        tri.fillColor   = lerpColor(s.fillColor,   d.fillColor,   lerpAmt);
+        tri.strokeColor = lerpColor(s.strokeColor, d.strokeColor, lerpAmt);
+      }
     }
-
-    // Cache the current lerpAmt so draw() can use it for the label
-    this._currentLerpAmt = lerpAmt;
   }
 
+  // ===========================================================================
+  // Rendering
+  // ===========================================================================
+
   /**
-   * Draws the MakeLab logo and its animated version on the provided canvas context.
-   * The base class draw() handles triangles and outlines (with opacity).
-   * The animated logo's label is drawn separately with fade-in and slide-up effects.
+   * Draws the current animation frame.
    *
-   * @param {CanvasRenderingContext2D} ctx - The canvas rendering context.
+   * Rendering order:
+   *   1. Static target logo (invisible by default; set makeLabLogo.visible=true
+   *      to show it as a debug overlay)
+   *   2. _animTris — the animated triangle pool (suppressed at lerpAmt >= 1;
+   *      the assembled logo renders via makeLabLogo instead)
+   *   3. Assembled logo at lerpAmt >= 1 (clean final state, no overdraw)
+   *   4. L-outline overlay (fades in near end of morph)
+   *   5. Art message (fades out during morph; art mode only)
+   *   6. Label (fades in near end of morph)
+   *
+   * @param {CanvasRenderingContext2D} ctx
    */
-  draw(ctx){
-    // Draw the static target logo (invisible by default, but respects .visible)
+  draw(ctx) {
+    const lerpAmt = this._currentLerpAmt ?? 0;
+
+    // 1. Optional debug overlay
     this.makeLabLogo.draw(ctx);
 
-    // Draw the animated logo — but suppress its label so we can draw it
-    // ourselves with animation effects via _drawAnimatedLabel
-    const savedLabelVisible = this.makeLabLogoAnimated.isLabelVisible;
-    this.makeLabLogoAnimated.isLabelVisible = false;
-    this.makeLabLogoAnimated.draw(ctx);
-    this.makeLabLogoAnimated.isLabelVisible = savedLabelVisible;
+    if (lerpAmt >= 1) {
+      // 3. Fully assembled — draw the clean target logo directly.
+      //    _animTris are hidden (set in update()), so no overdraw.
+      const savedVisible = this.makeLabLogo.visible;
+      this.makeLabLogo.visible = true;
+      this.makeLabLogo.draw(ctx);
+      this.makeLabLogo.visible = savedVisible;
+    } else {
+      // 2. Mid-morph — draw the animated triangle pool
+      for (const tri of this._animTris) {
+        tri.draw(ctx);
+      }
+    }
 
-    // Draw the animated label with fade-in / slide-up
-    if (savedLabelVisible) {
-      this._drawAnimatedLabel(ctx);
+    // 4. L-outline overlay via makeLabLogoAnimated, which tracks lOutlineOpacity.
+    //    drawLOutline() is a focused method that draws only the L stroke,
+    //    avoiding any interference with triangle colors or label state.
+    if (this.makeLabLogoAnimated.isLOutlineVisible) {
+      this.makeLabLogoAnimated.drawLOutline(ctx);
+    }
+
+    // 5. Art message: fades out as the morph progresses
+    if (this._artMessage) {
+      this._drawArtMessage(ctx, lerpAmt);
+    }
+
+    // 6. Logo label: fades in near the end of the morph
+    if (this.makeLabLogoAnimated.isLabelVisible) {
+      this._drawAnimatedLabel(ctx, lerpAmt);
     }
   }
 
+  // ===========================================================================
+  // Private rendering helpers
+  // ===========================================================================
+
   /**
-   * Draws the label with a fade-in and slide-up animation. Delegates the actual
-   * text rendering to the base class's drawLabel(), passing animated opacity and
-   * yOffset values.
+   * Draws the art message centered above the artwork, fading out as the
+   * morph progresses. Opacity goes from 1 at lerpAmt=0 to 0 at lerpAmt=0.5,
+   * so it disappears well before the logo label appears.
    *
-   * @param {CanvasRenderingContext2D} ctx - The canvas rendering context.
+   * @param {CanvasRenderingContext2D} ctx
+   * @param {number} lerpAmt
    * @private
    */
-  _drawAnimatedLabel(ctx) {
-    const lerpAmt = this._currentLerpAmt ?? 0;
+  _drawArtMessage(ctx, lerpAmt) {
+    // Fade out over the first half of the morph
+    const alpha = Math.max(0, 1 - lerpAmt * 2);
+    if (alpha <= 0) return;
+
+    ctx.save();
+    ctx.globalAlpha   = alpha;
+    ctx.font          = `bold ${this._artMessageFontSize}px sans-serif`;
+    ctx.fillStyle     = this._artMessageColor;
+    ctx.textAlign     = 'center';
+    ctx.textBaseline  = 'alphabetic';
+
+    // Center horizontally over the logo; position above it vertically
+    const logoBox = this.makeLabLogo.getBoundingBox();
+    const cx = logoBox.x + logoBox.width  / 2;
+    const cy = logoBox.y - this._artMessageFontSize * 0.3;
+    ctx.fillText(this._artMessage, cx, cy);
+    ctx.restore();
+  }
+
+  /**
+   * Draws the "Makeability Lab" label with a fade-in and upward slide entrance.
+   * Only active once lerpAmt exceeds labelAppearThreshold.
+   *
+   * @param {CanvasRenderingContext2D} ctx
+   * @param {number} lerpAmt
+   * @private
+   */
+  _drawAnimatedLabel(ctx, lerpAmt) {
     if (lerpAmt <= this.labelAppearThreshold) return;
 
-    // Compute animation progress within the label's appearance window
-    const labelProgress = Math.min(
-      (lerpAmt - this.labelAppearThreshold) / (1 - this.labelAppearThreshold),
-      1
-    );
-    const easedProgress = this.easingFunction(labelProgress);
+    // Map lerpAmt from [threshold, 1] → [0, 1] and apply easing
+    const rawProgress   = (lerpAmt - this.labelAppearThreshold)
+                        / (1 - this.labelAppearThreshold);
+    const easedProgress = this.easingFunction(Math.min(rawProgress, 1));
 
-    // Slide-up: starts offset downward, eases to 0
-    const fontSize = this.makeLabLogoAnimated.labelFontSize;
-    const slideOffset = fontSize * this.labelSlideDistanceFraction * (1 - easedProgress);
+    // Slide starts below final position and eases to 0 offset
+    const slideOffset = this.makeLabLogoAnimated.labelFontSize
+                      * this.labelSlideDistanceFraction
+                      * (1 - easedProgress);
 
     this.makeLabLogoAnimated.drawLabel(ctx, {
       opacity: easedProgress,
-      yOffset: slideOffset
+      yOffset: slideOffset,
     });
   }
+}
+
+// =============================================================================
+// Module-private helpers
+// =============================================================================
+
+/**
+ * Creates a plain-object snapshot of the properties update() needs from a
+ * Triangle. Passing an explicit angle overrides the triangle's own value,
+ * which is useful for forcing the destination angle to 0.
+ *
+ * @param {Triangle} tri
+ * @param {number} [angleOverride] - If provided, used instead of tri.angle.
+ * @returns {{x, y, size, angle, fillColor, strokeColor, strokeWidth}}
+ */
+function _snapshot(tri, angleOverride) {
+  return {
+    x:           tri.x,
+    y:           tri.y,
+    size:        tri.size,
+    angle:       angleOverride !== undefined ? angleOverride : tri.angle,
+    fillColor:   tri.fillColor,
+    strokeColor: tri.strokeColor,
+    strokeWidth: tri.strokeWidth ?? 1,
+  };
+}
+
+/**
+ * Groups an array of triangles into a Map keyed by direction string.
+ *
+ * @param {Triangle[]} triangles
+ * @returns {Map<string, Triangle[]>}
+ */
+function _groupByDirection(triangles) {
+  const map = new Map();
+  for (const tri of triangles) {
+    if (!map.has(tri.direction)) map.set(tri.direction, []);
+    map.get(tri.direction).push(tri);
+  }
+  return map;
 }
 
 /**
@@ -3552,5 +3869,5 @@ class TriangleArt {
   }
 }
 
-export { Cell, Grid, MakeabilityLabLogo, MakeabilityLabLogoColorer, MakeabilityLabLogoExploder, ORIGINAL_COLOR_ARRAY, OriginalColorPaletteRGB, Triangle, TriangleArt, TriangleDir };
+export { Cell, Grid, MakeabilityLabLogo, MakeabilityLabLogoColorer, MakeabilityLabLogoMorpher, ORIGINAL_COLOR_ARRAY, OriginalColorPaletteRGB, Triangle, TriangleArt, TriangleDir };
 //# sourceMappingURL=makelab.logo.js.map
