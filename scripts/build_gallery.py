@@ -34,6 +34,7 @@ for category in sorted(by_category):
 html = f"""<!DOCTYPE html>
 <html lang="en">
 <head>
+  <!-- This is an auto-generated file using GitHub Actions. Do not edit directly. -->
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Makeability Lab — JavaScript Demo Gallery</title>
