@@ -38,16 +38,17 @@ function lerp(start, end, amt) {
  * @returns {string} The interpolated color in rgba format.
  */
 function lerpColor(startColor, endColor, amt) {
-  // console.log(`lerpColor: startColor: ${startColor}, endColor: ${endColor}, amt: ${amt}`);
-
-  // Ensure both colors are objects with r, g, b, and optionally a properties
   startColor = convertColorStringToObject(startColor);
   endColor = convertColorStringToObject(endColor);
 
-  const r = Math.round(lerp(startColor.r, endColor.r, amt));
-  const g = Math.round(lerp(startColor.g, endColor.g, amt));
-  const b = Math.round(lerp(startColor.b, endColor.b, amt));
-  const a = lerp(startColor.a || 1, endColor.a || 1, amt); // Default to 1 if a property is missing
+  const clamp = (val, min, max) => Math.min(max, Math.max(min, val));
+
+  const r = clamp(Math.round(lerp(startColor.r, endColor.r, amt)), 0, 255);
+  const g = clamp(Math.round(lerp(startColor.g, endColor.g, amt)), 0, 255);
+  const b = clamp(Math.round(lerp(startColor.b, endColor.b, amt)), 0, 255);
+  
+  // Alpha typically ranges from 0.0 to 1.0
+  const a = clamp(lerp(startColor.a ?? 1, endColor.a ?? 1, amt), 0, 1);
 
   return `rgba(${r}, ${g}, ${b}, ${a})`;
 }

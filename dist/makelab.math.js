@@ -31,7 +31,7 @@ function lerp(start, end, amt) {
 }
 
 /**
- * Generates a random number within a specified range (similar to p5js random)
+ * Generates a random number within a specified range (similar to p5js random).
  * If only one argument is provided, it generates a number between 0 and the argument.
  * If two arguments are provided, it generates a number between the two arguments.
  * 

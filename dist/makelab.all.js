@@ -31,7 +31,7 @@ function lerp(start, end, amt) {
 }
 
 /**
- * Generates a random number within a specified range (similar to p5js random)
+ * Generates a random number within a specified range (similar to p5js random).
  * If only one argument is provided, it generates a number between 0 and the argument.
  * If two arguments are provided, it generates a number between the two arguments.
  * 
@@ -200,16 +200,17 @@ class Vector {
  * @returns {string} The interpolated color in rgba format.
  */
 function lerpColor(startColor, endColor, amt) {
-  // console.log(`lerpColor: startColor: ${startColor}, endColor: ${endColor}, amt: ${amt}`);
-
-  // Ensure both colors are objects with r, g, b, and optionally a properties
   startColor = convertColorStringToObject(startColor);
   endColor = convertColorStringToObject(endColor);
 
-  const r = Math.round(lerp(startColor.r, endColor.r, amt));
-  const g = Math.round(lerp(startColor.g, endColor.g, amt));
-  const b = Math.round(lerp(startColor.b, endColor.b, amt));
-  const a = lerp(startColor.a || 1, endColor.a || 1, amt); // Default to 1 if a property is missing
+  const clamp = (val, min, max) => Math.min(max, Math.max(min, val));
+
+  const r = clamp(Math.round(lerp(startColor.r, endColor.r, amt)), 0, 255);
+  const g = clamp(Math.round(lerp(startColor.g, endColor.g, amt)), 0, 255);
+  const b = clamp(Math.round(lerp(startColor.b, endColor.b, amt)), 0, 255);
+  
+  // Alpha typically ranges from 0.0 to 1.0
+  const a = clamp(lerp(startColor.a ?? 1, endColor.a ?? 1, amt), 0, 1);
 
   return `rgba(${r}, ${g}, ${b}, ${a})`;
 }
@@ -806,6 +807,11 @@ function calculateNormals(pt1, pt2) {
 
 class MakeabilityLabLogo {
 
+  static get DEFAULT_M_OUTLINE_COLOR()  { return 'black'; }
+  static get DEFAULT_M_OUTLINE_STROKE_WIDTH() { return 4; }
+  static get DEFAULT_L_OUTLINE_COLOR()  { return 'black'; }
+  static get DEFAULT_L_OUTLINE_STROKE_WIDTH() { return 4; }
+
   constructor(x, y, triangleSize) {
 
     // The Makeability Lab logo is composed of 6 columns and 4 rows of square cells
@@ -815,10 +821,10 @@ class MakeabilityLabLogo {
     this.visible = true;
     this.isMOutlineVisible = true;
     this.isLOutlineVisible = true;
-    this.mOutlineColor = 'black';
-    this.mOutlineStrokeWidth = 4;
-    this.lOutlineColor = 'black';
-    this.lOutlineStrokeWidth = 4;
+    this.mOutlineColor = MakeabilityLabLogo.DEFAULT_M_OUTLINE_COLOR;
+    this.mOutlineStrokeWidth = MakeabilityLabLogo.DEFAULT_M_OUTLINE_STROKE_WIDTH;
+    this.lOutlineColor = MakeabilityLabLogo.DEFAULT_L_OUTLINE_COLOR;
+    this.lOutlineStrokeWidth = MakeabilityLabLogo.DEFAULT_L_OUTLINE_STROKE_WIDTH;
     this.setColors('white', 'black');
     this.setFillColorsToDefault();
 
@@ -892,41 +898,58 @@ class MakeabilityLabLogo {
   }
 
   /**
-   * Calculates the X center position for the MakeabilityLabLogo on a canvas.
-   *
-   * @param {number} triangleSize - The size of the triangle used in the logo.
-   * @param {number} canvasWidth - The width of the canvas.
-   * @param {boolean} [alignToGrid=false] - Whether to align the center position to the grid.
-   * @returns {number} The x-coordinate for centering the logo.
-   */
-  static getGridXCenterPosition(triangleSize, canvasWidth, alignToGrid = false){
-    const xCenter = (canvasWidth - MakeabilityLabLogo.getGridWidth(triangleSize)) / 2;
-    
-    if(alignToGrid){
-      return Math.round(xCenter / triangleSize) * triangleSize;
-    }else {
-      return xCenter;
-    } 
-  }
+ * Calculates the X origin for centering the MakeabilityLabLogo on a canvas.
+ *
+ * The returned value is the logo's grid origin (left edge of cell [0,0]),
+ * not the visual center. Pass this directly to the MakeabilityLabLogo
+ * constructor as `x`, and as `offsetX` to the Grid constructor.
+ *
+ * The optional strokePadding shifts the origin inward so the M outline's
+ * stroke bleed (half the stroke width on each side) is visually symmetric.
+ * Without it, the stroke bleeds further on the right than the left, making
+ * the logo appear off-center. Pass MakeabilityLabLogo.DEFAULT_M_OUTLINE_STROKE_WIDTH
+ * or the logo instance's mOutlineStrokeWidth.
+ *
+ * @param {number} triangleSize  - Cell size in pixels.
+ * @param {number} canvasWidth   - Canvas width in logical (CSS) pixels.
+ * @param {boolean} [alignToGrid=false] - If true, snaps to nearest cell boundary.
+ * @param {number} [strokePadding=0] - Total stroke width of the M outline.
+ *   The origin is shifted inward by strokePadding/2 (half on each side).
+ * @returns {number} The x-coordinate for the logo's grid origin.
+ */
+static getGridXCenterPosition(triangleSize, canvasWidth, alignToGrid = false, strokePadding = 0) {
+  // Subtract the full stroke padding from the available width so that
+  // strokePadding/2 of margin remains on each side for the stroke bleed.
+  const xCenter = (canvasWidth - MakeabilityLabLogo.getGridWidth(triangleSize) - strokePadding) / 2;
 
-  /**
-   * Calculates the y-coordinate for centering the logo grid (excluding the label)
-   * on the canvas. For label-aware centering, use the instance method centerLogo().
-   *
-   * @param {number} triangleSize - The size of each triangle.
-   * @param {number} canvasHeight - The height of the canvas.
-   * @param {boolean} [alignToGrid=false] - Whether to align the center position to the grid.
-   * @returns {number} The y-coordinate for centering the logo grid.
-   */
-  static getGridYCenterPosition(triangleSize, canvasHeight, alignToGrid=false){
-    const yCenter = (canvasHeight - MakeabilityLabLogo.getGridHeight(triangleSize)) / 2;
-    
-    if(alignToGrid){
-      return Math.round(yCenter / triangleSize) * triangleSize;
-    }else {
-      return yCenter;
-    }
+  if (alignToGrid) {
+    return Math.round(xCenter / triangleSize) * triangleSize;
   }
+  return xCenter;
+}
+
+/**
+ * Calculates the Y origin for centering the MakeabilityLabLogo on a canvas.
+ * Positions the grid only (excludes label). For label-aware centering use
+ * the instance method centerLogo().
+ *
+ * See getGridXCenterPosition() for full documentation on strokePadding.
+ *
+ * @param {number} triangleSize  - Cell size in pixels.
+ * @param {number} canvasHeight  - Canvas height in logical (CSS) pixels.
+ * @param {boolean} [alignToGrid=false] - If true, snaps to nearest cell boundary.
+ * @param {number} [strokePadding=0] - Total stroke width of the M outline.
+ *   The origin is shifted inward by strokePadding/2 (half on each side).
+ * @returns {number} The y-coordinate for the logo's grid origin.
+ */
+static getGridYCenterPosition(triangleSize, canvasHeight, alignToGrid = false, strokePadding = 0) {
+  const yCenter = (canvasHeight - MakeabilityLabLogo.getGridHeight(triangleSize) - strokePadding) / 2;
+
+  if (alignToGrid) {
+    return Math.round(yCenter / triangleSize) * triangleSize;
+  }
+  return yCenter;
+}
 
   /**
    * Sets the draw debug information flag for the logo and its components.
@@ -1102,34 +1125,34 @@ class MakeabilityLabLogo {
 
   /**
    * Adjusts the logo size to fit within the given canvas dimensions.
-   * Optionally aligns the logo to a grid.
-   *
+   * Updated to fully account for stroke widths and label visibility.
    * @param {number} canvasWidth - The width of the canvas.
    * @param {number} canvasHeight - The height of the canvas.
-   * @param {boolean} [alignToGrid=false] - If true, aligns the logo to the grid.
-   */ 
-  fitToCanvas(canvasWidth, canvasHeight, alignToGrid=false){
-    // Maximize the logo size to fit the canvas
-    // If alignToGrid is true, the logo will be aligned to the grid
-    let adjustedHeight = canvasHeight - 2;
-    if (this.isLOutlineVisible){
-      adjustedHeight -= this.lOutlineStrokeWidth / 2.0;
-    }
-    if(this.isMOutlineVisible){
-      adjustedHeight -= this.mOutlineStrokeWidth / 2.0;
-    }
+   * @param {boolean} [alignToGrid=false] - Whether to align the center position to the grid.
+   */
+  fitToCanvas(canvasWidth, canvasHeight, alignToGrid = false) {
+    // 1. Calculate the required padding based on the stroke widths.
+    // We use the full stroke width as padding (half for each side of the canvas).
+    const strokePadding = Math.max(this.mOutlineStrokeWidth, this.lOutlineStrokeWidth);
 
-    // When the label is visible its height depends on triangleSize
-    // (labelFontSize = numCols * triangleSize * labelFontSizeFraction),
-    // so we solve for triangleSize algebraically.
+    // 2. Subtract stroke padding from both dimensions
+    let adjustedWidth = canvasWidth - strokePadding;
+    let adjustedHeight = canvasHeight - strokePadding;
+
+    // 3. Account for the label if visible
     let effectiveRows = MakeabilityLabLogo.numRows;
     if (this.isLabelVisible) {
-      adjustedHeight -= this.labelGap;
-      effectiveRows += MakeabilityLabLogo.numCols * this.labelFontSizeFraction;
+      adjustedHeight -= this.labelGap; //
+      effectiveRows += MakeabilityLabLogo.numCols * this.labelFontSizeFraction; //
     }
 
-    const triangleSize = Math.min(canvasWidth / MakeabilityLabLogo.numCols,
-                                   adjustedHeight / effectiveRows);
+    // 4. Calculate the triangle size based on the most restrictive dimension
+    const triangleSize = Math.min(
+      adjustedWidth / MakeabilityLabLogo.numCols,
+      adjustedHeight / effectiveRows
+    );
+
+    // 5. Apply the size and center the logo within the original canvas area
     this.setTriangleSize(triangleSize);
     this.centerLogo(canvasWidth, canvasHeight, alignToGrid);
   }
@@ -2193,11 +2216,11 @@ class Triangle {
 
     ctx.save();
 
-    if (this.isFillVisible) {
+    if (this.isFillVisible && this.fillColor) {
       ctx.fillStyle = this.fillColor;
-    } 
+    }
 
-    if (this.isStrokeVisible) {
+    if (this.isStrokeVisible && this.strokeColor && this.strokeWidth > 0) {
       ctx.strokeStyle = this.strokeColor;
       ctx.lineWidth = this.strokeWidth;
     } 
@@ -2231,11 +2254,11 @@ class Triangle {
     }
     ctx.closePath();
 
-    if (this.isFillVisible) {
+    if (this.isFillVisible && this.fillColor) {
       ctx.fill();
     }
 
-    if (this.isStrokeVisible) {
+    if (this.isStrokeVisible && this.strokeColor && this.strokeWidth > 0) {
       ctx.stroke();
     }
 
@@ -2365,20 +2388,56 @@ class Triangle {
   }
 }
 
-class Grid{
+class Grid {
+
   /**
-   * Constructs a new instance of the class.
-   * 
+   * Creates a background grid of triangular cells covering a canvas area.
+   *
+   * By default the grid starts at (0, 0), which is fine when the logo also
+   * starts at (0, 0). However, when the logo is centered or offset — for
+   * example after calling fitToCanvas(), or when manually centering via
+   * getGridXCenterPosition() / getGridYCenterPosition() — the grid origin
+   * must match the logo's origin so cell boundaries stay aligned.
+   *
+   * Pass the logo's x and y as offsetX / offsetY to achieve this:
+   *
+   * @example
+   * // Manually positioned logo
+   * const xLogo = MakeabilityLabLogo.getGridXCenterPosition(triangleSize, canvasWidth);
+   * const yLogo = MakeabilityLabLogo.getGridYCenterPosition(triangleSize, canvasHeight);
+   * const logo  = new MakeabilityLabLogo(xLogo, yLogo, triangleSize);
+   * const grid  = new Grid(canvasWidth, canvasHeight, triangleSize,
+   *                        undefined, undefined, xLogo, yLogo);
+   *
+   * @example
+   * // fitToCanvas — logo origin is set internally, read it back afterward
+   * const logo = new MakeabilityLabLogo(0, 0, triangleSize);
+   * logo.fitToCanvas(canvasWidth, canvasHeight);
+   * const grid = new Grid(canvasWidth, canvasHeight, logo.cellSize,
+   *                       undefined, undefined, logo.x, logo.y);
+   *
    * @constructor
-   * @param {number} gridWidth - The width of the grid.
-   * @param {number} gridHeight - The height of the grid.
-   * @param {number} triangleSize - The size of each triangle in the grid.
-   * @param {string} [strokeColor='rgba(100, 100, 100, 0.5)'] - The color of the stroke for the grid lines.
-   * @param {string|null} [fillColor=null] - The fill color for the grid triangles.
+   * @param {number} gridWidth   - Canvas width in logical (CSS) pixels.
+   * @param {number} gridHeight  - Canvas height in logical (CSS) pixels.
+   * @param {number} triangleSize - Cell size in pixels; should match the logo's
+   *   cellSize so grid lines fall on logo cell boundaries.
+   * @param {string} [strokeColor='rgba(200, 200, 200, 0.5)'] - Grid line color.
+   * @param {string|null} [fillColor=null] - Optional fill color for all cells.
+   * @param {number} [offsetX=0] - X origin of the grid. Pass the logo's x so the
+   *   grid is phase-aligned with the logo's cell columns.
+   * @param {number} [offsetY=0] - Y origin of the grid. Pass the logo's y so the
+   *   grid is phase-aligned with the logo's cell rows.
    */
-  constructor(gridWidth, gridHeight, triangleSize, strokeColor = 'rgba(200, 200, 200, 0.5)', fillColor = null){
-    this.gridArray = Grid.createGrid(gridWidth, gridHeight, triangleSize, strokeColor, fillColor);
+  constructor(gridWidth, gridHeight, triangleSize,
+              strokeColor = 'rgba(200, 200, 200, 0.5)', fillColor = null,
+              offsetX = 0, offsetY = 0) {
+
+    this.gridArray = Grid.createGrid(gridWidth, gridHeight, triangleSize,
+                                     strokeColor, fillColor, offsetX, offsetY);
     this.visible = true;
+
+    // setFillColor is a no-op when fillColor is null, but calling it here
+    // keeps construction consistent if a subclass overrides it later.
     this.setFillColor(fillColor);
   }
 
@@ -2387,75 +2446,106 @@ class Grid{
    *
    * @param {CanvasRenderingContext2D} ctx - The canvas rendering context to draw on.
    */
-  draw(ctx){
-    if(!this.visible){ return; }
+  draw(ctx) {
+    if (!this.visible) { return; }
 
-    for(let row = 0; row < this.gridArray.length; row++){
-      for(let col = 0; col < this.gridArray[row].length; col++){
+    for (let row = 0; row < this.gridArray.length; row++) {
+      for (let col = 0; col < this.gridArray[row].length; col++) {
         this.gridArray[row][col].draw(ctx);
       }
     }
   }
 
   /**
-   * Sets the stroke color for all triangles in the grid array.
+   * Sets the stroke color for all triangles in the grid.
    *
-   * @param {string} strokeColor - The color to set as the stroke color for the triangles.
+   * @param {string} strokeColor - The new stroke color.
    */
-  setStrokeColor(strokeColor){
-    for(let row = 0; row < this.gridArray.length; row++){
-      for(let col = 0; col < this.gridArray[row].length; col++){
+  setStrokeColor(strokeColor) {
+    for (let row = 0; row < this.gridArray.length; row++) {
+      for (let col = 0; col < this.gridArray[row].length; col++) {
         this.gridArray[row][col].tri1.strokeColor = strokeColor;
         this.gridArray[row][col].tri2.strokeColor = strokeColor;
       }
     }
   }
-  
+
   /**
-   * Sets the fill color for all triangles in the grid array.
+   * Sets the fill color for all triangles in the grid.
    *
-   * @param {string} fillColor - The color to set as the fill color for the triangles.
+   * @param {string|null} fillColor - The new fill color, or null for transparent.
    */
-  setFillColor(fillColor){
-    for(let row = 0; row < this.gridArray.length; row++){
-      for(let col = 0; col < this.gridArray[row].length; col++){
+  setFillColor(fillColor) {
+    for (let row = 0; row < this.gridArray.length; row++) {
+      for (let col = 0; col < this.gridArray[row].length; col++) {
         this.gridArray[row][col].tri1.fillColor = fillColor;
         this.gridArray[row][col].tri2.fillColor = fillColor;
       }
     }
   }
 
-
   /**
-   * Creates a grid of cells with triangles.
+   * Creates a 2D array of triangular cells that tile the canvas.
    *
-   * @param {number} gridWidth - The width of the grid.
-   * @param {number} gridHeight - The height of the grid.
-   * @param {number} triangleSize - The size of each triangle in the grid.
-   * @param {string} strokeColor - The color of the triangle strokes.
-   * @param {string} [fillColor] - The optional fill color of the triangles.
-   * @returns {Array<Array<Cell>>} A 2D array representing the grid of cells.
+   * The grid is extended by one extra row and column beyond what fits in
+   * gridWidth/gridHeight to ensure full coverage when offsetX/offsetY shift
+   * the origin away from (0, 0) — otherwise a strip along the top/left edge
+   * would be left uncovered.
+   *
+   * Triangle orientation alternates in a checkerboard pattern so the diagonal
+   * cuts form the characteristic diamond/X visual of the Makeability Lab grid.
+   * The parity of each cell is determined by its logical row/col index (not its
+   * pixel position), so the pattern stays consistent regardless of the offset.
+   *
+   * @param {number} gridWidth    - Canvas width in logical pixels.
+   * @param {number} gridHeight   - Canvas height in logical pixels.
+   * @param {number} triangleSize - Cell size in pixels.
+   * @param {string} strokeColor  - Stroke color for all cells.
+   * @param {string|null} fillColor - Fill color for all cells, or null.
+   * @param {number} [offsetX=0]  - X origin offset in pixels.
+   * @param {number} [offsetY=0]  - Y origin offset in pixels.
+   * @returns {Array<Array<Cell>>} 2D array of Cell objects.
    */
-  static createGrid(gridWidth, gridHeight, triangleSize, strokeColor, fillColor){
+  static createGrid(gridWidth, gridHeight, triangleSize,
+                  strokeColor, fillColor,
+                  offsetX = 0, offsetY = 0) {
 
-    const numGridColumns = Math.floor(gridWidth / triangleSize);
-    const numGridRows = Math.floor(gridHeight / triangleSize);
-  
+    // Backtrack from the offset to find the first cell origin that is <= 0,
+    // so the grid covers the full canvas including the top and left edges.
+    // e.g. offsetX=50, triangleSize=100 → startX = 50 - 1*100 = -50
+    const startX = offsetX - Math.ceil(offsetX / triangleSize) * triangleSize;
+    const startY = offsetY - Math.ceil(offsetY / triangleSize) * triangleSize;
+
+    // Size the grid from the adjusted start point to ensure full coverage.
+    const numGridColumns = Math.ceil((gridWidth  - startX) / triangleSize);
+    const numGridRows    = Math.ceil((gridHeight - startY) / triangleSize);
+
     let grid = new Array(numGridRows);
-  
-    for(let row = 0; row < grid.length; row++){
+
+    for (let row = 0; row < grid.length; row++) {
       grid[row] = new Array(numGridColumns);
-      for(let col = 0; col < grid[row].length; col++){
-        let triDir = TriangleDir.TopLeft;
-        if((row % 2 == 0 && col % 2 == 0) || (row % 2 != 0 && col % 2 != 0)){
-          triDir = TriangleDir.TopRight;
-        }
-        let cell = Cell.createCell(col * triangleSize, row * triangleSize, triangleSize, triDir);
-  
+
+      for (let col = 0; col < grid[row].length; col++) {
+
+        const cellX = startX + col * triangleSize;
+        const cellY = startY + row * triangleSize;
+
+        // Checkerboard parity: determine orientation from absolute cell index
+        // so the pattern is consistent across the whole canvas regardless of
+        // where the grid starts. We use the cell's position relative to the
+        // logo origin (offsetX/offsetY) to compute the canonical index.
+        const colIndex = Math.round((cellX - offsetX) / triangleSize);
+        const rowIndex = Math.round((cellY - offsetY) / triangleSize);
+        const isEvenCell = (rowIndex % 2 === 0 && colIndex % 2 === 0) ||
+                          (rowIndex % 2 !== 0 && colIndex % 2 !== 0);
+        const triDir = isEvenCell ? TriangleDir.TopRight : TriangleDir.TopLeft;
+
+        const cell = Cell.createCell(cellX, cellY, triangleSize, triDir);
+
         cell.tri1.strokeColor = strokeColor;
         cell.tri2.strokeColor = strokeColor;
 
-        if(fillColor){
+        if (fillColor) {
           cell.tri1.fillColor = fillColor;
           cell.tri2.fillColor = fillColor;
         }
@@ -2463,6 +2553,7 @@ class Grid{
         grid[row][col] = cell;
       }
     }
+
     return grid;
   }
 }
@@ -2857,5 +2948,35 @@ class MakeabilityLabLogoExploder{
   }
 }
 
-export { Cell, Grid, LineSegment, MakeabilityLabLogo, MakeabilityLabLogoColorer, MakeabilityLabLogoExploder, ORIGINAL_COLOR_ARRAY, OriginalColorPaletteRGB, Triangle, TriangleDir, Vector, convertColorStringToObject, convertToDegrees, convertToRadians, lerp, lerpColor, random };
+/**
+ * Array utility functions.
+ * 
+ * By Jon E. Froehlich
+ * https://jonfroehlich.github.io/
+ * http://makeabilitylab.cs.washington.edu
+ */
+
+/**
+ * Shuffles an array in place using the Fisher-Yates algorithm.
+ *
+ * @param {Array} array - The array to shuffle.
+ * @returns {Array} The same array, shuffled in place.
+ * 
+ * @example
+ * const arr = [1, 2, 3, 4, 5];
+ * shuffle(arr); // arr is now shuffled in place
+ */
+function shuffle(array) {
+  let currentIndex = array.length;
+
+  while (currentIndex !== 0) {
+    const randomIndex = Math.floor(Math.random() * currentIndex);
+    currentIndex--;
+    [array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]];
+  }
+
+  return array;
+}
+
+export { Cell, Grid, LineSegment, MakeabilityLabLogo, MakeabilityLabLogoColorer, MakeabilityLabLogoExploder, ORIGINAL_COLOR_ARRAY, OriginalColorPaletteRGB, Triangle, TriangleDir, Vector, convertColorStringToObject, convertToDegrees, convertToRadians, lerp, lerpColor, random, shuffle };
 //# sourceMappingURL=makelab.all.js.map
