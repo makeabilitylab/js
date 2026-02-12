@@ -18,7 +18,7 @@ import {
 import { shuffle } from '../../../lib/array-utils.js';
 import { map, lerp } from '../../../lib/math/math-utils.js';
 import { lerpColor } from '../../../lib/graphics/color-utils.js';
-import { TriangleArt } from './triangle-art.js'; 
+import { TriangleArt } from '../../../lib/logo/triangle-art.js'; 
 
 // --- Constants ---
 const TRIANGLE_SIZE = 50;

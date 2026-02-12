@@ -19,14 +19,14 @@
 
 import {
   Cell, Triangle, TriangleDir
-} from '../../../lib/logo/makelab-logo.js';  // Adjust path as needed
+} from './makelab-logo.js';  // Adjust path as needed
 
 import {
   changeColorBrightness,
   changeColorSaturationAndBrightness
-} from '../../../lib/graphics/color-utils.js';
+} from '../graphics/color-utils.js';
 
-import { random, randomGaussian } from '../../../lib/math/math-utils.js';
+import { random, randomGaussian } from '../math/math-utils.js';
 
 // ---------------------------------------------------------------------------
 // TriangleArt
