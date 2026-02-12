@@ -38,7 +38,7 @@
 import { 
   MakeabilityLabLogo, Grid, Triangle, ORIGINAL_COLOR_ARRAY, 
 } from '../../../lib/logo/makelab-logo.js';
-import { TriangleSanta } from './triangle-santa.js';
+import { TriangleSanta, COLOR_SANTA_SUIT_RED, COLOR_SANTA_BELT} from './triangle-santa.js';
 import { shuffle } from '../../../lib/array-utils.js';
 import { map, lerp } from '../../../lib/math/math-utils.js';
 import { lerpColor } from '../../../lib/graphics/color-utils.js';
@@ -55,6 +55,8 @@ const HOLIDAY_FONT_FAMILY = 'MerryChristmasFlake, cursive';
 
 /** @const {number} Font size in pixels for the holiday greeting text. */
 const HOLIDAY_TEXT_SIZE = 45;
+
+const WIDTH_MARGIN_PCT = 0.1; // Percentage of width to use for interaction buffer on each side (10% by default)
 
 /** @const {string} The holiday greeting message displayed on the canvas. */
 const HOLIDAY_MESSAGE = "Happy holidays from the Makeability Lab!";
@@ -248,7 +250,9 @@ function onTouchMove(e) {
  * Interpolates Santa triangles based on the current mouseX.
  */
 function updateAnimation() {
-  const lerpAmt = map(mouseX, 0, logicalWidth, 0, 1, true);
+  const smallBuffer = WIDTH_MARGIN_PCT * logicalWidth;
+  const effectiveWidth = logicalWidth - 2 * smallBuffer;
+  const lerpAmt = map(mouseX, smallBuffer, effectiveWidth, 0, 1, true);
 
   for (const tri of originalSantaTriangles) {
     // Interpolate position
@@ -277,21 +281,53 @@ function drawLoop() {
   requestAnimationFrame(drawLoop);
 }
 
+
 /**
- * Renders the holiday message with dynamic positioning and color.
+ * Renders the holiday message with dynamic positioning, color-interpolation, 
+ * and holiday styling. The text color shifts from Santa Red to Belt Black 
+ * as the morph progresses.
  */
 function drawHolidayMessage() {
-  const lerpAmt = map(mouseX, 0, logicalWidth, 0, 1, true);
+  const smallBuffer = WIDTH_MARGIN_PCT * logicalWidth;
+  const effectiveWidth = logicalWidth - 2 * smallBuffer;
+  const lerpAmt = map(mouseX, smallBuffer, effectiveWidth, 0, 1, true);
 
   ctx.save();
-  ctx.font = `${HOLIDAY_TEXT_SIZE}px ${HOLIDAY_FONT_FAMILY}`;
+  
+  // 1. Auto-scale font size based on logicalWidth
+  const padding = 40;
+  const targetWidth = logicalWidth - padding;
+  let currentFontSize = HOLIDAY_TEXT_SIZE;
+  
+  ctx.font = `${currentFontSize}px ${HOLIDAY_FONT_FAMILY}`;
+  let metrics = ctx.measureText(HOLIDAY_MESSAGE);
 
-  const textColor = lerpColor('rgb(128, 128, 128)', 'rgb(0, 0, 0)', lerpAmt);
-  const metrics = ctx.measureText(HOLIDAY_MESSAGE);
-  const yLoc = lerp(60, 120, lerpAmt);
+  if (metrics.width > targetWidth) {
+    currentFontSize = (targetWidth / metrics.width) * HOLIDAY_TEXT_SIZE;
+    ctx.font = `${currentFontSize}px ${HOLIDAY_FONT_FAMILY}`;
+    metrics = ctx.measureText(HOLIDAY_MESSAGE);
+  }
 
+  // 2. Dynamic Y-position (sliding toward the animation)
+  const yStartOffset = 80; // How far above the logo the text starts
+  const startY = triangleSantaAnimated.y - yStartOffset; 
+  const endY = makeLabLogoStatic.y - yStartOffset;
+  const yLoc = lerp(startY, endY, lerpAmt);
+
+  // 3. Interpolate color from Red to Belt Black
+  const textColor = lerpColor(COLOR_SANTA_SUIT_RED, COLOR_SANTA_BELT, lerpAmt);
+
+  // 4. Holiday Styling: Dynamic Sparkle/Glow
+  // We use a sine wave based on time to make the glow pulse
+  const sparkle = 5 + Math.sin(Date.now() / 300) * 5;
+  ctx.shadowColor = 'rgba(255, 255, 255, 0.9)';
+  ctx.shadowBlur = sparkle;
+  
   ctx.fillStyle = textColor;
-  ctx.fillText(HOLIDAY_MESSAGE, (logicalWidth - metrics.width) / 2, yLoc);
+  ctx.textAlign = 'center';
+  
+  ctx.fillText(HOLIDAY_MESSAGE, logicalWidth / 2, yLoc);
+  
   ctx.restore();
 }
 

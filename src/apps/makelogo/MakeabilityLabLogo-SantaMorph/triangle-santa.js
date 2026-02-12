@@ -33,12 +33,12 @@ import { random, randomGaussian } from '../../../lib/math/math-utils.js';
 // --- Santa color palette (base hex values) ---
 // Each getter method applies random HSV brightness jitter to these base colors
 // to give each triangle a slightly unique shade.
-const COLOR_SANTA_FACE = "#fdf2d0";
-const COLOR_SANTA_SUIT_RED = "#cc4133";
-const COLOR_SANTA_SUIT_WHITE = "#ffffff";
-const COLOR_SANTA_NOSE = "#f9da78";
-const COLOR_SANTA_MOUTH = "#f3af56";
-const COLOR_SANTA_BELT = "#272425";
+export const COLOR_SANTA_FACE = "#fdf2d0";
+export const COLOR_SANTA_SUIT_RED = "#cc4133";
+export const COLOR_SANTA_SUIT_WHITE = "#ffffff";
+export const COLOR_SANTA_NOSE = "#f9da78";
+export const COLOR_SANTA_MOUTH = "#f3af56";
+export const COLOR_SANTA_BELT = "#272425";
 
 export class TriangleSanta {
 
