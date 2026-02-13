@@ -258,12 +258,14 @@ export class MakeabilityLabLogoMorpher {
     this._artMessage      = null;
     this._artMessageColor = null;
 
-    const logoTris = this.makeLabLogo.getAllTriangles();
-    const animTris = this.makeLabLogoAnimated.getAllTriangles();
+    // CHANGE: Filter for visible triangles only
+    const logoTris = this.makeLabLogo.getAllTriangles().filter(t => t.visible);
+    const animTris = this.makeLabLogoAnimated.getAllTriangles().filter(t => t.visible);
+    
     const endSize  = this.makeLabLogo.cellSize;
 
-    // Set all animated triangles to the neutral start color before scattering
-    this.makeLabLogoAnimated.setColors(this.startFillColor, this.startStrokeColor);
+    // Set colors on the filtered pool
+    animTris.forEach(tri => tri.setColors(this.startFillColor, this.startStrokeColor));
 
     this._animTris = animTris.map((tri, i) => {
       const dest     = logoTris[i];
@@ -280,7 +282,7 @@ export class MakeabilityLabLogoMorpher {
       tri.strokeWidth = this.explodeStrokeWidth ? tri.strokeWidth : dest.strokeWidth;
 
       tri._start = _snapshot(tri);
-      tri._dest  = _snapshot(dest, 0 /* angle always 0 at destination */);
+      tri._dest  = _snapshot(dest, 0);
       return tri;
     });
   }
@@ -319,7 +321,8 @@ export class MakeabilityLabLogoMorpher {
     // Build direction-grouped destination map from the logo triangles.
     // Shuffle within each group so every call produces a fresh mapping.
     // -----------------------------------------------------------------
-    const destByDir = _groupByDirection(this.makeLabLogo.getAllTriangles());
+    const visibleLogoTris = this.makeLabLogo.getAllTriangles().filter(t => t.visible);
+    const destByDir = _groupByDirection(visibleLogoTris);
     for (const group of destByDir.values()) shuffle(group);
 
     const destIndex = new Map(); // round-robin index per direction
@@ -506,24 +509,42 @@ export class MakeabilityLabLogoMorpher {
    * @private
    */
   _drawArtMessage(ctx, lerpAmt) {
-    // Fade out over the first half of the morph
-    const alpha = Math.max(0, 1 - lerpAmt * 2);
+    const alpha = Math.max(0, 1 - lerpAmt * 1.1); // fades out faster than linear
     if (alpha <= 0) return;
 
-    ctx.save();
-    ctx.globalAlpha   = alpha;
-    ctx.font          = `bold ${this._artMessageFontSize}px sans-serif`;
-    ctx.fillStyle     = this._artMessageColor;
-    ctx.textAlign     = 'center';
-    ctx.textBaseline  = 'alphabetic';
+    // 1. Find the current highest point among all triangles in this frame
+    let currentMinY = Infinity;
 
-    // Center horizontally over the logo; position above it vertically
+    // Check the animated triangles (the morphing set)
+    for (const tri of this._animTris) {
+      if (tri.visible) {
+        // Subtract half size because (x,y) is the center
+        const triTop = tri.y - (tri.size / 2);
+        if (triTop < currentMinY) currentMinY = triTop;
+      }
+    }
+
+    // 2. Also check the target logo's bounds (the destination) 
+    // to ensure the label doesn't "dip" into the final logo position.
     const logoBox = this.makeLabLogo.getBoundingBox();
-    const cx = logoBox.x + logoBox.width  / 2;
-    const cy = logoBox.y - this._artMessageFontSize * 0.3;
+    const absoluteTop = Math.min(currentMinY, logoBox.y);
+
+    // 3. Render the text relative to that dynamic peak
+    const margin = this._artMessageFontSize * 0.4;
+    const cx = logoBox.x + logoBox.width / 2;
+    const cy = absoluteTop - margin;
+
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.font = `bold ${this._artMessageFontSize}px sans-serif`;
+    ctx.fillStyle = this._artMessageColor;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'alphabetic';
     ctx.fillText(this._artMessage, cx, cy);
     ctx.restore();
   }
+
+  
 
   /**
    * Draws the "Makeability Lab" label with a fade-in and upward slide entrance.

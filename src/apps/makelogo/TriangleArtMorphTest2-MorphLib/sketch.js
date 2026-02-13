@@ -169,11 +169,6 @@ function drawLoop() {
 
     morpher.update(currentLerpAmt);
     morpher.draw(ctx);
-
-    // Art message fades out as morph progresses
-    if (currentArt?.message) {
-      currentArt.drawMessage(ctx, 1 - currentLerpAmt);
-    }
   }
 
   requestAnimationFrame(drawLoop);
