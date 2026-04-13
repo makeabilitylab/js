@@ -4,7 +4,7 @@ html, body {
   padding: 0;
   width: 100%;
   height: 100%;
-  overflow: hidden; /* Prevents scrollbars on full-page apps */
+  overflow: hidden;
   background-color: rgb(250, 250, 250);
 }
 
@@ -18,24 +18,139 @@ html, body {
 
 canvas {
   display: block;
-  /* Use max-width/height to maintain visibility on small screens */
   max-width: 100%;
   max-height: 100%;
   width: 100%;
   height: 100%;
 }
 
-/* Floating control for the shape selector */
+/* ── Floating control panel ── */
 #controls {
   position: absolute;
   top: 10px;
   right: 10px;
   z-index: 100;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
   background: rgba(255, 255, 255, 0.95);
-  padding: 15px;
+  padding: 14px 16px;
   border-radius: 8px;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
   font-family: 'Segoe UI', sans-serif;
+  font-size: 13px;
+  min-width: 190px;
 }
-label { font-weight: bold; margin-right: 8px; }
-select { font-size: 14px; padding: 6px; border-radius: 4px; border: 1px solid #ccc; }
+
+.divider {
+  border: none;
+  border-top: 1px solid #e0e0e0;
+  margin: 2px 0;
+}
+
+.control-row {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.control-row > label {
+  font-weight: 600;
+  font-size: 12px;
+  color: #444;
+}
+
+/* ── Drive mode fieldset ── */
+.drive-mode-fieldset {
+  border: none;
+  margin: 0;
+  padding: 0;
+}
+
+.drive-mode-fieldset legend {
+  font-weight: 600;
+  font-size: 12px;
+  color: #444;
+  padding: 0;
+  margin-bottom: 4px;
+}
+
+.radio-group {
+  display: flex;
+  gap: 14px;
+}
+
+.radio-label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  font-weight: normal;
+  font-size: 13px;
+  color: #333;
+}
+
+/* ── Checkbox labels ── */
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: normal !important;
+  font-size: 13px !important;
+  color: #333;
+  cursor: pointer;
+}
+
+/* ── Selects ── */
+select {
+  font-size: 13px;
+  padding: 5px 6px;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+}
+
+/* ── Duration slider row ── */
+.range-with-value {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.range-with-value input[type="range"] {
+  flex: 1;
+  cursor: pointer;
+}
+
+.range-with-value span {
+  min-width: 28px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  font-size: 12px;
+  color: #666;
+}
+
+/* ── Play button ── */
+#playBtn {
+  padding: 6px 12px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background: #f7f7f7;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+#playBtn:hover:not(:disabled) {
+  background: #eaeaea;
+}
+
+#playBtn.playing {
+  background: #e8e8e8;
+  border-color: #aaa;
+}
+
+/* ── Disabled playback controls ── */
+#playbackControls.disabled {
+  opacity: 0.4;
+  pointer-events: none;
+}

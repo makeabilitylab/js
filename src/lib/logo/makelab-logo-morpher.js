@@ -197,6 +197,10 @@ export class MakeabilityLabLogoMorpher {
   /** Final assembled height of the logo (includes label). @returns {number} */
   get finalHeight() { return this.makeLabLogo.height; }
 
+  /** Whether the art message (e.g. "Happy Valentine's Day") is shown. */
+  get artMessageVisible() { return this._artMessageVisible; }
+  set artMessageVisible(visible) { this._artMessageVisible = !!visible; }
+
   // ===========================================================================
   // Layout helpers — delegate symmetrically to both internal logos
   // ===========================================================================

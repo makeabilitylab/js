@@ -8,19 +8,93 @@
 </head>
 <body>
   <div id="controls">
-    <label for="shapeSelect">Start shape:</label>
-    <select id="shapeSelect">
-      <option value="">Random Explosion</option>
-      <option value="../../../lib/logo/art_data/heart.json">Heart (Valentine's Day)</option>
-      <option value="../../../lib/logo/art_data/shamrock.json">Shamrock (St. Patrick's Day)</option>
-      <option value="../../../lib/logo/art_data/jack-o-lantern.json">Jack-O-Lantern (Halloween)</option>
-      <option value="../../../lib/logo/art_data/pumpkin.json">Pumpkin (Halloween)</option>
-      <option value="../../../lib/logo/art_data/santa.json">Santa (Christmas)</option>
-      <option value="../../../lib/logo/art_data/uw.json">UW Purple W</option>
-    </select>
-    <label for="showMessage" style="margin-left: 12px;">
-      <input type="checkbox" id="showMessage" checked> Show message
-    </label>
+    <div class="control-row">
+      <label for="shapeSelect">Start shape</label>
+      <select id="shapeSelect">
+        <option value="">Random Explosion</option>
+        <option value="../../../lib/logo/art_data/heart.json">Heart (Valentine's Day)</option>
+        <option value="../../../lib/logo/art_data/shamrock.json">Shamrock (St. Patrick's Day)</option>
+        <option value="../../../lib/logo/art_data/jack-o-lantern.json">Jack-O-Lantern (Halloween)</option>
+        <option value="../../../lib/logo/art_data/pumpkin.json">Pumpkin (Halloween)</option>
+        <option value="../../../lib/logo/art_data/santa.json">Santa (Christmas)</option>
+        <option value="../../../lib/logo/art_data/uw.json">UW Purple W</option>
+      </select>
+    </div>
+
+    <hr class="divider">
+
+    <fieldset class="control-row drive-mode-fieldset">
+      <legend>Drive mode</legend>
+      <div class="radio-group">
+        <label class="radio-label">
+          <input type="radio" name="driveMode" value="mouse" checked>
+          Mouse
+        </label>
+        <label class="radio-label">
+          <input type="radio" name="driveMode" value="playback">
+          Playback
+        </label>
+      </div>
+    </fieldset>
+
+    <hr class="divider">
+
+    <div id="playbackControls">
+      <div class="control-row">
+        <label for="directionSelect">Direction</label>
+        <select id="directionSelect">
+          <option value="artToLogo" selected>Art &rarr; Logo</option>
+          <option value="logoToArt">Logo &rarr; Art</option>
+        </select>
+      </div>
+
+      <div class="control-row">
+        <label for="easingSelect">Easing</label>
+        <select id="easingSelect">
+          <option value="easeOutCubic" selected>Ease Out Cubic</option>
+          <option value="easeOutQuad">Ease Out Quad</option>
+          <option value="easeInCubic">Ease In Cubic</option>
+          <option value="easeInOutCubic">Ease In-Out Cubic</option>
+          <option value="linear">Linear</option>
+        </select>
+      </div>
+
+      <div class="control-row">
+        <label for="durationRange">Duration</label>
+        <div class="range-with-value">
+          <input type="range" id="durationRange" min="0.5" max="8" step="0.5" value="3">
+          <span id="durationValue">3s</span>
+        </div>
+      </div>
+
+      <div class="control-row">
+        <label for="pauseRange">Pause at ends</label>
+        <div class="range-with-value">
+          <input type="range" id="pauseRange" min="0" max="3" step="0.25" value="1">
+          <span id="pauseValue">1s</span>
+        </div>
+      </div>
+
+      <div class="control-row">
+        <button id="playBtn" aria-label="Play animation">&#9654; Play</button>
+      </div>
+
+      <div class="control-row">
+        <label class="checkbox-label" for="repeatCheck">
+          <input type="checkbox" id="repeatCheck">
+          Repeat (ping-pong)
+        </label>
+      </div>
+    </div>
+
+    <hr class="divider">
+
+    <div class="control-row">
+      <label class="checkbox-label" for="showMessage">
+        <input type="checkbox" id="showMessage" checked>
+        Show message
+      </label>
+    </div>
   </div>
 
   <div class="container">
