@@ -53,6 +53,11 @@ async function setup() {
   if (selector) {
     selector.addEventListener('change', (e) => loadShape(e.target.value));
     await loadShape(selector.value);
+
+    const msgToggle = document.getElementById('showMessage');
+    if (msgToggle) {
+      msgToggle.addEventListener('change', () => updateMessageVisibility());
+    }
   } else {
     initRandom();
   }
@@ -154,6 +159,12 @@ function initMorpher(artData) {
   morpher.update(0);
 }
 
+function updateMessageVisibility() {
+  if (!morpher) return;
+  const msgToggle = document.getElementById('showMessage');
+  morpher._artMessageVisible = msgToggle ? msgToggle.checked : true;
+}
+
 // =============================================================================
 // Animation loop
 // =============================================================================
@@ -202,5 +213,6 @@ function onKeyPressed(e) {
   // Toggle visibility of the static target logo for debugging
   if (e.key === 'h') morpher.makeLabLogo.visible = !morpher.makeLabLogo.visible;
 }
+
 
 setup();
