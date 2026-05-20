@@ -4,8 +4,9 @@
 // This will generate the following files in the dist folder:
 // 1. makelab.math.js and makelab.math.min.js
 // 2. makelab.graphics.js and makelab.graphics.min.js
-// 3. makelab.logo.js and makelab.logo.min.js
-// 4. makelab.all.js and makelab.all.min.js
+// 3. makelab.serial.js and makelab.serial.min.js
+// 4. makelab.logo.js and makelab.logo.min.js
+// 5. makelab.all.js and makelab.all.min.js
 
 import { defineConfig } from 'rollup';
 import resolve from '@rollup/plugin-node-resolve';
@@ -60,6 +61,24 @@ export default defineConfig([
       },
       {
         file: 'dist/makelab.graphics.min.js',
+        format: 'es',
+        sourcemap: false,
+        plugins: [terser()],
+      },
+    ],
+    plugins: commonPlugins,
+  },
+  // Bundle for makelab.serial.js
+  {
+    input: './src/lib/serial/index.js',
+    output: [
+      {
+        file: 'dist/makelab.serial.js',
+        format: 'es',
+        sourcemap: true,
+      },
+      {
+        file: 'dist/makelab.serial.min.js',
         format: 'es',
         sourcemap: false,
         plugins: [terser()],

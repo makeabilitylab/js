@@ -214,6 +214,25 @@ export function hexStringToRgb(hex) {
   } : null;
 }
 
+/**
+ * Converts RGB values to a hex color string.
+ *
+ * @param {number} r - Red value between 0 and 255 (inclusive).
+ * @param {number} g - Green value between 0 and 255 (inclusive).
+ * @param {number} b - Blue value between 0 and 255 (inclusive).
+ * @returns {string} Hex color string (e.g., "#CC4133").
+ *
+ * @example
+ * rgbToHex(255, 0, 0);    // "#FF0000"
+ * rgbToHex(0, 128, 255);  // "#0080FF"
+ */
+export function rgbToHex(r, g, b) {
+  return "#" + [r, g, b]
+    .map(c => Math.max(0, Math.min(255, Math.round(c))).toString(16).padStart(2, "0"))
+    .join("")
+    .toUpperCase();
+}
+
 const HTML_COLOR_NAMES = {
   aliceblue: { r: 240, g: 248, b: 255, a: 1 },
   antiquewhite: { r: 250, g: 235, b: 215, a: 1 },

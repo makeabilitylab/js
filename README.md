@@ -8,6 +8,7 @@ The library is organized into three main modules:
 
 - **Math** - Vector operations and mathematical utilities (conversions, interpolation, random numbers)
 - **Graphics** - Color manipulation and geometric primitives (line segments, color utilities)
+- **Serial** - Web Serial API wrapper for communication with microcontrollers (Arduino, ESP32)
 - **Logo** - Interactive Makeability Lab logo components with animation support
 
 Each module can be imported independently or as a complete bundle, allowing for optimized loading based on your needs.
@@ -22,6 +23,7 @@ The easiest way to use this library is via CDN. No installation required - just 
   // Import specific modules
   import { Vector, lerp } from 'https://cdn.jsdelivr.net/gh/makeabilitylab/js@main/dist/makelab.math.js';
   import { lerpColor } from 'https://cdn.jsdelivr.net/gh/makeabilitylab/js@main/dist/makelab.graphics.js';
+  import { Serial, SerialEvents } from 'https://cdn.jsdelivr.net/gh/makeabilitylab/js@main/dist/makelab.serial.js';
   import { MakeabilityLabLogo } from 'https://cdn.jsdelivr.net/gh/makeabilitylab/js@main/dist/makelab.logo.js';
 
   // Or import everything
@@ -46,12 +48,14 @@ https://cdn.jsdelivr.net/gh/makeabilitylab/js@main/dist/{filename}
 // Specific modules
 https://cdn.jsdelivr.net/gh/makeabilitylab/js@main/dist/makelab.math.js
 https://cdn.jsdelivr.net/gh/makeabilitylab/js@main/dist/makelab.graphics.js
+https://cdn.jsdelivr.net/gh/makeabilitylab/js@main/dist/makelab.serial.js
 https://cdn.jsdelivr.net/gh/makeabilitylab/js@main/dist/makelab.logo.js
 https://cdn.jsdelivr.net/gh/makeabilitylab/js@main/dist/makelab.all.js
 
 // Minified versions (recommended for production)
 https://cdn.jsdelivr.net/gh/makeabilitylab/js@main/dist/makelab.math.min.js
 https://cdn.jsdelivr.net/gh/makeabilitylab/js@main/dist/makelab.graphics.min.js
+https://cdn.jsdelivr.net/gh/makeabilitylab/js@main/dist/makelab.serial.min.js
 https://cdn.jsdelivr.net/gh/makeabilitylab/js@main/dist/makelab.logo.min.js
 https://cdn.jsdelivr.net/gh/makeabilitylab/js@main/dist/makelab.all.min.js
 ```
@@ -130,6 +134,7 @@ js/
 │   ├── lib/
 │   │   ├── math/           # Math utilities and Vector class
 │   │   ├── graphics/       # Graphics utilities (colors, line segments)
+│   │   ├── serial/         # Web Serial API wrapper
 │   │   └── logo/           # Makeability Lab logo components
 │   └── apps/               # Example applications
 ├── dist/                   # Built output files
@@ -150,6 +155,18 @@ js/
 - `LineSegment` - Line segment operations and intersections
 - `lerpColor()` - Interpolate between colors
 - `convertColorStringToObject()` - Parse color strings to RGB objects
+- `hsvToRgb()` - Convert HSV to RGB
+- `rgbToHsv()` - Convert RGB to HSV
+- `rgbToHex()` - Convert RGB to hex string
+- `hexStringToRgb()` - Convert hex string to RGB
+- `changeColorBrightness()` - Adjust color brightness
+- `changeColorSaturationAndBrightness()` - Adjust color saturation and brightness
+
+#### Serial Module
+- `Serial` - Event-driven Web Serial API wrapper for text-based communication
+- `SerialEvents` - Event type constants (`CONNECTION_OPENED`, `CONNECTION_CLOSED`, `DATA_RECEIVED`, `ERROR_OCCURRED`)
+- `SerialState` - Connection state constants (`CLOSED`, `OPENING`, `OPEN`, `CLOSING`)
+- `LineBreakTransformer` - Stream transformer for line-delimited serial data
 
 #### Logo Module
 - `MakeabilityLabLogo` - Main logo component
@@ -173,6 +190,7 @@ This command generates the following files in the `dist/` directory:
 |--------|----------|----------|
 | Math | `makelab.math.js` | `makelab.math.min.js` |
 | Graphics | `makelab.graphics.js` | `makelab.graphics.min.js` |
+| Serial | `makelab.serial.js` | `makelab.serial.min.js` |
 | Logo | `makelab.logo.js` | `makelab.logo.min.js` |
 | All (Complete) | `makelab.all.js` | `makelab.all.min.js` |
 
@@ -397,6 +415,38 @@ line.getIntersection(otherLine) // Get intersection point
 ```javascript
 lerpColor(color1, color2, amount)        // Blend two colors
 convertColorStringToObject(colorString)  // Parse color to RGB
+hsvToRgb(h, s, v)                        // HSV (0–1) to RGB object
+rgbToHsv(r, g, b)                        // RGB (0–255) to HSV object
+rgbToHex(r, g, b)                        // RGB to hex string
+hexStringToRgb(hex)                      // Hex string to RGB object
+changeColorBrightness(color, percent)    // Adjust brightness
+```
+
+### Serial Module
+
+```javascript
+const serial = new Serial()
+
+// Events
+serial.on(SerialEvents.DATA_RECEIVED, (sender, line) => { ... })
+serial.on(SerialEvents.CONNECTION_OPENED, (sender) => { ... })
+serial.on(SerialEvents.CONNECTION_CLOSED, (sender) => { ... })
+serial.on(SerialEvents.ERROR_OCCURRED, (sender, error) => { ... })
+serial.off(event, callback)    // Remove a listener
+
+// Connection
+serial.connectAndOpen(filters, options)  // Prompt user + open (requires user gesture)
+serial.autoConnectAndOpenPreviouslyApprovedPort(options)  // Reconnect without gesture
+serial.close()                 // Close and release resources
+
+// I/O
+serial.writeLine(text)         // Send text + newline
+serial.write(text)             // Send text
+
+// State
+serial.isOpen()                // Boolean
+serial.state                   // "closed" | "opening" | "open" | "closing"
+Serial.isWebSerialSupported()  // Static browser check
 ```
 
 ### Logo Module

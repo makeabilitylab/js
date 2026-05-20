@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Serial Test — Makeability Lab</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="app">
+    <header>
+      <h1>Serial Test</h1>
+      <p class="subtitle">
+        Web Serial API test app for
+        <a href="https://github.com/makeabilitylab/js">makeabilitylab/js</a>
+      </p>
+    </header>
+
+    <!-- Connection controls -->
+    <section id="connection-section" aria-label="Connection controls">
+      <div class="control-row">
+        <label for="baud-rate">Baud rate</label>
+        <select id="baud-rate">
+          <option value="9600" selected>9600 (Arduino Uno/Leonardo)</option>
+          <option value="57600">57600</option>
+          <option value="115200">115200 (ESP32)</option>
+        </select>
+      </div>
+
+      <div class="button-row">
+        <button id="connect-btn" type="button">Connect</button>
+        <button id="disconnect-btn" type="button" disabled>Disconnect</button>
+      </div>
+
+      <div id="status-bar">
+        <span id="state-indicator" class="state-closed" aria-live="polite">
+          ● Closed
+        </span>
+        <span id="port-info"></span>
+      </div>
+
+      <div id="browser-warning" hidden>
+        Your browser does not support the Web Serial API.
+        Please use Chrome, Edge, or Opera.
+      </div>
+    </section>
+
+    <!-- Incoming data log -->
+    <section id="receive-section" aria-label="Received data">
+      <div class="section-header">
+        <h2>Received</h2>
+        <div class="section-controls">
+          <label>
+            <input type="checkbox" id="auto-scroll" checked>
+            Auto-scroll
+          </label>
+          <button id="clear-log-btn" type="button">Clear</button>
+        </div>
+      </div>
+      <pre id="serial-log" role="log" aria-live="off"></pre>
+      <div id="line-count">0 lines</div>
+    </section>
+
+    <!-- Send data -->
+    <section id="send-section" aria-label="Send data">
+      <h2>Send</h2>
+      <div class="send-row">
+        <input
+          type="text"
+          id="send-input"
+          placeholder="Type a message to send..."
+          disabled
+          aria-label="Message to send"
+        >
+        <button id="send-btn" type="button" disabled>Send</button>
+      </div>
+      <label class="small-label">
+        <input type="checkbox" id="send-newline" checked>
+        Append newline
+      </label>
+    </section>
+
+    <!-- Error log -->
+    <section id="error-section" aria-label="Errors" hidden>
+      <h2>Errors</h2>
+      <pre id="error-log" role="alert"></pre>
+    </section>
+  </div>
+
+  <script type="module" src="sketch.js"></script>
+</body>
+</html>
