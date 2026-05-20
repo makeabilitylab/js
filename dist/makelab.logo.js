@@ -2911,6 +2911,9 @@ class MakeabilityLabLogoMorpher {
      */
     this._artMessage      = null;
 
+    /** @type {boolean} Whether to display the art message. */
+    this._artMessageVisible = true;
+
     /** @type {string|null} */
     this._artMessageColor = null;
 
@@ -2989,6 +2992,10 @@ class MakeabilityLabLogoMorpher {
 
   /** Final assembled height of the logo (includes label). @returns {number} */
   get finalHeight() { return this.makeLabLogo.height; }
+
+  /** Whether the art message (e.g. "Happy Valentine's Day") is shown. */
+  get artMessageVisible() { return this._artMessageVisible; }
+  set artMessageVisible(visible) { this._artMessageVisible = !!visible; }
 
   // ===========================================================================
   // Layout helpers — delegate symmetrically to both internal logos
@@ -3281,7 +3288,7 @@ class MakeabilityLabLogoMorpher {
     }
 
     // 5. Art message: fades out as the morph progresses
-    if (this._artMessage) {
+    if (this._artMessage &&  this._artMessageVisible) {
       this._drawArtMessage(ctx, lerpAmt);
     }
 
