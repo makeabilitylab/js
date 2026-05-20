@@ -1,5 +1,11 @@
-// vector-tests.js
-import { Vector } from '/dist/makelab.math.js';
+/**
+ * Vector class unit tests.
+ *
+ * Runs basic arithmetic, magnitude, normalization, dot product, and angle
+ * tests against the Vector class from makelab.math. Results are logged to
+ * the browser dev console (Cmd+Option+I on Mac, Ctrl+Shift+I on Windows).
+ */
+import { Vector } from '../../../../dist/makelab.math.js';
 
 function testVector(testName, expectedResult, actualResult) {
   const result = expectedResult === actualResult;
