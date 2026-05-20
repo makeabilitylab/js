@@ -2,11 +2,31 @@
 // npx rollup -c rollup.config.js
 // 
 // This will generate the following files in the dist folder:
-// 1. makelab.math.js and makelab.math.min.js
-// 2. makelab.graphics.js and makelab.graphics.min.js
-// 3. makelab.serial.js and makelab.serial.min.js
-// 4. makelab.logo.js and makelab.logo.min.js
-// 5. makelab.all.js and makelab.all.min.js
+//
+// ESM (ES module) builds — for use with <script type="module"> and import:
+//   1. makelab.math.js       / makelab.math.min.js
+//   2. makelab.graphics.js   / makelab.graphics.min.js
+//   3. makelab.serial.js     / makelab.serial.min.js
+//   4. makelab.logo.js       / makelab.logo.min.js
+//   5. makelab.all.js        / makelab.all.min.js
+//
+// IIFE (global variable) builds — for use with plain <script> tags:
+//   6. makelab.math.iife.js       / makelab.math.iife.min.js       → window.Makelab.Math
+//   7. makelab.graphics.iife.js   / makelab.graphics.iife.min.js   → window.Makelab.Graphics
+//   8. makelab.serial.iife.js     / makelab.serial.iife.min.js     → window.Makelab.Serial
+//   9. makelab.logo.iife.js       / makelab.logo.iife.min.js       → window.Makelab.Logo
+//  10. makelab.all.iife.js        / makelab.all.iife.min.js        → window.Makelab
+//
+// The IIFE builds are designed for educational contexts (e.g., p5.js sketches)
+// where ES module imports add unnecessary complexity. After including an IIFE
+// build via a <script> tag, its exports are available as global variables:
+//
+//   <script src="https://cdn.jsdelivr.net/gh/makeabilitylab/js@main/dist/makelab.serial.iife.min.js"></script>
+//   <script>
+//     // Serial and SerialEvents are now global variables
+//     const serial = new Serial();
+//     serial.on(SerialEvents.DATA_RECEIVED, (sender, data) => { ... });
+//   </script>
 
 import { defineConfig } from 'rollup';
 import resolve from '@rollup/plugin-node-resolve';
@@ -31,95 +51,121 @@ const commonPlugins = [
   }),
 ];
 
+/**
+ * Helper to generate ESM + IIFE output configs for a single module.
+ *
+ * @param {string} input        - Entry point path (e.g., './src/lib/serial/index.js')
+ * @param {string} baseName     - Output base name (e.g., 'makelab.serial')
+ * @param {string} iifeGlobal   - Global variable name for the IIFE build (e.g., 'Makelab.Serial')
+ * @param {string} iifeFooter   - Optional JS to run after the IIFE to hoist inner exports to
+ *                                 the global scope (e.g., make Serial available as window.Serial)
+ * @returns {object[]}          - Array of Rollup config objects
+ */
+function createModuleConfigs(input, baseName, iifeGlobal, iifeFooter = '') {
+  return [
+    // ESM builds (existing behavior, unchanged)
+    {
+      input,
+      output: [
+        {
+          file: `dist/${baseName}.js`,
+          format: 'es',
+          sourcemap: true,
+        },
+        {
+          file: `dist/${baseName}.min.js`,
+          format: 'es',
+          sourcemap: false,
+          plugins: [terser()],
+        },
+      ],
+      plugins: commonPlugins,
+    },
+    // IIFE builds (new — for plain <script> tag usage)
+    {
+      input,
+      output: [
+        {
+          file: `dist/${baseName}.iife.js`,
+          format: 'iife',
+          name: iifeGlobal,
+          sourcemap: true,
+          // Extend: if window.Makelab already exists (from another IIFE build
+          // loaded earlier), merge into it rather than overwriting
+          extend: true,
+          footer: iifeFooter,
+        },
+        {
+          file: `dist/${baseName}.iife.min.js`,
+          format: 'iife',
+          name: iifeGlobal,
+          sourcemap: false,
+          extend: true,
+          footer: iifeFooter,
+          plugins: [terser()],
+        },
+      ],
+      plugins: commonPlugins,
+    },
+  ];
+}
+
 export default defineConfig([
-  // Bundle for makelab.math.js
-  {
-    input: './src/lib/math/index.js',
-    output: [
-      {
-        file: 'dist/makelab.math.js',
-        format: 'es',
-        sourcemap: true,
-      },
-      {
-        file: 'dist/makelab.math.min.js',
-        format: 'es',
-        sourcemap: false,
-        plugins: [terser()],
-      },
-    ],
-    plugins: commonPlugins,
-  },
-  // Bundle for makelab.graphics.js
-  {
-    input: './src/lib/graphics/index.js',
-    output: [
-      {
-        file: 'dist/makelab.graphics.js',
-        format: 'es',
-        sourcemap: true,
-      },
-      {
-        file: 'dist/makelab.graphics.min.js',
-        format: 'es',
-        sourcemap: false,
-        plugins: [terser()],
-      },
-    ],
-    plugins: commonPlugins,
-  },
-  // Bundle for makelab.serial.js
-  {
-    input: './src/lib/serial/index.js',
-    output: [
-      {
-        file: 'dist/makelab.serial.js',
-        format: 'es',
-        sourcemap: true,
-      },
-      {
-        file: 'dist/makelab.serial.min.js',
-        format: 'es',
-        sourcemap: false,
-        plugins: [terser()],
-      },
-    ],
-    plugins: commonPlugins,
-  },
-  // Bundle for makelab.logo.js
-  {
-    input: './src/lib/logo/index.js',
-    output: [
-      {
-        file: 'dist/makelab.logo.js',
-        format: 'es',
-        sourcemap: true,
-      },
-      {
-        file: 'dist/makelab.logo.min.js',
-        format: 'es',
-        sourcemap: false,
-        plugins: [terser()],
-      },
-    ],
-    plugins: commonPlugins,
-  },
-  // Bundle for makelab.all.js
-  {
-    input: './src/lib/index.js',
-    output: [
-      {
-        file: 'dist/makelab.all.js',
-        format: 'es',
-        sourcemap: true,
-      },
-      {
-        file: 'dist/makelab.all.min.js',
-        format: 'es',
-        sourcemap: false,
-        plugins: [terser()],
-      },
-    ],
-    plugins: commonPlugins,
-  },
+  // Math module
+  ...createModuleConfigs(
+    './src/lib/math/index.js',
+    'makelab.math',
+    'Makelab.Math',
+    // Hoist commonly used exports to global scope for convenience
+    'if(typeof window!=="undefined"&&window.Makelab&&window.Makelab.Math){' +
+    'window.Vector=window.Makelab.Math.Vector;' +
+    'window.lerp=window.Makelab.Math.lerp;' +
+    '}'
+  ),
+
+  // Graphics module
+  ...createModuleConfigs(
+    './src/lib/graphics/index.js',
+    'makelab.graphics',
+    'Makelab.Graphics'
+  ),
+
+  // Serial module
+  ...createModuleConfigs(
+    './src/lib/serial/index.js',
+    'makelab.serial',
+    'Makelab.Serial',
+    // Hoist Serial class and events to global scope so students can write:
+    //   const serial = new Serial();
+    //   serial.on(SerialEvents.DATA_RECEIVED, callback);
+    // without any import or namespace prefix
+    'if(typeof window!=="undefined"&&window.Makelab&&window.Makelab.Serial){' +
+    'window.Serial=window.Makelab.Serial.Serial;' +
+    'window.SerialEvents=window.Makelab.Serial.SerialEvents;' +
+    'window.SerialState=window.Makelab.Serial.SerialState;' +
+    'window.LineBreakTransformer=window.Makelab.Serial.LineBreakTransformer;' +
+    '}'
+  ),
+
+  // Logo module
+  ...createModuleConfigs(
+    './src/lib/logo/index.js',
+    'makelab.logo',
+    'Makelab.Logo'
+  ),
+
+  // All-in-one bundle
+  ...createModuleConfigs(
+    './src/lib/index.js',
+    'makelab.all',
+    'Makelab',
+    // Hoist the most commonly used exports to global scope
+    'if(typeof window!=="undefined"&&window.Makelab){' +
+    'window.Serial=window.Makelab.Serial;' +
+    'window.SerialEvents=window.Makelab.SerialEvents;' +
+    'window.SerialState=window.Makelab.SerialState;' +
+    'window.Vector=window.Makelab.Vector;' +
+    'window.lerp=window.Makelab.lerp;' +
+    '}'
+  ),
 ]);

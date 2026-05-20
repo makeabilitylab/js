@@ -35,6 +35,41 @@ The easiest way to use this library is via CDN. No installation required - just 
 </script>
 ```
 
+### Quick Start with Plain `<script>` Tags (No Modules)
+
+If you're using **p5.js**, teaching a class, or just want the simplest possible setup, use the **IIFE builds**. These work with plain `<script>` tags and make the library available as global variables — no `import` statements or `type="module"` needed:
+
+```html
+<!-- Include just the serial module -->
+<script src="https://cdn.jsdelivr.net/gh/makeabilitylab/js@main/dist/makelab.serial.iife.min.js"></script>
+
+<script>
+  // Serial, SerialEvents, and SerialState are now global variables!
+  const serial = new Serial();
+  serial.on(SerialEvents.CONNECTION_OPENED, () => console.log("Connected!"));
+  serial.on(SerialEvents.DATA_RECEIVED, (sender, data) => console.log(data));
+
+  async function connect() {
+    await serial.connectAndOpen(null, { baudRate: 115200 });
+  }
+</script>
+```
+
+This is the recommended approach for **p5.js + Arduino** projects. See the [Physical Computing textbook](https://makeabilitylab.github.io/physcomp/communication/web-serial.html) for full tutorials.
+
+#### IIFE CDN URLs
+
+```
+// Individual modules (IIFE — plain <script> tag)
+https://cdn.jsdelivr.net/gh/makeabilitylab/js@main/dist/makelab.serial.iife.min.js
+https://cdn.jsdelivr.net/gh/makeabilitylab/js@main/dist/makelab.math.iife.min.js
+https://cdn.jsdelivr.net/gh/makeabilitylab/js@main/dist/makelab.graphics.iife.min.js
+https://cdn.jsdelivr.net/gh/makeabilitylab/js@main/dist/makelab.logo.iife.min.js
+
+// All-in-one bundle (IIFE)
+https://cdn.jsdelivr.net/gh/makeabilitylab/js@main/dist/makelab.all.iife.min.js
+```
+
 ### CDN Usage Options
 
 #### Using jsdelivr CDN
@@ -45,19 +80,26 @@ The library is available via the jsdelivr CDN, which automatically serves files 
 // Base URL pattern
 https://cdn.jsdelivr.net/gh/makeabilitylab/js@main/dist/{filename}
 
-// Specific modules
+// ES module versions (for use with <script type="module"> and import)
 https://cdn.jsdelivr.net/gh/makeabilitylab/js@main/dist/makelab.math.js
 https://cdn.jsdelivr.net/gh/makeabilitylab/js@main/dist/makelab.graphics.js
 https://cdn.jsdelivr.net/gh/makeabilitylab/js@main/dist/makelab.serial.js
 https://cdn.jsdelivr.net/gh/makeabilitylab/js@main/dist/makelab.logo.js
 https://cdn.jsdelivr.net/gh/makeabilitylab/js@main/dist/makelab.all.js
 
-// Minified versions (recommended for production)
+// ES module minified versions (recommended for production)
 https://cdn.jsdelivr.net/gh/makeabilitylab/js@main/dist/makelab.math.min.js
 https://cdn.jsdelivr.net/gh/makeabilitylab/js@main/dist/makelab.graphics.min.js
 https://cdn.jsdelivr.net/gh/makeabilitylab/js@main/dist/makelab.serial.min.js
 https://cdn.jsdelivr.net/gh/makeabilitylab/js@main/dist/makelab.logo.min.js
 https://cdn.jsdelivr.net/gh/makeabilitylab/js@main/dist/makelab.all.min.js
+
+// IIFE versions (for use with plain <script> tags — no import needed)
+https://cdn.jsdelivr.net/gh/makeabilitylab/js@main/dist/makelab.serial.iife.min.js
+https://cdn.jsdelivr.net/gh/makeabilitylab/js@main/dist/makelab.math.iife.min.js
+https://cdn.jsdelivr.net/gh/makeabilitylab/js@main/dist/makelab.graphics.iife.min.js
+https://cdn.jsdelivr.net/gh/makeabilitylab/js@main/dist/makelab.logo.iife.min.js
+https://cdn.jsdelivr.net/gh/makeabilitylab/js@main/dist/makelab.all.iife.min.js
 ```
 
 #### Version Pinning
@@ -186,20 +228,26 @@ npx rollup -c rollup.config.js
 
 This command generates the following files in the `dist/` directory:
 
-| Module | Standard | Minified |
-|--------|----------|----------|
-| Math | `makelab.math.js` | `makelab.math.min.js` |
-| Graphics | `makelab.graphics.js` | `makelab.graphics.min.js` |
-| Serial | `makelab.serial.js` | `makelab.serial.min.js` |
-| Logo | `makelab.logo.js` | `makelab.logo.min.js` |
-| All (Complete) | `makelab.all.js` | `makelab.all.min.js` |
+| Module | ESM | ESM (min) | IIFE | IIFE (min) |
+|--------|-----|-----------|------|------------|
+| Math | `makelab.math.js` | `makelab.math.min.js` | `makelab.math.iife.js` | `makelab.math.iife.min.js` |
+| Graphics | `makelab.graphics.js` | `makelab.graphics.min.js` | `makelab.graphics.iife.js` | `makelab.graphics.iife.min.js` |
+| Serial | `makelab.serial.js` | `makelab.serial.min.js` | `makelab.serial.iife.js` | `makelab.serial.iife.min.js` |
+| Logo | `makelab.logo.js` | `makelab.logo.min.js` | `makelab.logo.iife.js` | `makelab.logo.iife.min.js` |
+| All (Complete) | `makelab.all.js` | `makelab.all.min.js` | `makelab.all.iife.js` | `makelab.all.iife.min.js` |
 
 ### Build Details
 
-- **Format**: ES6 modules (ESM)
+- **ESM format**: ES6 modules for use with `import` statements and `<script type="module">`
+- **IIFE format**: Immediately Invoked Function Expression for use with plain `<script>` tags. Exports are placed on `window.Makelab.*` and commonly used classes (like `Serial`, `SerialEvents`, `Vector`) are also hoisted to the global scope for convenience.
 - **Source Maps**: Generated for non-minified versions
 - **Minification**: Terser plugin for optimized builds
 - **Path Aliases**: Configured for clean imports (@lib, @mathlib, @graphicslib, @apps, @dist)
+
+### Which build format should I use?
+
+- **Use ESM** (`.js` / `.min.js`) if you're building a modern web app with `import`/`export` syntax and `<script type="module">`.
+- **Use IIFE** (`.iife.js` / `.iife.min.js`) if you're using **p5.js**, working in an educational context, or just want the simplest possible setup with plain `<script>` tags. This is the recommended approach for our [Physical Computing course](https://makeabilitylab.github.io/physcomp/).
 
 ### Production Build
 
