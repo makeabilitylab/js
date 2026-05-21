@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Serial Hue Test — Makeability Lab</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="app">
+    <header>
+      <h1>Serial Hue Test</h1>
+      <p class="subtitle">
+        Send and receive a hue value (0–360°) over Web Serial.
+        Designed for use with an RGB LED or NeoPixel on Arduino/ESP32.
+      </p>
+    </header>
+
+    <!-- Connection controls -->
+    <section id="connection-section" aria-label="Connection controls">
+      <div class="control-row">
+        <label for="baud-rate">Baud rate</label>
+        <select id="baud-rate">
+          <option value="9600" selected>9600</option>
+          <option value="57600">57600</option>
+          <option value="115200">115200</option>
+        </select>
+        <button id="connect-btn" type="button">Connect</button>
+        <button id="disconnect-btn" type="button" disabled>Disconnect</button>
+      </div>
+
+      <div id="status-bar">
+        <span id="state-indicator" class="state-closed" aria-live="polite">
+          ● Closed
+        </span>
+      </div>
+
+      <div id="browser-warning" hidden>
+        Your browser does not support the Web Serial API.
+        Please use Chrome, Edge, or Opera.
+      </div>
+    </section>
+
+    <!-- Hue wheel + slider -->
+    <section id="color-section" aria-label="Hue control">
+      <div id="color-layout">
+        <!-- Hue wheel (interactive canvas) -->
+        <div id="wheel-container">
+          <canvas id="hue-wheel" width="600" height="600"
+            aria-label="Interactive hue wheel — click or drag to select a hue angle">
+          </canvas>
+          <div id="wheel-indicator"></div>
+        </div>
+
+        <!-- Swatch + slider column -->
+        <div id="controls-column">
+          <div id="color-preview" role="img" aria-label="Color preview">
+            <div id="color-swatch"></div>
+            <div id="color-values" aria-live="polite"></div>
+          </div>
+
+          <div class="slider-group">
+            <div class="slider-label-row">
+              <label for="hue-slider">Hue</label>
+              <output id="hue-value" for="hue-slider">0°</output>
+            </div>
+            <input
+              type="range" id="hue-slider"
+              min="0" max="360" value="0" step="1"
+              class="slider slider-hue"
+            >
+          </div>
+        </div>
+      </div>
+
+      <div id="serial-format">
+        <span class="format-label">Serial format (sent &amp; received):</span>
+        <code id="serial-preview">0</code>
+      </div>
+    </section>
+
+    <!-- Incoming data log -->
+    <section id="log-section" aria-label="Serial log">
+      <div class="section-header">
+        <h2>Serial Log</h2>
+        <button id="clear-log-btn" type="button">Clear</button>
+      </div>
+      <pre id="serial-log" role="log" aria-live="off"></pre>
+    </section>
+  </div>
+
+  <script type="module" src="sketch.js"></script>
+</body>
+</html>
