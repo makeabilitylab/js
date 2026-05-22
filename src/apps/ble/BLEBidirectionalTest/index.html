@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BLE Bidirectional Test — Makeability Lab</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="app">
+    <header>
+      <h1>BLE Bidirectional Test</h1>
+      <p class="subtitle">
+        Send and receive text over BLE.
+        Uses separate characteristics for TX (write) and RX (notify).
+      </p>
+    </header>
+
+    <!-- UUID configuration -->
+    <section id="uuid-section" aria-label="BLE UUIDs">
+      <h2>BLE UUIDs</h2>
+      <div class="uuid-group">
+        <label for="service-uuid">Service UUID</label>
+        <input
+          type="text" id="service-uuid"
+          value="4fafc201-1fb5-459e-8fcc-c5c9c331914b"
+        >
+      </div>
+      <div class="uuid-group">
+        <label for="rx-char-uuid">RX Characteristic UUID (notify — data from device)</label>
+        <input
+          type="text" id="rx-char-uuid"
+          value="beb5483e-36e1-4688-b7f5-ea07361b26a8"
+        >
+      </div>
+      <div class="uuid-group">
+        <label for="tx-char-uuid">TX Characteristic UUID (write — data to device)</label>
+        <input
+          type="text" id="tx-char-uuid"
+          value="beb5483e-36e1-4688-b7f5-ea07361b26a9"
+        >
+      </div>
+      <p class="uuid-hint">
+        The RX characteristic must support notifications. The TX characteristic
+        must support write or write-without-response.
+      </p>
+    </section>
+
+    <!-- Connection controls -->
+    <section id="connection-section" aria-label="Connection controls">
+      <div class="button-row">
+        <button id="connect-btn" type="button">Connect</button>
+        <button id="disconnect-btn" type="button" disabled>Disconnect</button>
+      </div>
+
+      <div id="status-bar">
+        <span id="state-indicator" class="state-disconnected" aria-live="polite">
+          ● Disconnected
+        </span>
+        <span id="device-name"></span>
+      </div>
+
+      <div id="browser-warning" hidden>
+        Your browser does not support the Web Bluetooth API.
+        Please use Chrome or Edge on desktop or Android.
+      </div>
+    </section>
+
+    <!-- Incoming data log -->
+    <section id="receive-section" aria-label="Received data">
+      <div class="section-header">
+        <h2>Received</h2>
+        <div class="section-controls">
+          <label>
+            <input type="checkbox" id="auto-scroll" checked>
+            Auto-scroll
+          </label>
+          <button id="clear-log-btn" type="button">Clear</button>
+        </div>
+      </div>
+      <pre id="data-log" role="log" aria-live="off"></pre>
+      <div id="line-count">0 notifications</div>
+    </section>
+
+    <!-- Send data -->
+    <section id="send-section" aria-label="Send data">
+      <h2>Send</h2>
+      <div class="send-row">
+        <input
+          type="text"
+          id="send-input"
+          placeholder="Type a message to send..."
+          disabled
+          aria-label="Message to send"
+        >
+        <button id="send-btn" type="button" disabled>Send</button>
+      </div>
+      <label class="small-label">
+        <input type="checkbox" id="send-newline" checked>
+        Append newline
+      </label>
+    </section>
+
+    <!-- Error log -->
+    <section id="error-section" aria-label="Errors" hidden>
+      <h2>Errors</h2>
+      <pre id="error-log" role="alert"></pre>
+    </section>
+  </div>
+
+  <script type="module" src="sketch.js"></script>
+</body>
+</html>

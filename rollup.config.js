@@ -7,15 +7,17 @@
 //   1. makelab.math.js       / makelab.math.min.js
 //   2. makelab.graphics.js   / makelab.graphics.min.js
 //   3. makelab.serial.js     / makelab.serial.min.js
-//   4. makelab.logo.js       / makelab.logo.min.js
-//   5. makelab.all.js        / makelab.all.min.js
+//   4. makelab.ble.js        / makelab.ble.min.js
+//   5. makelab.logo.js       / makelab.logo.min.js
+//   6. makelab.all.js        / makelab.all.min.js
 //
 // IIFE (global variable) builds — for use with plain <script> tags:
-//   6. makelab.math.iife.js       / makelab.math.iife.min.js       → window.Makelab.Math
-//   7. makelab.graphics.iife.js   / makelab.graphics.iife.min.js   → window.Makelab.Graphics
-//   8. makelab.serial.iife.js     / makelab.serial.iife.min.js     → window.Makelab.Serial
-//   9. makelab.logo.iife.js       / makelab.logo.iife.min.js       → window.Makelab.Logo
-//  10. makelab.all.iife.js        / makelab.all.iife.min.js        → window.Makelab
+//   7. makelab.math.iife.js       / makelab.math.iife.min.js       → window.Makelab.Math
+//   8. makelab.graphics.iife.js   / makelab.graphics.iife.min.js   → window.Makelab.Graphics
+//   9. makelab.serial.iife.js     / makelab.serial.iife.min.js     → window.Makelab.Serial
+//  10. makelab.ble.iife.js        / makelab.ble.iife.min.js        → window.Makelab.BLE
+//  11. makelab.logo.iife.js       / makelab.logo.iife.min.js       → window.Makelab.Logo
+//  12. makelab.all.iife.js        / makelab.all.iife.min.js        → window.Makelab
 //
 // The IIFE builds are designed for educational contexts (e.g., p5.js sketches)
 // where ES module imports add unnecessary complexity. After including an IIFE
@@ -147,6 +149,22 @@ export default defineConfig([
     '}'
   ),
 
+  // BLE module
+  ...createModuleConfigs(
+    './src/lib/ble/index.js',
+    'makelab.ble',
+    'Makelab.BLE',
+    // Hoist BLE class and events to global scope so students can write:
+    //   const ble = new BLE();
+    //   ble.on(BLEEvents.DATA_RECEIVED, callback);
+    // without any import or namespace prefix
+    'if(typeof window!=="undefined"&&window.Makelab&&window.Makelab.BLE){' +
+    'window.BLE=window.Makelab.BLE.BLE;' +
+    'window.BLEEvents=window.Makelab.BLE.BLEEvents;' +
+    'window.BLEState=window.Makelab.BLE.BLEState;' +
+    '}'
+  ),
+
   // Logo module
   ...createModuleConfigs(
     './src/lib/logo/index.js',
@@ -164,6 +182,9 @@ export default defineConfig([
     'window.Serial=window.Makelab.Serial;' +
     'window.SerialEvents=window.Makelab.SerialEvents;' +
     'window.SerialState=window.Makelab.SerialState;' +
+    'window.BLE=window.Makelab.BLE;' +
+    'window.BLEEvents=window.Makelab.BLEEvents;' +
+    'window.BLEState=window.Makelab.BLEState;' +
     'window.Vector=window.Makelab.Vector;' +
     'window.lerp=window.Makelab.lerp;' +
     '}'

@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BLE Test — Makeability Lab</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="app">
+    <header>
+      <h1>BLE Test</h1>
+      <p class="subtitle">
+        Web Bluetooth API test app for
+        <a href="https://github.com/makeabilitylab/js">makeabilitylab/js</a>.
+        Connects to a BLE peripheral and displays incoming notifications.
+      </p>
+    </header>
+
+    <!-- UUID configuration -->
+    <section id="uuid-section" aria-label="BLE UUIDs">
+      <h2>BLE UUIDs</h2>
+      <div class="uuid-group">
+        <label for="service-uuid">Service UUID</label>
+        <input
+          type="text" id="service-uuid"
+          value="4fafc201-1fb5-459e-8fcc-c5c9c331914b"
+          aria-label="Service UUID"
+        >
+      </div>
+      <div class="uuid-group">
+        <label for="char-uuid">Characteristic UUID (notify)</label>
+        <input
+          type="text" id="char-uuid"
+          value="beb5483e-36e1-4688-b7f5-ea07361b26a8"
+          aria-label="Characteristic UUID"
+        >
+      </div>
+      <p class="uuid-hint">
+        These are the default UUIDs from the
+        <a href="https://makeabilitylab.github.io/physcomp/esp32/ble.html">Physical Computing BLE tutorial</a>.
+        Change them to match your peripheral.
+      </p>
+    </section>
+
+    <!-- Connection controls -->
+    <section id="connection-section" aria-label="Connection controls">
+      <div class="button-row">
+        <button id="connect-btn" type="button">Connect</button>
+        <button id="disconnect-btn" type="button" disabled>Disconnect</button>
+      </div>
+
+      <div id="status-bar">
+        <span id="state-indicator" class="state-disconnected" aria-live="polite">
+          ● Disconnected
+        </span>
+        <span id="device-name"></span>
+      </div>
+
+      <div id="browser-warning" hidden>
+        Your browser does not support the Web Bluetooth API.
+        Please use Chrome or Edge on desktop or Android.
+        Web Bluetooth is not available on iOS.
+      </div>
+    </section>
+
+    <!-- Incoming data log -->
+    <section id="receive-section" aria-label="Received data">
+      <div class="section-header">
+        <h2>Received</h2>
+        <div class="section-controls">
+          <label>
+            <input type="checkbox" id="auto-scroll" checked>
+            Auto-scroll
+          </label>
+          <button id="clear-log-btn" type="button">Clear</button>
+        </div>
+      </div>
+      <pre id="data-log" role="log" aria-live="off"></pre>
+      <div id="line-count">0 notifications</div>
+    </section>
+
+    <!-- Error log -->
+    <section id="error-section" aria-label="Errors" hidden>
+      <h2>Errors</h2>
+      <pre id="error-log" role="alert"></pre>
+    </section>
+  </div>
+
+  <script type="module" src="sketch.js"></script>
+</body>
+</html>

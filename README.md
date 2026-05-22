@@ -9,6 +9,7 @@ The library is organized into three main modules:
 - **Math** - Vector operations and mathematical utilities (conversions, interpolation, random numbers)
 - **Graphics** - Color manipulation and geometric primitives (line segments, color utilities)
 - **Serial** - Web Serial API wrapper for communication with microcontrollers (Arduino, ESP32)
+- **BLE** - Web Bluetooth API wrapper for BLE communication with microcontrollers (ESP32, Arduino Nano 33)
 - **Logo** - Interactive Makeability Lab logo components with animation support
 
 Each module can be imported independently or as a complete bundle, allowing for optimized loading based on your needs.
@@ -24,6 +25,7 @@ The easiest way to use this library is via CDN. No installation required - just 
   import { Vector, lerp } from 'https://cdn.jsdelivr.net/gh/makeabilitylab/js@main/dist/makelab.math.js';
   import { lerpColor } from 'https://cdn.jsdelivr.net/gh/makeabilitylab/js@main/dist/makelab.graphics.js';
   import { Serial, SerialEvents } from 'https://cdn.jsdelivr.net/gh/makeabilitylab/js@main/dist/makelab.serial.js';
+  import { BLE, BLEEvents } from 'https://cdn.jsdelivr.net/gh/makeabilitylab/js@main/dist/makelab.ble.js';
   import { MakeabilityLabLogo } from 'https://cdn.jsdelivr.net/gh/makeabilitylab/js@main/dist/makelab.logo.js';
 
   // Or import everything
@@ -57,11 +59,39 @@ If you're using **p5.js**, teaching a class, or just want the simplest possible 
 
 This is the recommended approach for **p5.js + Arduino** projects. See the [Physical Computing textbook](https://makeabilitylab.github.io/physcomp/communication/web-serial.html) for full tutorials.
 
+You can also use BLE the same way:
+
+```html
+<!-- Include just the BLE module -->
+<script src="https://cdn.jsdelivr.net/gh/makeabilitylab/js@main/dist/makelab.ble.iife.min.js"></script>
+
+<script>
+  // BLE, BLEEvents, and BLEState are now global variables!
+  const ble = new BLE();
+  ble.on(BLEEvents.CONNECTED, () => console.log("Connected!"));
+  ble.on(BLEEvents.DATA_RECEIVED, (sender, data) => console.log(data.value));
+
+  const SERVICE_UUID = '4fafc201-1fb5-459e-8fcc-c5c9c331914b';
+  const CHAR_UUID    = 'beb5483e-36e1-4688-b7f5-ea07361b26a8';
+
+  async function connect() {
+    await ble.connectAndSubscribe(
+      { filters: [{ services: [SERVICE_UUID] }] },
+      SERVICE_UUID,
+      CHAR_UUID
+    );
+  }
+</script>
+```
+
+See the [Physical Computing BLE textbook chapter](https://makeabilitylab.github.io/physcomp/esp32/ble.html) for full tutorials.
+
 #### IIFE CDN URLs
 
 ```
 // Individual modules (IIFE — plain <script> tag)
 https://cdn.jsdelivr.net/gh/makeabilitylab/js@main/dist/makelab.serial.iife.min.js
+https://cdn.jsdelivr.net/gh/makeabilitylab/js@main/dist/makelab.ble.iife.min.js
 https://cdn.jsdelivr.net/gh/makeabilitylab/js@main/dist/makelab.math.iife.min.js
 https://cdn.jsdelivr.net/gh/makeabilitylab/js@main/dist/makelab.graphics.iife.min.js
 https://cdn.jsdelivr.net/gh/makeabilitylab/js@main/dist/makelab.logo.iife.min.js
@@ -84,6 +114,7 @@ https://cdn.jsdelivr.net/gh/makeabilitylab/js@main/dist/{filename}
 https://cdn.jsdelivr.net/gh/makeabilitylab/js@main/dist/makelab.math.js
 https://cdn.jsdelivr.net/gh/makeabilitylab/js@main/dist/makelab.graphics.js
 https://cdn.jsdelivr.net/gh/makeabilitylab/js@main/dist/makelab.serial.js
+https://cdn.jsdelivr.net/gh/makeabilitylab/js@main/dist/makelab.ble.js
 https://cdn.jsdelivr.net/gh/makeabilitylab/js@main/dist/makelab.logo.js
 https://cdn.jsdelivr.net/gh/makeabilitylab/js@main/dist/makelab.all.js
 
@@ -91,11 +122,13 @@ https://cdn.jsdelivr.net/gh/makeabilitylab/js@main/dist/makelab.all.js
 https://cdn.jsdelivr.net/gh/makeabilitylab/js@main/dist/makelab.math.min.js
 https://cdn.jsdelivr.net/gh/makeabilitylab/js@main/dist/makelab.graphics.min.js
 https://cdn.jsdelivr.net/gh/makeabilitylab/js@main/dist/makelab.serial.min.js
+https://cdn.jsdelivr.net/gh/makeabilitylab/js@main/dist/makelab.ble.min.js
 https://cdn.jsdelivr.net/gh/makeabilitylab/js@main/dist/makelab.logo.min.js
 https://cdn.jsdelivr.net/gh/makeabilitylab/js@main/dist/makelab.all.min.js
 
 // IIFE versions (for use with plain <script> tags — no import needed)
 https://cdn.jsdelivr.net/gh/makeabilitylab/js@main/dist/makelab.serial.iife.min.js
+https://cdn.jsdelivr.net/gh/makeabilitylab/js@main/dist/makelab.ble.iife.min.js
 https://cdn.jsdelivr.net/gh/makeabilitylab/js@main/dist/makelab.math.iife.min.js
 https://cdn.jsdelivr.net/gh/makeabilitylab/js@main/dist/makelab.graphics.iife.min.js
 https://cdn.jsdelivr.net/gh/makeabilitylab/js@main/dist/makelab.logo.iife.min.js
@@ -177,6 +210,7 @@ js/
 │   │   ├── math/           # Math utilities and Vector class
 │   │   ├── graphics/       # Graphics utilities (colors, line segments)
 │   │   ├── serial/         # Web Serial API wrapper
+│   │   ├── ble/            # Web Bluetooth API wrapper
 │   │   └── logo/           # Makeability Lab logo components
 │   └── apps/               # Example applications
 ├── dist/                   # Built output files
@@ -210,6 +244,11 @@ js/
 - `SerialState` - Connection state constants (`CLOSED`, `OPENING`, `OPEN`, `CLOSING`)
 - `LineBreakTransformer` - Stream transformer for line-delimited serial data
 
+#### BLE Module
+- `BLE` - Event-driven Web Bluetooth API wrapper for BLE communication
+- `BLEEvents` - Event type constants (`CONNECTED`, `DISCONNECTED`, `DATA_RECEIVED`, `ERROR_OCCURRED`)
+- `BLEState` - Connection state constants (`DISCONNECTED`, `CONNECTING`, `CONNECTED`, `DISCONNECTING`)
+
 #### Logo Module
 - `MakeabilityLabLogo` - Main logo component
 - `MakeabilityLabLogoExploder` - Animated logo explosion effect
@@ -233,6 +272,7 @@ This command generates the following files in the `dist/` directory:
 | Math | `makelab.math.js` | `makelab.math.min.js` | `makelab.math.iife.js` | `makelab.math.iife.min.js` |
 | Graphics | `makelab.graphics.js` | `makelab.graphics.min.js` | `makelab.graphics.iife.js` | `makelab.graphics.iife.min.js` |
 | Serial | `makelab.serial.js` | `makelab.serial.min.js` | `makelab.serial.iife.js` | `makelab.serial.iife.min.js` |
+| BLE | `makelab.ble.js` | `makelab.ble.min.js` | `makelab.ble.iife.js` | `makelab.ble.iife.min.js` |
 | Logo | `makelab.logo.js` | `makelab.logo.min.js` | `makelab.logo.iife.js` | `makelab.logo.iife.min.js` |
 | All (Complete) | `makelab.all.js` | `makelab.all.min.js` | `makelab.all.iife.js` | `makelab.all.iife.min.js` |
 
@@ -495,6 +535,41 @@ serial.write(text)             // Send text
 serial.isOpen()                // Boolean
 serial.state                   // "closed" | "opening" | "open" | "closing"
 Serial.isWebSerialSupported()  // Static browser check
+```
+
+### BLE Module
+
+```javascript
+const ble = new BLE()
+
+// Events
+ble.on(BLEEvents.DATA_RECEIVED, (sender, data) => { ... })
+ble.on(BLEEvents.CONNECTED, (sender) => { ... })
+ble.on(BLEEvents.DISCONNECTED, (sender) => { ... })
+ble.on(BLEEvents.ERROR_OCCURRED, (sender, error) => { ... })
+ble.off(event, callback)        // Remove a listener
+
+// Connection
+ble.connectAndSubscribe(requestDeviceOptions, serviceUUID, charUUIDs)  // Connect + subscribe (requires user gesture)
+ble.connect(requestDeviceOptions)   // Connect only (requires user gesture)
+ble.disconnect()                    // Disconnect and release resources
+
+// Service & Characteristic Discovery
+ble.getService(serviceUUID)                        // Get (cached) GATT service
+ble.getCharacteristic(charUUID, serviceUUID?)      // Get (cached) characteristic
+
+// Data
+ble.subscribe(charUUID, serviceUUID?)              // Subscribe to notifications
+ble.unsubscribe(charUUID)                          // Unsubscribe
+ble.read(charUUID, serviceUUID?)                   // Read characteristic value
+ble.write(charUUID, data, serviceUUID?)            // Write with response
+ble.writeWithoutResponse(charUUID, data, svcUUID?) // Write without response
+
+// State
+ble.isConnected()              // Boolean
+ble.state                      // "disconnected" | "connecting" | "connected" | "disconnecting"
+ble.getDeviceName()            // Name of connected device or null
+BLE.isWebBluetoothSupported()  // Static browser check
 ```
 
 ### Logo Module
