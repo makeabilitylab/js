@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Serial Hue + Brightness Test — Makeability Lab</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="app">
+    <header>
+      <h1>Serial Hue + Brightness Test</h1>
+      <p class="subtitle">
+        Bidirectional Web Serial demo for
+        <a href="https://github.com/makeabilitylab/js">makeabilitylab/js</a>:
+        the browser owns the <strong>hue</strong>, the device owns the
+        <strong>brightness</strong>. Designed for use with the
+        <code>BluetoothColorMixer</code> ESP32 sketch (pot + NeoPixel).
+      </p>
+    </header>
+
+    <!-- Connection controls -->
+    <section id="connection-section" aria-label="Connection controls">
+      <div class="control-row">
+        <label for="baud-rate">Baud rate</label>
+        <select id="baud-rate">
+          <option value="9600">9600</option>
+          <option value="57600">57600</option>
+          <option value="115200" selected>115200 (ESP32)</option>
+        </select>
+        <button id="connect-btn" type="button">Connect</button>
+        <button id="disconnect-btn" type="button" disabled>Disconnect</button>
+      </div>
+
+      <div id="status-bar">
+        <span id="state-indicator" class="state-closed" aria-live="polite">
+          ● Closed
+        </span>
+      </div>
+
+      <div id="browser-warning" hidden>
+        Your browser does not support the Web Serial API.
+        Please use Chrome, Edge, or Opera.
+      </div>
+    </section>
+
+    <!-- Hue + brightness -->
+    <section id="color-section" aria-label="Hue control and brightness readout">
+      <div id="color-layout">
+        <!-- Hue wheel (interactive canvas) -->
+        <div id="wheel-container">
+          <canvas id="hue-wheel" width="600" height="600"
+            aria-label="Interactive hue wheel — click or drag to select a hue angle">
+          </canvas>
+          <div id="wheel-indicator"></div>
+        </div>
+
+        <!-- Controls column -->
+        <div id="controls-column">
+          <div id="color-preview" role="img" aria-label="Color preview">
+            <div id="color-swatch"></div>
+            <div id="color-values" aria-live="polite"></div>
+          </div>
+
+          <!-- Hue (browser-owned) -->
+          <div class="control-group">
+            <div class="control-label-row">
+              <label for="hue-slider">
+                Hue <span class="owner-badge owner-browser">browser</span>
+              </label>
+              <output id="hue-value" for="hue-slider">0°</output>
+            </div>
+            <input
+              type="range" id="hue-slider"
+              min="0" max="360" value="0" step="1"
+              class="slider slider-hue"
+            >
+          </div>
+
+          <!-- Brightness (device-owned, read-only) -->
+          <div class="control-group">
+            <div class="control-label-row">
+              <label>
+                Brightness <span class="owner-badge owner-device">device</span>
+              </label>
+              <output id="brightness-value" aria-live="polite">—</output>
+            </div>
+            <div class="readout-bar" aria-label="Brightness readout (read-only, driven by pot)">
+              <div id="brightness-bar"></div>
+            </div>
+            <p class="readout-caption">
+              Driven by the potentiometer on the ESP32 — turn the knob to change.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div id="serial-format">
+        <div class="format-row">
+          <span class="format-label">Sending →</span>
+          <code id="serial-out-preview">0</code>
+          <span class="format-hint">hue, integer 0..360</span>
+        </div>
+        <div class="format-row">
+          <span class="format-label">← Receiving</span>
+          <code id="serial-in-preview">—</code>
+          <span class="format-hint">brightness, float 0.0..1.0</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Serial log -->
+    <section id="log-section" aria-label="Serial log">
+      <div class="section-header">
+        <h2>Serial Log</h2>
+        <button id="clear-log-btn" type="button">Clear</button>
+      </div>
+      <pre id="serial-log" role="log" aria-live="off"></pre>
+    </section>
+  </div>
+
+  <script type="module" src="sketch.js"></script>
+</body>
+</html>
