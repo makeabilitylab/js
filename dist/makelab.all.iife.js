@@ -53,6 +53,30 @@
   }
 
   /**
+   * Re-maps a number from one range to another (similar to p5js map).
+   *
+   * @param {number} value - The value to re-map.
+   * @param {number} start1 - The lower bound of the input range.
+   * @param {number} stop1 - The upper bound of the input range.
+   * @param {number} start2 - The lower bound of the output range.
+   * @param {number} stop2 - The upper bound of the output range.
+   * @param {boolean} [withinBounds=false] - If true, clamps the result to [start2, stop2].
+   * @returns {number} The re-mapped value.
+   * 
+   * @example
+   * map(5, 0, 10, 0, 100);         // 50
+   * map(15, 0, 10, 0, 100, true);  // 100 (clamped)
+   */
+  function map(value, start1, stop1, start2, stop2, withinBounds = false) {
+    const mapped = start2 + (stop2 - start2) * ((value - start1) / (stop1 - start1));
+    if (!withinBounds) return mapped;
+
+    const min = Math.min(start2, stop2);
+    const max = Math.max(start2, stop2);
+    return Math.max(min, Math.min(max, mapped));
+  }
+
+  /**
    * Generates a random number from a Gaussian (normal) distribution
    * using the Box-Muller transform (similar to p5js randomGaussian).
    *
@@ -71,12 +95,35 @@
     return z * sd + mean;
   }
 
+  /**
+   * Clamps a value between a minimum and maximum.
+   *
+   * @param {number} value - The value to clamp.
+   * @param {number} min - The minimum bound.
+   * @param {number} max - The maximum bound.
+   * @returns {number} The clamped value.
+   */
+  function clamp(value, min, max) {
+    return Math.max(min, Math.min(max, value));
+  }
+
   // --- Easing functions ---
   // Each takes a value t in [0, 1] and returns a value in [0, 1].
   // See https://easings.net/ for visualizations.
 
   /** @param {number} t @returns {number} */
   function easeOutCubic(t) { return 1 - Math.pow(1 - t, 3); }
+
+  /** @param {number} t @returns {number} */
+  function easeOutQuad(t) { return 1 - (1 - t) * (1 - t); }
+
+  /** @param {number} t @returns {number} */
+  function easeInOutCubic(t) {
+    return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+  }
+
+  /** @param {number} t @returns {number} */
+  function easeInCubic(t) { return t * t * t; }
 
   /**
    * Class representing a 2D vector.
@@ -190,6 +237,19 @@
       }
 
       return angle;
+    }
+
+    /**
+     * Tests whether this vector equals another, within an optional tolerance.
+     * Use a non-zero epsilon to compare results of floating-point math.
+     *
+     * @param {Vector} other - The vector to compare against.
+     * @param {number} [epsilon=0] - Maximum allowed difference per component.
+     * @returns {boolean} True if both components are within epsilon of other's.
+     */
+    equals(other, epsilon = 0) {
+      return Math.abs(this.x - other.x) <= epsilon &&
+        Math.abs(this.y - other.y) <= epsilon;
     }
 
     /**
@@ -737,7 +797,6 @@
       }
 
       let angleBetweenRadians = v1.angleBetween(v2);
-      console.log(`angleBetweenDegrees: ${convertToDegrees(angleBetweenRadians).toFixed(1)}`);
 
       // Ensure the angle is between 0 and 2*PI
       if (angleBetweenRadians < 0) {
@@ -901,11 +960,6 @@
       const lineSeg1AngleRadians = lineSegment1.getHeading();
       const angles = lineSegment1.getAnglesBetween(lineSegment2);
 
-      console.log(`CW angle ${convertToDegrees(angles.clockwiseAngle).toFixed(1)} CCW angle ${convertToDegrees(angles.counterclockwiseAngle).toFixed(1)}`);
-      //console.log(`Counterclockwise Angle: ${angles.counterclockwiseAngle} radians (${convertToDegrees(angles.counterclockwiseAngle).toFixed(1)}°)`);
-      //console.log(`Clockwise Angle: ${angles.clockwiseAngle} radians (${convertToDegrees(angles.clockwiseAngle).toFixed(1)}°)`);
-      // console.log(`Old angle Between: ${angleBetweenLineSegmentsInRadians} radians (${convertToDegrees(angleBetweenLineSegmentsInRadians).toFixed(1)}°)`);
-      
       ctx.save();
 
       // Draw the clockwise arc
@@ -3254,13 +3308,13 @@
      * @param {string} tri.direction - The direction of the triangle.
      * @param {string} tri.fillColor - The fill color of the triangle.
      * @param {string} tri.strokeColor - The stroke color of the triangle.
-     * @param {number} tri.strokeWeight - The stroke weight of the triangle.
+     * @param {number} tri.strokeWidth - The stroke width of the triangle.
      * @param {boolean} tri.visible - The visibility of the triangle.
      * @returns {Triangle} A new Triangle object.
      */
     static createTriangle(tri){
       return new Triangle(tri.x, tri.y, tri.size, tri.direction,
-        tri.fillColor, tri.strokeColor, tri.strokeWeight, tri.visible);
+        tri.fillColor, tri.strokeColor, tri.strokeWidth, tri.visible);
     }
   }
 
@@ -4191,9 +4245,6 @@
 
       /** @type {string} CSS color for the message text. Falls back to palette's first entry base, then black. */
       this.messageColor = data.messageColor ?? TriangleArt._defaultMessageColor(data);
-
-      console.log("Initialized TriangleArt with name: ", this.name);
-      console.log("Message: ", this.message);
     }
 
     // -----------------------------------------------------------------------
@@ -4297,9 +4348,6 @@
 
       if (this.showMessage && this.message){
         this.drawMessage(ctx);
-        console.log("Drawing message: ", this.message);
-      }else {
-        console.log("Message hidden or empty, skipping drawMessage.");
       }
 
       for (const row of this.artArray) {
@@ -4638,14 +4686,21 @@
   exports.Vector = Vector;
   exports.changeColorBrightness = changeColorBrightness;
   exports.changeColorSaturationAndBrightness = changeColorSaturationAndBrightness;
+  exports.clamp = clamp;
   exports.convertColorStringToObject = convertColorStringToObject;
   exports.convertToDegrees = convertToDegrees;
   exports.convertToRadians = convertToRadians;
+  exports.easeInCubic = easeInCubic;
+  exports.easeInOutCubic = easeInOutCubic;
+  exports.easeOutCubic = easeOutCubic;
+  exports.easeOutQuad = easeOutQuad;
   exports.hexStringToRgb = hexStringToRgb;
   exports.hsvToRgb = hsvToRgb;
   exports.lerp = lerp;
   exports.lerpColor = lerpColor;
+  exports.map = map;
   exports.random = random;
+  exports.randomGaussian = randomGaussian;
   exports.rgbToHex = rgbToHex;
   exports.rgbToHsv = rgbToHsv;
   exports.shuffle = shuffle;

@@ -149,7 +149,6 @@ export class LineSegment {
     }
 
     let angleBetweenRadians = v1.angleBetween(v2);
-    console.log(`angleBetweenDegrees: ${convertToDegrees(angleBetweenRadians).toFixed(1)}`);
 
     // Ensure the angle is between 0 and 2*PI
     if (angleBetweenRadians < 0) {
@@ -313,11 +312,6 @@ export class LineSegment {
     const lineSeg1AngleRadians = lineSegment1.getHeading();
     const angles = lineSegment1.getAnglesBetween(lineSegment2);
 
-    console.log(`CW angle ${convertToDegrees(angles.clockwiseAngle).toFixed(1)} CCW angle ${convertToDegrees(angles.counterclockwiseAngle).toFixed(1)}`);
-    //console.log(`Counterclockwise Angle: ${angles.counterclockwiseAngle} radians (${convertToDegrees(angles.counterclockwiseAngle).toFixed(1)}°)`);
-    //console.log(`Clockwise Angle: ${angles.clockwiseAngle} radians (${convertToDegrees(angles.clockwiseAngle).toFixed(1)}°)`);
-    // console.log(`Old angle Between: ${angleBetweenLineSegmentsInRadians} radians (${convertToDegrees(angleBetweenLineSegmentsInRadians).toFixed(1)}°)`);
-    
     ctx.save();
 
     // Draw the clockwise arc

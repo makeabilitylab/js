@@ -117,6 +117,19 @@ this.Makelab = this.Makelab || {};
     }
 
     /**
+     * Tests whether this vector equals another, within an optional tolerance.
+     * Use a non-zero epsilon to compare results of floating-point math.
+     *
+     * @param {Vector} other - The vector to compare against.
+     * @param {number} [epsilon=0] - Maximum allowed difference per component.
+     * @returns {boolean} True if both components are within epsilon of other's.
+     */
+    equals(other, epsilon = 0) {
+      return Math.abs(this.x - other.x) <= epsilon &&
+        Math.abs(this.y - other.y) <= epsilon;
+    }
+
+    /**
      * Get a string representation of this vector.
      * @returns {string} A string representation of the vector.
      */
@@ -358,7 +371,6 @@ this.Makelab = this.Makelab || {};
       }
 
       let angleBetweenRadians = v1.angleBetween(v2);
-      console.log(`angleBetweenDegrees: ${convertToDegrees(angleBetweenRadians).toFixed(1)}`);
 
       // Ensure the angle is between 0 and 2*PI
       if (angleBetweenRadians < 0) {
@@ -522,11 +534,6 @@ this.Makelab = this.Makelab || {};
       const lineSeg1AngleRadians = lineSegment1.getHeading();
       const angles = lineSegment1.getAnglesBetween(lineSegment2);
 
-      console.log(`CW angle ${convertToDegrees(angles.clockwiseAngle).toFixed(1)} CCW angle ${convertToDegrees(angles.counterclockwiseAngle).toFixed(1)}`);
-      //console.log(`Counterclockwise Angle: ${angles.counterclockwiseAngle} radians (${convertToDegrees(angles.counterclockwiseAngle).toFixed(1)}°)`);
-      //console.log(`Clockwise Angle: ${angles.clockwiseAngle} radians (${convertToDegrees(angles.clockwiseAngle).toFixed(1)}°)`);
-      // console.log(`Old angle Between: ${angleBetweenLineSegmentsInRadians} radians (${convertToDegrees(angleBetweenLineSegmentsInRadians).toFixed(1)}°)`);
-      
       ctx.save();
 
       // Draw the clockwise arc
@@ -2195,13 +2202,13 @@ this.Makelab = this.Makelab || {};
      * @param {string} tri.direction - The direction of the triangle.
      * @param {string} tri.fillColor - The fill color of the triangle.
      * @param {string} tri.strokeColor - The stroke color of the triangle.
-     * @param {number} tri.strokeWeight - The stroke weight of the triangle.
+     * @param {number} tri.strokeWidth - The stroke width of the triangle.
      * @param {boolean} tri.visible - The visibility of the triangle.
      * @returns {Triangle} A new Triangle object.
      */
     static createTriangle(tri){
       return new Triangle(tri.x, tri.y, tri.size, tri.direction,
-        tri.fillColor, tri.strokeColor, tri.strokeWeight, tri.visible);
+        tri.fillColor, tri.strokeColor, tri.strokeWidth, tri.visible);
     }
   }
 
@@ -3472,9 +3479,6 @@ this.Makelab = this.Makelab || {};
 
       /** @type {string} CSS color for the message text. Falls back to palette's first entry base, then black. */
       this.messageColor = data.messageColor ?? TriangleArt._defaultMessageColor(data);
-
-      console.log("Initialized TriangleArt with name: ", this.name);
-      console.log("Message: ", this.message);
     }
 
     // -----------------------------------------------------------------------
@@ -3578,9 +3582,6 @@ this.Makelab = this.Makelab || {};
 
       if (this.showMessage && this.message){
         this.drawMessage(ctx);
-        console.log("Drawing message: ", this.message);
-      }else {
-        console.log("Message hidden or empty, skipping drawMessage.");
       }
 
       for (const row of this.artArray) {

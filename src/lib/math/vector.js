@@ -113,6 +113,19 @@ export class Vector {
   }
 
   /**
+   * Tests whether this vector equals another, within an optional tolerance.
+   * Use a non-zero epsilon to compare results of floating-point math.
+   *
+   * @param {Vector} other - The vector to compare against.
+   * @param {number} [epsilon=0] - Maximum allowed difference per component.
+   * @returns {boolean} True if both components are within epsilon of other's.
+   */
+  equals(other, epsilon = 0) {
+    return Math.abs(this.x - other.x) <= epsilon &&
+      Math.abs(this.y - other.y) <= epsilon;
+  }
+
+  /**
    * Get a string representation of this vector.
    * @returns {string} A string representation of the vector.
    */

@@ -1602,13 +1602,13 @@ export class Triangle {
    * @param {string} tri.direction - The direction of the triangle.
    * @param {string} tri.fillColor - The fill color of the triangle.
    * @param {string} tri.strokeColor - The stroke color of the triangle.
-   * @param {number} tri.strokeWeight - The stroke weight of the triangle.
+   * @param {number} tri.strokeWidth - The stroke width of the triangle.
    * @param {boolean} tri.visible - The visibility of the triangle.
    * @returns {Triangle} A new Triangle object.
    */
   static createTriangle(tri){
     return new Triangle(tri.x, tri.y, tri.size, tri.direction,
-      tri.fillColor, tri.strokeColor, tri.strokeWeight, tri.visible);
+      tri.fillColor, tri.strokeColor, tri.strokeWidth, tri.visible);
   }
 }
 

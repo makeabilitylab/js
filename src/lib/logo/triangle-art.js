@@ -59,9 +59,6 @@ export class TriangleArt {
 
     /** @type {string} CSS color for the message text. Falls back to palette's first entry base, then black. */
     this.messageColor = data.messageColor ?? TriangleArt._defaultMessageColor(data);
-
-    console.log("Initialized TriangleArt with name: ", this.name);
-    console.log("Message: ", this.message);
   }
 
   // -----------------------------------------------------------------------
@@ -165,9 +162,6 @@ export class TriangleArt {
 
     if (this.showMessage && this.message){
       this.drawMessage(ctx);
-      console.log("Drawing message: ", this.message);
-    }else{
-      console.log("Message hidden or empty, skipping drawMessage.");
     }
 
     for (const row of this.artArray) {
