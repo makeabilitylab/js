@@ -55,6 +55,7 @@ export class TriangleArt {
     /** @type {boolean} */
     this.visible = true;
 
+    /** @type {boolean} Whether the message text is drawn over the art. */
     this.showMessage = true;
 
     /** @type {string} CSS color for the message text. Falls back to palette's first entry base, then black. */
@@ -472,9 +473,12 @@ export class TriangleArt {
   }
 
   /**
-   * 
-   * @param {*} data 
-   * @returns 
+   * Picks a default message color: the "base" color of the palette's first
+   * entry, or black if the data has no palette.
+   *
+   * @private
+   * @param {Object} data - The raw art JSON (may contain a `palette` object).
+   * @returns {string} A CSS color string.
    */
   static _defaultMessageColor(data) {
     const keys = Object.keys(data.palette ?? {});

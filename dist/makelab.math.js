@@ -88,7 +88,7 @@ function map(value, start1, stop1, start2, stop2, withinBounds = false) {
 function randomGaussian(mean = 0, sd = 1) {
   const u1 = Math.random();
   const u2 = Math.random();
-  const z = Math.sqrt(-2.0 * Math.log(u1)) * Math.cos(2.0 * Math.PI * u2);
+  const z = Math.sqrt(-2 * Math.log(u1)) * Math.cos(2.0 * Math.PI * u2);
   return z * sd + mean;
 }
 

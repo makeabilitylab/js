@@ -88,7 +88,7 @@ function map(value, start1, stop1, start2, stop2, withinBounds = false) {
 function randomGaussian(mean = 0, sd = 1) {
   const u1 = Math.random();
   const u2 = Math.random();
-  const z = Math.sqrt(-2.0 * Math.log(u1)) * Math.cos(2.0 * Math.PI * u2);
+  const z = Math.sqrt(-2 * Math.log(u1)) * Math.cos(2.0 * Math.PI * u2);
   return z * sd + mean;
 }
 
@@ -1748,7 +1748,6 @@ class MakeabilityLabLogo {
       tri.fillColor = tri.strokeColor;
     }
 
-    //this.setColorScheme(ColorScheme.BlackOnWhite);
     this.areLTriangleStrokesVisible = false;
 
     this.drawBoundingBox = false;
@@ -2666,18 +2665,32 @@ static getGridYCenterPosition(triangleSize, canvasHeight, alignToGrid = false, s
     return mPoints;
   }
 
+  /**
+   * Gives each triangle its own random color from the Makeability Lab palette,
+   * using that same color for both fill and stroke.
+   *
+   * @param {Triangle[]} triangles - The triangles to recolor.
+   * @param {boolean} [isFillVisible=true] - Whether the fill is drawn.
+   * @param {boolean} [isStrokeVisible=true] - Whether the stroke is drawn.
+   */
   static setRandomColors(triangles, isFillVisible=true, isStrokeVisible=true){
     for(const tri of triangles){
       const fillColor = MakeabilityLabLogoColorer.getRandomOriginalColor();
-      tri.fillColor = fillColor;
-      tri.startFillColor = fillColor;
-      tri.endFillColor = fillColor;
-      tri.strokeColor = fillColor;
-      tri.isFillVisible = isFillVisible;
-      tri.isStrokeVisible = isStrokeVisible;
+      MakeabilityLabLogo.setColors([tri], fillColor, fillColor, isFillVisible, isStrokeVisible);
     }
   }
 
+  /**
+   * Sets the fill and stroke colors (and visibility) for the given triangles.
+   * Also seeds startFillColor/endFillColor to the fill color so the triangles
+   * are ready for color animation (see {@link MakeabilityLabLogoMorpher}).
+   *
+   * @param {Triangle[]} triangles - The triangles to recolor.
+   * @param {string} fillColor - The fill color.
+   * @param {string} strokeColor - The stroke color.
+   * @param {boolean} [isFillVisible=true] - Whether the fill is drawn.
+   * @param {boolean} [isStrokeVisible=true] - Whether the stroke is drawn.
+   */
   static setColors(triangles, fillColor, strokeColor, isFillVisible=true, isStrokeVisible=true){
     for(const tri of triangles){
       tri.fillColor = fillColor;
@@ -4492,6 +4505,7 @@ class TriangleArt {
     /** @type {boolean} */
     this.visible = true;
 
+    /** @type {boolean} Whether the message text is drawn over the art. */
     this.showMessage = true;
 
     /** @type {string} CSS color for the message text. Falls back to palette's first entry base, then black. */
@@ -4909,9 +4923,12 @@ class TriangleArt {
   }
 
   /**
-   * 
-   * @param {*} data 
-   * @returns 
+   * Picks a default message color: the "base" color of the palette's first
+   * entry, or black if the data has no palette.
+   *
+   * @private
+   * @param {Object} data - The raw art JSON (may contain a `palette` object).
+   * @returns {string} A CSS color string.
    */
   static _defaultMessageColor(data) {
     const keys = Object.keys(data.palette ?? {});
