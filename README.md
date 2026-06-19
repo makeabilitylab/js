@@ -107,8 +107,8 @@ https://cdn.jsdelivr.net/gh/makeabilitylab/js@main/dist/makelab.all.iife.min.js
 For production use, it's recommended to pin to a specific commit or tag instead of `@main`:
 
 ```javascript
-// Pin to a specific version tag
-import { Vector } from 'https://cdn.jsdelivr.net/gh/makeabilitylab/js@v1.0.0/dist/makelab.math.min.js';
+// Pin to a specific version tag (no "v" prefix)
+import { Vector } from 'https://cdn.jsdelivr.net/gh/makeabilitylab/js@0.3.0/dist/makelab.math.min.js';
 
 // Pin to a specific commit
 import { Vector } from 'https://cdn.jsdelivr.net/gh/makeabilitylab/js@5baeb55/dist/makelab.math.min.js';
@@ -292,59 +292,53 @@ This library follows [Semantic Versioning](https://semver.org/) (SemVer): `MAJOR
 
 ### Creating a New Release
 
-When you're ready to release a new version:
+Releases are git tags (served by jsdelivr). Tags use a bare version number with
+**no `v` prefix** (e.g. `0.3.1`), matching the existing tags. From a clean `main`
+with your changes committed:
 
 #### 1. Update the Version Number
 
-Edit `package.json` and update the version number:
+Edit `package.json` and bump `version` (e.g. `0.3.0` → `0.3.1`). Pick the bump
+per SemVer: PATCH for fixes, MINOR for new features (or a breaking change while
+still in `0.x`), MAJOR once you're past `1.0`.
 
-```json
-{
-  "name": "makelab-lib",
-  "version": "1.2.3",  // Update this
-  ...
-}
-```
-
-#### 2. Build the Distribution Files
+#### 2. Build and Test
 
 ```bash
-npx rollup -c rollup.config.js
+npm run build   # regenerate all dist/ files from your latest source
+npm test        # confirm the test suite passes
 ```
 
-This ensures all `dist/` files are up to date with your latest changes.
-
-#### 3. Commit Your Changes
+#### 3. Commit and Push
 
 ```bash
-git add .
-git commit -m "Release v1.2.3: Brief description of changes"
-git push origin main
+git add package.json dist/
+git commit -m "Release 0.3.1"
+git push
 ```
 
-#### 4. Create a GitHub Release
+#### 4. Tag and Publish the GitHub Release
 
-Create a new release on GitHub to tag the version:
+Use the [GitHub CLI](https://cli.github.com/) to create the tag and release in
+one step:
 
-1. Go to your repository on GitHub
-2. Click on "Releases" (in the right sidebar)
-3. Click "Create a new release"
-4. **Tag version**: Enter the version number (e.g., `v1.2.3`)
-5. **Target**: Select `main` branch
-6. **Release title**: `v1.2.3` or descriptive title
-7. **Description**: Describe what's new, changed, or fixed
-8. Click "Publish release"
+```bash
+gh release create 0.3.1 --title "0.3.1" --target main \
+  --notes "What's new, changed, or fixed in this release."
+```
+
+(You can also do this from the GitHub web UI under **Releases → Draft a new
+release**, but make sure the **tag** has no `v` prefix.)
 
 #### 5. Verify CDN Access
 
-After creating the release, verify that the CDN serves the new version:
+The jsdelivr CDN usually serves the new tag within a minute:
 
 ```javascript
-// Test the new version tag
-import { Vector } from 'https://cdn.jsdelivr.net/gh/makeabilitylab/js@v1.2.3/dist/makelab.math.min.js';
+import { Vector } from 'https://cdn.jsdelivr.net/gh/makeabilitylab/js@0.3.1/dist/makelab.math.min.js';
 ```
 
-The jsdelivr CDN may take a few minutes to update. You can check the status at:
+You can check propagation status at:
 ```
 https://www.jsdelivr.com/package/gh/makeabilitylab/js
 ```
@@ -358,9 +352,9 @@ For users of the library:
   import { Vector } from 'https://cdn.jsdelivr.net/gh/makeabilitylab/js@main/dist/makelab.math.js';
   ```
 
-- **Production**: Always pin to a specific version tag
+- **Production**: Always pin to a specific version tag (no `v` prefix)
   ```javascript
-  import { Vector } from 'https://cdn.jsdelivr.net/gh/makeabilitylab/js@v1.2.3/dist/makelab.math.min.js';
+  import { Vector } from 'https://cdn.jsdelivr.net/gh/makeabilitylab/js@0.3.0/dist/makelab.math.min.js';
   ```
 
 - **Specific Commit**: Pin to a commit hash for absolute stability
@@ -372,13 +366,12 @@ For users of the library:
 
 Before creating a release, ensure:
 
-- [ ] All tests pass (if applicable)
+- [ ] `npm test` passes
 - [ ] Version number updated in `package.json`
-- [ ] `npx rollup -c rollup.config.js` has been run
+- [ ] `npm run build` has been run and `dist/` committed
 - [ ] All changes committed and pushed to `main`
-- [ ] CHANGELOG updated (if you maintain one)
-- [ ] GitHub Release created with tag
-- [ ] CDN links tested and working
+- [ ] GitHub release created with a no-`v`-prefix tag (`gh release create …`)
+- [ ] CDN link for the new tag tested and working
 
 ## Usage
 
