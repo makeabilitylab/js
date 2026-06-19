@@ -1,4 +1,3 @@
 node_modules
-src/lib/.DS_Store
-src/lib/logo/.DS_Store
-src/apps/makelogo/.DS_Store
+.DS_Store
+**/.DS_Store
