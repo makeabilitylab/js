@@ -148,9 +148,9 @@ export class LineSegment {
       v2 = vectorOrLineSegment;
     }
 
-    let angleBetweenRadians = v1.angleBetween(v2);
+    let angleBetweenRadians = v1.signedAngleTo(v2);
 
-    // Ensure the angle is between 0 and 2*PI
+    // Normalize the signed angle (-π, π] to [0, 2π)
     if (angleBetweenRadians < 0) {
       angleBetweenRadians += 2 * Math.PI;
     }

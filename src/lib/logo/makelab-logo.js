@@ -1040,7 +1040,7 @@ static getGridYCenterPosition(triangleSize, canvasHeight, alignToGrid = false, s
     let row3 = new Array(MakeabilityLabLogo.numCols);
     for (let col = 0; col < row3.length; col++) {
       let triDir = TriangleDir.TopLeft;
-      if (col % 2 != 0) {
+      if (col % 2 !== 0) {
         triDir = TriangleDir.TopRight;
       }
       row3[col] = Cell.createCell(x, y, triangleSize, triDir);
@@ -1053,7 +1053,7 @@ static getGridYCenterPosition(triangleSize, canvasHeight, alignToGrid = false, s
     let botRow = new Array(MakeabilityLabLogo.numCols);
     for (let col = 0; col < botRow.length; col++) {
       let triDir = TriangleDir.TopRight;
-      if (col % 2 != 0) {
+      if (col % 2 !== 0) {
         triDir = TriangleDir.TopLeft;
       }
       botRow[col] = Cell.createCellWithTopTriangleOnly(x, y, triangleSize, triDir);

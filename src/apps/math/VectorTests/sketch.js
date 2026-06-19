@@ -54,6 +54,14 @@ testVector('Vector dot product', 9, new Vector(2, 3).dotProduct(new Vector(3, 1)
 testVector('Vector angle between', Math.PI / 4, new Vector(1, 1).angleBetween(new Vector(0, 1)));
 testVector('Vector angle between (parallel)', 0, new Vector(1, 0).angleBetween(new Vector(2, 0)));
 testVector('Vector angle between (perpendicular)', Math.PI / 2, new Vector(1, 0).angleBetween(new Vector(0, 1)));
+testVector('Vector angle between is symmetric', new Vector(0, 1).angleBetween(new Vector(1, 1)), new Vector(1, 1).angleBetween(new Vector(0, 1)));
+
+// Signed (directed) angle tests — counterclockwise is positive
+testVector('Vector signedAngleTo (CCW)', Math.PI / 2, new Vector(1, 0).signedAngleTo(new Vector(0, 1)));
+testVector('Vector signedAngleTo (CW)', -Math.PI / 2, new Vector(0, 1).signedAngleTo(new Vector(1, 0)));
+
+// Clone test
+testVector('Vector clone equals original', true, new Vector(2, 3).clone().equals(new Vector(2, 3)));
 
 // String representation test
 testVector('Vector toString', '(2, 3)', new Vector(2, 3).toString());

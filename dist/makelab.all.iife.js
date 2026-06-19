@@ -172,6 +172,10 @@
      * @returns {Vector} The resulting vector.
      */
     divide(scalar) {
+      // Guard against division by zero, mirroring normalize().
+      if (scalar === 0) {
+        return new Vector(0, 0);
+      }
       return new Vector(this.x / scalar, this.y / scalar);
     }
 
@@ -206,37 +210,51 @@
     }
 
     /**
-     * Calculate the angle between this vector and another vector.
+     * Calculates the unsigned angle between this vector and another, in the
+     * range [0, π]. This is the conventional "angle between two vectors" and is
+     * symmetric: `a.angleBetween(b)` equals `b.angleBetween(a)`.
+     *
+     * For a signed/directed angle (e.g., to know which way to rotate from one
+     * vector to the other), use {@link Vector#signedAngleTo}.
+     *
      * @param {Vector} other - The other vector.
-     * @returns {number} The angle in radians.
+     * @returns {number} The angle in radians, in [0, π]. Returns 0 if either
+     *   vector has zero length.
      */
     angleBetween(other) {
-      // const cosTheta = this.dotProduct(other) / (this.magnitude() * other.magnitude());
-      // return Math.acos(cosTheta);
-
-      const dotProduct = this.dotProduct(other);
       const magnitudeProduct = this.magnitude() * other.magnitude();
-
-      // Handle parallel vectors (dotProduct ≈ magnitudeProduct)
-      if (Math.abs(dotProduct - magnitudeProduct) < Number.EPSILON) {
-        return dotProduct >= 0 ? 0 : Math.PI;
-      }
-
-      // Handle zero vectors
       if (magnitudeProduct === 0) {
-        return 0; // Or return NaN if you prefer
+        return 0;
       }
+      // Clamp guards against tiny floating-point overshoot outside acos's [-1, 1] domain.
+      const cosTheta = clamp(this.dotProduct(other) / magnitudeProduct, -1, 1);
+      return Math.acos(cosTheta);
+    }
 
-      const cosTheta = dotProduct / magnitudeProduct;
-      let angle = Math.acos(cosTheta);
+    /**
+     * Calculates the signed angle from this vector to another, in the range
+     * (-π, π]. Positive is counterclockwise and negative is clockwise, in
+     * standard math orientation (y pointing up). Unlike {@link Vector#angleBetween},
+     * this is directional: `a.signedAngleTo(b)` equals `-b.signedAngleTo(a)`.
+     *
+     * Note: on a typical canvas the y-axis points *down*, so a positive result
+     * appears clockwise on screen.
+     *
+     * @param {Vector} other - The other vector.
+     * @returns {number} The signed angle in radians, in (-π, π].
+     */
+    signedAngleTo(other) {
+      const cross = this.x * other.y - this.y * other.x; // z of the 2D cross product
+      const dot = this.dotProduct(other);
+      return Math.atan2(cross, dot);
+    }
 
-      // Use the cross product to determine the sign of the angle
-      const crossProductZ = this.x * other.y - this.y * other.x; // 2D cross product
-      if (crossProductZ < 0) {
-        angle = 2 * Math.PI - angle;
-      }
-
-      return angle;
+    /**
+     * Returns a new Vector with the same components.
+     * @returns {Vector} A copy of this vector.
+     */
+    clone() {
+      return new Vector(this.x, this.y);
     }
 
     /**
@@ -796,9 +814,9 @@
         v2 = vectorOrLineSegment;
       }
 
-      let angleBetweenRadians = v1.angleBetween(v2);
+      let angleBetweenRadians = v1.signedAngleTo(v2);
 
-      // Ensure the angle is between 0 and 2*PI
+      // Normalize the signed angle (-π, π] to [0, 2π)
       if (angleBetweenRadians < 0) {
         angleBetweenRadians += 2 * Math.PI;
       }
@@ -2746,7 +2764,7 @@
       let row3 = new Array(MakeabilityLabLogo.numCols);
       for (let col = 0; col < row3.length; col++) {
         let triDir = TriangleDir.TopLeft;
-        if (col % 2 != 0) {
+        if (col % 2 !== 0) {
           triDir = TriangleDir.TopRight;
         }
         row3[col] = Cell.createCell(x, y, triangleSize, triDir);
@@ -2759,7 +2777,7 @@
       let botRow = new Array(MakeabilityLabLogo.numCols);
       for (let col = 0; col < botRow.length; col++) {
         let triDir = TriangleDir.TopRight;
-        if (col % 2 != 0) {
+        if (col % 2 !== 0) {
           triDir = TriangleDir.TopLeft;
         }
         botRow[col] = Cell.createCellWithTopTriangleOnly(x, y, triangleSize, triDir);
