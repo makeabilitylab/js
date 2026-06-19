@@ -262,6 +262,26 @@ For production use, reference the minified versions:
 </script>
 ```
 
+## Testing
+
+The library has a small, zero-dependency test suite in `test/` (covering the
+`Vector` class and the math and color utilities). The same tests run in two ways:
+
+```bash
+# From the command line (Node):
+npm test
+```
+
+```
+# In the browser: open test/index.html
+# (results show on the page and in the dev console)
+```
+
+Tests are plain ES modules using a tiny ~100-line harness (`test/test-runner.js`)
+with `test()`, `assert()`, and `assertEquals()`. To add tests, create a
+`*.test.js` file in `test/`, import what you need from `../src/lib/...`, and add
+an `import` for it in `test/all.test.js`.
+
 ## Versioning and Releases
 
 This library follows [Semantic Versioning](https://semver.org/) (SemVer): `MAJOR.MINOR.PATCH`
