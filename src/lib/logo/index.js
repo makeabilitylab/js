@@ -3,4 +3,6 @@ export { MakeabilityLabLogo, TriangleDir, Triangle,
          MakeabilityLabLogoColorer} from './makelab-logo.js';
 export { MakeabilityLabLogoMorpher } from './makelab-logo-morpher.js';
 export { MakeabilityLabLogoGridFade } from './makelab-logo-gridfade.js';
+export { MakeabilityLabLogoLeafFall } from './makelab-logo-leaffall.js';
+export { MakeabilityLabLogoZoomFade } from './makelab-logo-zoomfade.js';
 export { TriangleArt } from './triangle-art.js';

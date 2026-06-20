@@ -4225,6 +4225,245 @@
     return map;
   }
 
+  // makelab-logo-intro-utils.js — shared helpers for the Makeability Lab logo
+  // "intro" animations (grid fade, leaf fall, z-zoom).
+  //
+  // These animations all share the same idea: fill the canvas with a triangle
+  // grid that is phase-aligned to the logo, reorient the cells under the logo's
+  // footprint so they line up with it, and then reveal the logo on top. The
+  // movement-based variants (leaf fall, z-zoom) additionally animate individual
+  // pieces (triangles and outline line segments) into place, each rendered
+  // through a per-frame canvas transform that pivots about the piece's resting
+  // center.
+  //
+  // By Jon E. Froehlich
+  // https://makeabilitylab.io
+  //
+  // Source: https://github.com/makeabilitylab/js
+
+
+  /**
+   * Builds a full-canvas triangle {@link Grid} whose origin and cell size match
+   * the logo, so the grid's cell boundaries line up with the logo's cells.
+   *
+   * @param {MakeabilityLabLogo} logo - The logo to align to (provides cellSize, x, y).
+   * @param {number} canvasWidth - Canvas width in CSS pixels.
+   * @param {number} canvasHeight - Canvas height in CSS pixels.
+   * @returns {Grid} A grid covering the canvas, phase-aligned to the logo.
+   */
+  function buildAlignedGrid(logo, canvasWidth, canvasHeight) {
+    return new Grid(canvasWidth, canvasHeight, logo.cellSize,
+      undefined, undefined, logo.x, logo.y);
+  }
+
+  /**
+   * Indexes a grid's cells by their (rounded) top-left origin so a logo triangle
+   * can be matched to the grid cell at the same position.
+   *
+   * @param {Grid} grid
+   * @returns {Map<string, Cell>} Map from "x,y" (rounded) to the cell there.
+   */
+  function indexCellsByPosition(grid) {
+    const cellByPos = new Map();
+    for (const row of grid.gridArray) {
+      for (const cell of row) {
+        cellByPos.set(`${Math.round(cell.tri1.x)},${Math.round(cell.tri1.y)}`, cell);
+      }
+    }
+    return cellByPos;
+  }
+
+  /**
+   * Finds the grid cell that sits at the same position as the given logo triangle.
+   *
+   * @param {Map<string, Cell>} cellByPos - Index from {@link indexCellsByPosition}
+   *   (also returned by {@link matchGridOrientationToLogo}).
+   * @param {Triangle} logoTri - A logo triangle to look up.
+   * @returns {Cell|undefined} The cell at that position, or undefined if none.
+   */
+  function findGridCellForTriangle(cellByPos, logoTri) {
+    return cellByPos.get(`${Math.round(logoTri.x)},${Math.round(logoTri.y)}`);
+  }
+
+  /**
+   * Reorients every grid cell beneath the logo so its two triangles point the
+   * same way as the logo's cell at that position. The grid shares the logo's
+   * origin and cell size, so each logo triangle has a grid cell at the same
+   * position. A logo cell's two triangles always lie on the same diagonal
+   * (opposite directions), so matching one triangle's direction orients the
+   * whole cell.
+   *
+   * @param {Grid} grid - The grid to reorient (mutated in place).
+   * @param {MakeabilityLabLogo} logo - The logo to align to.
+   * @returns {Map<string, Cell>} The position index, so callers can do further
+   *   per-cell work (e.g. pinning fade-target colors) without re-indexing.
+   */
+  function matchGridOrientationToLogo(grid, logo) {
+    const cellByPos = indexCellsByPosition(grid);
+
+    for (const logoTri of logo.getAllTriangles()) {
+      const cell = findGridCellForTriangle(cellByPos, logoTri);
+      if (!cell) continue;
+      if (cell.tri1.direction !== logoTri.direction &&
+          cell.tri2.direction !== logoTri.direction) {
+        cell.tri1.direction = logoTri.direction;
+        cell.tri2.direction = Triangle.getOppositeDirection(logoTri.direction);
+      }
+    }
+
+    return cellByPos;
+  }
+
+  /**
+   * Decomposes the logo's M and L outlines into their smallest constituent line
+   * segments, each tagged with the outline's color and stroke width. Used by the
+   * movement animations so the outlines can fall / zoom in piece by piece rather
+   * than as two monolithic shapes.
+   *
+   * @param {MakeabilityLabLogo} logo
+   * @returns {{x1:number, y1:number, x2:number, y2:number, color:string, width:number}[]}
+   */
+  function getOutlineSegments(logo) {
+    const segments = [];
+
+    for (const seg of logo.getMOutlineLineSegments()) {
+      segments.push({
+        x1: seg.x1, y1: seg.y1, x2: seg.x2, y2: seg.y2,
+        color: logo.mOutlineColor, width: logo.mOutlineStrokeWidth,
+      });
+    }
+
+    for (const seg of logo.getLOutlineLineSegments()) {
+      segments.push({
+        x1: seg.x1, y1: seg.y1, x2: seg.x2, y2: seg.y2,
+        color: logo.lOutlineColor, width: logo.lOutlineStrokeWidth,
+      });
+    }
+
+    return segments;
+  }
+
+  /**
+   * Builds the three pools of animatable "pieces" shared by the movement
+   * animations (leaf fall, z-zoom): the background grid triangles, the logo's own
+   * triangles, and the logo's outline line segments. Each piece records a draw
+   * function (which renders the piece at its resting coordinates) and the resting
+   * center + height the caller needs to animate it. Timing and per-frame transform
+   * are left to the caller, since those differ per animation.
+   *
+   * Side effect: each grid triangle's fill and stroke are set via getGridColor so
+   * the falling/zooming grid is already colored.
+   *
+   * @param {Grid} grid - The aligned background grid (already orientation-matched).
+   * @param {MakeabilityLabLogo} logo - The logo to assemble.
+   * @param {Object} [opts]
+   * @param {function(): string} opts.getGridColor - Returns a fill/stroke color
+   *   for each grid triangle.
+   * @returns {{grid: Piece[], logoTris: Piece[], outline: Piece[]}} where each
+   *   Piece is {drawFn, pivotX, pivotY, height}.
+   */
+  function buildIntroPieces(grid, logo, { getGridColor }) {
+    const triPiece = (tri) => {
+      const bb = tri.getBoundingBox();
+      return {
+        drawFn: (ctx) => tri.draw(ctx),
+        pivotX: bb.x + bb.width / 2,
+        pivotY: bb.y + bb.height / 2,
+        height: bb.height,
+      };
+    };
+
+    // Background grid triangles — each gets a random palette color.
+    const gridPieces = [];
+    for (const row of grid.gridArray) {
+      for (const cell of row) {
+        for (const tri of [cell.tri1, cell.tri2]) {
+          const color = getGridColor();
+          tri.fillColor = color;
+          tri.strokeColor = color;
+          gridPieces.push(triPiece(tri));
+        }
+      }
+    }
+
+    // Pin the grid cells beneath the logo's 12 default-colored triangles to those
+    // exact colors so the colored logo *emerges from the backing grid* as the grid
+    // lands, rather than having a redundant copy fall on top of it. The grid is
+    // already orientation-matched to the logo, so the matching-direction triangle
+    // in each cell lines up with the logo triangle.
+    const cellByPos = indexCellsByPosition(grid);
+    for (const logoTri of logo.getDefaultColoredTriangles()) {
+      const cell = findGridCellForTriangle(cellByPos, logoTri);
+      if (!cell) continue;
+      const match = cell.tri1.direction === logoTri.direction ? cell.tri1 : cell.tri2;
+      match.fillColor = logoTri.fillColor;
+      match.strokeColor = logoTri.fillColor;
+    }
+
+    // Logo pieces that genuinely fall *on top of* the grid: the black M-shadow
+    // triangles and the (translucent) L overlay triangles. The 12 colored
+    // triangles emerge from the grid (pinned above), so they are deliberately
+    // excluded here to avoid a redundant second triangle landing in the same spot.
+    const logoTriPieces = [...logo.getMShadowTriangles(), ...logo.getLTriangles()]
+      .filter((tri) => tri.visible)
+      .map(triPiece);
+
+    // Logo outlines, decomposed into individual line segments.
+    const outlinePieces = getOutlineSegments(logo).map((seg) => ({
+      drawFn: (ctx) => {
+        ctx.save();
+        ctx.strokeStyle = seg.color;
+        ctx.lineWidth = seg.width;
+        // Round caps so adjacent segments overlap at angled joints — each cap
+        // extends half the stroke width past the endpoint, filling the corner
+        // gap that butt caps (the default) would leave between separate strokes.
+        ctx.lineCap = 'round';
+        ctx.beginPath();
+        ctx.moveTo(seg.x1, seg.y1);
+        ctx.lineTo(seg.x2, seg.y2);
+        ctx.stroke();
+        ctx.restore();
+      },
+      pivotX: (seg.x1 + seg.x2) / 2,
+      pivotY: (seg.y1 + seg.y2) / 2,
+      height: Math.abs(seg.y2 - seg.y1),
+    }));
+
+    return { grid: gridPieces, logoTris: logoTriPieces, outline: outlinePieces };
+  }
+
+  /**
+   * Renders a piece through a per-frame canvas transform that pivots about the
+   * piece's resting center. The piece's own geometry stays at its resting
+   * coordinates; this applies a translation, rotation, and uniform scale around
+   * (pivotX, pivotY), plus an opacity multiplier. When dx=dy=0, angleRad=0, and
+   * scale=1 the piece draws exactly at rest, so animations that converge those
+   * values to identity land each piece precisely in place.
+   *
+   * @param {CanvasRenderingContext2D} ctx
+   * @param {number} pivotX - Resting-center x to pivot about.
+   * @param {number} pivotY - Resting-center y to pivot about.
+   * @param {Object} t - Transform for this frame.
+   * @param {number} [t.dx=0] - Horizontal translation offset.
+   * @param {number} [t.dy=0] - Vertical translation offset.
+   * @param {number} [t.angleRad=0] - Rotation in radians about the pivot.
+   * @param {number} [t.scale=1] - Uniform scale about the pivot.
+   * @param {number} [t.opacity=1] - Opacity multiplier in [0, 1].
+   * @param {function(CanvasRenderingContext2D): void} drawFn - Draws the piece at
+   *   its resting coordinates (e.g. tri.draw(ctx) or a stroked line).
+   */
+  function drawPieceWithTransform(ctx, pivotX, pivotY,
+      { dx = 0, dy = 0, angleRad = 0, scale = 1, opacity = 1 }, drawFn) {
+    ctx.save();
+    ctx.globalAlpha *= opacity;
+    ctx.translate(pivotX + dx, pivotY + dy);
+    ctx.rotate(angleRad);
+    ctx.scale(scale, scale);
+    ctx.translate(-pivotX, -pivotY);
+    drawFn(ctx);
+    ctx.restore();
+  }
+
   // makelab-logo-gridfade.js — "grid fade" intro animation for the Makeability Lab logo
   //
   // Fills the canvas with a grid of triangles that each fade from a start color
@@ -4309,8 +4548,7 @@
        * cells line up with the logo's cells.
        * @type {Grid}
        */
-      this.grid = new Grid(canvasWidth, canvasHeight, makeLabLogo.cellSize,
-        undefined, undefined, makeLabLogo.x, makeLabLogo.y);
+      this.grid = buildAlignedGrid(makeLabLogo, canvasWidth, canvasHeight);
 
       /**
        * Current logo opacity in [0, 1], updated each frame by {@link update}.
@@ -4376,28 +4614,13 @@
      *   animation entry (so we can override the fade target color).
      */
     _matchGridToLogo(entryByTri) {
-      // Index grid cells by their (rounded) origin for position lookup.
-      const cellByPos = new Map();
-      for (const row of this.grid.gridArray) {
-        for (const cell of row) {
-          cellByPos.set(`${Math.round(cell.tri1.x)},${Math.round(cell.tri1.y)}`, cell);
-        }
-      }
-
-      // 1. Match orientation across the whole logo footprint.
-      for (const logoTri of this.makeLabLogo.getAllTriangles()) {
-        const cell = cellByPos.get(`${Math.round(logoTri.x)},${Math.round(logoTri.y)}`);
-        if (!cell) continue;
-        if (cell.tri1.direction !== logoTri.direction &&
-            cell.tri2.direction !== logoTri.direction) {
-          cell.tri1.direction = logoTri.direction;
-          cell.tri2.direction = Triangle.getOppositeDirection(logoTri.direction);
-        }
-      }
+      // 1. Match orientation across the whole logo footprint. Returns the cell
+      //    position index so we can reuse it for color pinning below.
+      const cellByPos = matchGridOrientationToLogo(this.grid, this.makeLabLogo);
 
       // 2. Pin the 12 colored triangles' grid counterparts to the logo's colors.
       for (const logoTri of this.makeLabLogo.getDefaultColoredTriangles()) {
-        const cell = cellByPos.get(`${Math.round(logoTri.x)},${Math.round(logoTri.y)}`);
+        const cell = findGridCellForTriangle(cellByPos, logoTri);
         if (!cell) continue;
         const match = cell.tri1.direction === logoTri.direction ? cell.tri1 : cell.tri2;
         const entry = entryByTri.get(match);
@@ -4458,6 +4681,438 @@
     reset() {
       this.logoOpacity = 0;
       this._initGridAnimation();
+    }
+  }
+
+  // makelab-logo-leaffall.js — "falling leaf" intro animation for the
+  // Makeability Lab logo.
+  //
+  // Fills the canvas with a grid of triangles that flutter down from the top of
+  // the screen like falling leaves — weaving side to side and tumbling as they
+  // drop — and settle into their grid positions. After the grid has started
+  // filling in, the Makeability Lab logo's own pieces fall in the same way: each
+  // logo triangle, and each individual line segment of the M and L outlines (the
+  // outlines fall as their smallest constituent pieces, randomly sequenced), drift
+  // down and land to compose the finished logo on top of the aligned grid.
+  //
+  // This class is framework-agnostic: it draws to a raw CanvasRenderingContext2D
+  // and is driven by an elapsed-time value, so the host app owns the animation
+  // clock and render loop (e.g., requestAnimationFrame). This mirrors the design
+  // of MakeabilityLabLogoGridFade.
+  //
+  // By Jon E. Froehlich
+  // https://makeabilitylab.io
+  //
+  // Source: https://github.com/makeabilitylab/js
+
+
+  /**
+   * A "falling leaf" intro animation: a full-canvas grid of triangles flutters
+   * down from the top and settles into place, then the Makeability Lab logo's
+   * pieces (triangles and individual outline segments) fall in to compose the
+   * logo on top.
+   *
+   * @example
+   * import { MakeabilityLabLogo } from './makelab-logo.js';
+   * import { MakeabilityLabLogoLeafFall } from './makelab-logo-leaffall.js';
+   *
+   * const logo = new MakeabilityLabLogo(logoX, logoY, 50);
+   * const anim = new MakeabilityLabLogoLeafFall(logo, canvas.width, canvas.height);
+   *
+   * const start = performance.now();
+   * function frame(now) {
+   *   ctx.clearRect(0, 0, canvas.width, canvas.height);
+   *   anim.update(now - start);
+   *   anim.draw(ctx);
+   *   requestAnimationFrame(frame);
+   * }
+   * requestAnimationFrame(frame);
+   */
+  class MakeabilityLabLogoLeafFall {
+    /**
+     * @param {MakeabilityLabLogo} makeLabLogo - The logo to reveal. The caller is
+     *   responsible for configuring its colors/position before passing it in.
+     * @param {number} canvasWidth - Width of the canvas to fill (CSS pixels).
+     * @param {number} canvasHeight - Height of the canvas to fill (CSS pixels).
+     * @param {Object} [options] - Animation options.
+     * @param {number} [options.totalDurationMs=6000] - Approximate total length of
+     *   the animation. Logo pieces start falling at logoRevealStartFraction of this.
+     * @param {number} [options.gridStaggerMs=2500] - Grid triangles begin falling
+     *   at a random time in [0, gridStaggerMs).
+     * @param {number} [options.logoRevealStartFraction=0.2] - Fraction of
+     *   totalDurationMs after which the logo's own pieces begin falling.
+     * @param {number} [options.logoStaggerMs=1600] - The logo's own pieces begin
+     *   falling within a window of this length (starting at logoRevealStartFraction
+     *   of totalDurationMs). Kept short so the logo gathers in a burst rather than
+     *   trickling in across the whole animation.
+     * @param {number} [options.minFallMs=1400] - Shortest per-piece fall duration
+     *   (for pieces that have the least distance to fall).
+     * @param {number} [options.maxFallMs=2800] - Longest per-piece fall duration
+     *   (for pieces that fall the full height of the canvas).
+     * @param {number} [options.swayAmplitude=55] - Max horizontal sway, in pixels,
+     *   of a leaf as it drifts down (decays to 0 on landing).
+     * @param {number} [options.maxRotationDeg=140] - Max tumble rotation, in
+     *   degrees, of a leaf as it falls (decays to 0 on landing).
+     * @param {function(number): number} [options.easingFunction=easeOutCubic] -
+     *   Easing for each piece's vertical descent (t in [0,1] → [0,1]).
+     * @param {function(): string} [options.getGridColor] - Returns the fill/stroke
+     *   color for each background grid triangle. Defaults to a random ML color.
+     */
+    constructor(makeLabLogo, canvasWidth, canvasHeight, options = {}) {
+      this.makeLabLogo = makeLabLogo;
+      this.canvasWidth = canvasWidth;
+      this.canvasHeight = canvasHeight;
+
+      this.totalDurationMs = options.totalDurationMs ?? 6000;
+      this.gridStaggerMs = options.gridStaggerMs ?? 2500;
+      this.logoRevealStartFraction = options.logoRevealStartFraction ?? 0.2;
+      this.logoStaggerMs = options.logoStaggerMs ?? 1600;
+      this.minFallMs = options.minFallMs ?? 1400;
+      this.maxFallMs = options.maxFallMs ?? 2800;
+      this.swayAmplitude = options.swayAmplitude ?? 55;
+      this.maxRotationDeg = options.maxRotationDeg ?? 140;
+      this.easingFunction = options.easingFunction ?? easeOutCubic;
+      this.getGridColor = options.getGridColor ??
+        (() => MakeabilityLabLogoColorer.getRandomOriginalColor());
+
+      /**
+       * Background grid that fills the canvas, aligned to the logo. Exposed so
+       * hosts can toggle visibility (e.g. a debug key).
+       * @type {Grid}
+       */
+      this.grid = buildAlignedGrid(makeLabLogo, canvasWidth, canvasHeight);
+
+      /** @private Flat list of animated pieces (grid, then logo, then outline). */
+      this._pieces = [];
+
+      this._init();
+    }
+
+    /**
+     * Builds the grid, the animated piece pools, and assigns each piece a fall
+     * delay, duration, start offset, and randomized sway/tumble parameters.
+     * @private
+     */
+    _init() {
+      matchGridOrientationToLogo(this.grid, this.makeLabLogo);
+
+      const pools = buildIntroPieces(this.grid, this.makeLabLogo,
+        { getGridColor: this.getGridColor });
+
+      const logoStartMs = this.totalDurationMs * this.logoRevealStartFraction;
+
+      this._pieces = [];
+      // Grid pieces begin near t=0; logo + outline pieces begin after the reveal
+      // fraction has elapsed and gather within logoStaggerMs.
+      for (const p of pools.grid) {
+        this._addPiece(p, 'grid', Math.random() * this.gridStaggerMs);
+      }
+      const logoDelay = () =>
+        logoStartMs + Math.random() * this.logoStaggerMs;
+      for (const p of pools.logoTris) this._addPiece(p, 'logo', logoDelay());
+      for (const p of pools.outline) this._addPiece(p, 'outline', logoDelay());
+    }
+
+    /**
+     * Wraps a base piece with leaf-fall animation state and adds it to the pool.
+     * @private
+     */
+    _addPiece(base, group, delayMs) {
+      // Start fully above the top edge; a random extra margin staggers the
+      // heights pieces enter from so they don't all cross the top edge in a line.
+      const startDy = -(base.pivotY + base.height / 2 +
+        Math.random() * this.canvasHeight * 0.3);
+
+      // Fall speed is roughly constant: duration scales with distance to fall.
+      const distanceFraction = clamp(Math.abs(startDy) / this.canvasHeight, 0, 1);
+      const durationMs = lerp(this.minFallMs, this.maxFallMs, distanceFraction);
+
+      const sign = Math.random() < 0.5 ? -1 : 1;
+      this._pieces.push({
+        ...base,
+        group,
+        delayMs,
+        durationMs,
+        startDy,
+        sway: {
+          amp: this.swayAmplitude * (0.5 + Math.random() * 0.5),
+          freq: 1 + Math.random() * 1.5,
+          phase: Math.random() * Math.PI * 2,
+        },
+        rot: {
+          amp: sign * (this.maxRotationDeg * Math.PI / 180) * (0.5 + Math.random() * 0.5),
+          freq: 1 + Math.random() * 2,
+          phase: Math.random() * Math.PI * 2,
+        },
+        // Per-frame state, filled in by update():
+        started: false,
+        dx: 0,
+        dy: startDy,
+        angleRad: 0,
+      });
+    }
+
+    /**
+     * Advances the animation to the given elapsed time, computing each piece's
+     * current offset and rotation. Call once per frame before {@link draw}.
+     *
+     * @param {number} elapsedMs - Milliseconds elapsed since the animation started.
+     */
+    update(elapsedMs) {
+      for (const p of this._pieces) {
+        if (elapsedMs < p.delayMs) {
+          p.started = false;
+          continue;
+        }
+        p.started = true;
+
+        const t = clamp((elapsedMs - p.delayMs) / p.durationMs, 0, 1);
+        const e = this.easingFunction(t);
+        const decay = 1 - t; // sway/tumble fade out so the piece lands exactly
+
+        p.dy = lerp(p.startDy, 0, e);
+        p.dx = p.sway.amp * Math.sin(t * p.sway.freq * Math.PI * 2 + p.sway.phase) * decay;
+        p.angleRad = p.rot.amp * Math.sin(t * p.rot.freq * Math.PI * 2 + p.rot.phase) * decay;
+      }
+    }
+
+    /**
+     * Draws the started pieces in layered order: grid, then logo triangles, then
+     * outline segments (on top). Respects grid.visible and makeLabLogo.visible.
+     *
+     * @param {CanvasRenderingContext2D} ctx - The canvas rendering context.
+     */
+    draw(ctx) {
+      for (const p of this._pieces) {
+        if (!p.started) continue;
+        if (p.group === 'grid' && !this.grid.visible) continue;
+        if ((p.group === 'logo' || p.group === 'outline') && !this.makeLabLogo.visible) continue;
+        drawPieceWithTransform(ctx, p.pivotX, p.pivotY,
+          { dx: p.dx, dy: p.dy, angleRad: p.angleRad }, p.drawFn);
+      }
+    }
+
+    /**
+     * Restarts the animation from the beginning (re-randomizes colors, delays, and
+     * sway/tumble). Call this, then reset your elapsed-time clock to 0.
+     */
+    reset() {
+      this.grid = buildAlignedGrid(this.makeLabLogo, this.canvasWidth, this.canvasHeight);
+      this._init();
+    }
+  }
+
+  // makelab-logo-zoomfade.js — "z-axis zoom" intro animation for the
+  // Makeability Lab logo.
+  //
+  // Fills the canvas with a grid of triangles that fly in from the front of the
+  // screen: each piece starts overscaled (as if in front of the viewer) and
+  // shrinks down to settle onto the screen plane, fading in as it lands. After the
+  // grid has started filling in, the Makeability Lab logo's own pieces zoom in the
+  // same way — each logo triangle, and each individual line segment of the M and L
+  // outlines — until the finished logo is composed on top of the aligned grid.
+  //
+  // This is the zoom counterpart to MakeabilityLabLogoGridFade (which only fades)
+  // and MakeabilityLabLogoLeafFall (which drops pieces from the top). Like those,
+  // it is framework-agnostic: it draws to a raw CanvasRenderingContext2D and is
+  // driven by an elapsed-time value, so the host owns the clock and render loop.
+  //
+  // By Jon E. Froehlich
+  // https://makeabilitylab.io
+  //
+  // Source: https://github.com/makeabilitylab/js
+
+
+  /**
+   * A "z-axis zoom" intro animation: triangles fly in toward the viewer from a
+   * shared perspective origin (the screen center by default). Each piece starts
+   * large and offset out beyond its final position — as if close to the viewer,
+   * in front of the screen — then sweeps inward and shrinks to land on the screen
+   * plane. Because every piece scales about the *same* point, pieces destined for
+   * the edges rush in from off-screen while central pieces barely move, producing
+   * the parallax that reads as real 3D depth. The grid flies in first, then the
+   * Makeability Lab logo's pieces (triangles and individual outline segments) land
+   * to compose the logo on top.
+   *
+   * @example
+   * import { MakeabilityLabLogo } from './makelab-logo.js';
+   * import { MakeabilityLabLogoZoomFade } from './makelab-logo-zoomfade.js';
+   *
+   * const logo = new MakeabilityLabLogo(logoX, logoY, 50);
+   * const anim = new MakeabilityLabLogoZoomFade(logo, canvas.width, canvas.height);
+   *
+   * const start = performance.now();
+   * function frame(now) {
+   *   ctx.clearRect(0, 0, canvas.width, canvas.height);
+   *   anim.update(now - start);
+   *   anim.draw(ctx);
+   *   requestAnimationFrame(frame);
+   * }
+   * requestAnimationFrame(frame);
+   */
+  class MakeabilityLabLogoZoomFade {
+    /**
+     * @param {MakeabilityLabLogo} makeLabLogo - The logo to reveal. The caller is
+     *   responsible for configuring its colors/position before passing it in.
+     * @param {number} canvasWidth - Width of the canvas to fill (CSS pixels).
+     * @param {number} canvasHeight - Height of the canvas to fill (CSS pixels).
+     * @param {Object} [options] - Animation options.
+     * @param {number} [options.totalDurationMs=5000] - Approximate total length of
+     *   the animation. Logo pieces start zooming at logoRevealStartFraction of this.
+     * @param {number} [options.gridStaggerMs=2500] - Grid triangles begin zooming
+     *   at a random time in [0, gridStaggerMs).
+     * @param {number} [options.logoRevealStartFraction=0.2] - Fraction of
+     *   totalDurationMs after which the logo's own pieces begin zooming in.
+     * @param {number} [options.logoStaggerMs=1400] - The logo's own pieces begin
+     *   zooming within a window of this length (starting at logoRevealStartFraction
+     *   of totalDurationMs). Kept short so the logo gathers in a burst rather than
+     *   trickling in across the whole animation.
+     * @param {number} [options.pieceDurationMs=1100] - How long each piece takes to
+     *   fly in from its start scale to its resting size.
+     * @param {number} [options.startScale=6] - Base initial scale of each piece
+     *   (>1 = overscaled / "in front of" the screen). Since pieces scale about the
+     *   shared perspective origin, this also controls how far out they start: a
+     *   piece begins at origin + startScale × (restPosition − origin). Settles to 1.
+     * @param {number} [options.depthVariance=0.45] - Per-piece random fraction
+     *   applied to startScale, so pieces arrive from a range of depths (start scale
+     *   ∈ startScale × [1 − depthVariance, 1 + depthVariance]) rather than one flat
+     *   plane. 0 disables the variation.
+     * @param {number} [options.startOpacity=0.25] - Opacity of a piece at the
+     *   instant it starts flying in (it ramps to 1 as it lands). Keeping it above 0
+     *   lets you see pieces travel rather than just materialize in place.
+     * @param {number} [options.perspectiveX=canvasWidth/2] - X of the shared
+     *   perspective origin (vanishing point) all pieces fly in toward.
+     * @param {number} [options.perspectiveY=canvasHeight/2] - Y of the shared
+     *   perspective origin.
+     * @param {function(number): number} [options.easingFunction=easeOutCubic] -
+     *   Easing for each piece's fly-in + fade (t in [0,1] → [0,1]).
+     * @param {function(): string} [options.getGridColor] - Returns the fill/stroke
+     *   color for each background grid triangle. Defaults to a random ML color.
+     */
+    constructor(makeLabLogo, canvasWidth, canvasHeight, options = {}) {
+      this.makeLabLogo = makeLabLogo;
+      this.canvasWidth = canvasWidth;
+      this.canvasHeight = canvasHeight;
+
+      this.totalDurationMs = options.totalDurationMs ?? 5000;
+      this.gridStaggerMs = options.gridStaggerMs ?? 2500;
+      this.logoRevealStartFraction = options.logoRevealStartFraction ?? 0.2;
+      this.logoStaggerMs = options.logoStaggerMs ?? 1400;
+      this.pieceDurationMs = options.pieceDurationMs ?? 1100;
+      this.startScale = options.startScale ?? 6;
+      this.depthVariance = options.depthVariance ?? 0.45;
+      this.startOpacity = options.startOpacity ?? 0.25;
+      this.perspectiveX = options.perspectiveX ?? canvasWidth / 2;
+      this.perspectiveY = options.perspectiveY ?? canvasHeight / 2;
+      this.easingFunction = options.easingFunction ?? easeOutCubic;
+      this.getGridColor = options.getGridColor ??
+        (() => MakeabilityLabLogoColorer.getRandomOriginalColor());
+
+      /**
+       * Background grid that fills the canvas, aligned to the logo. Exposed so
+       * hosts can toggle visibility (e.g. a debug key).
+       * @type {Grid}
+       */
+      this.grid = buildAlignedGrid(makeLabLogo, canvasWidth, canvasHeight);
+
+      /** @private Flat list of animated pieces (grid, then logo, then outline). */
+      this._pieces = [];
+
+      this._init();
+    }
+
+    /**
+     * Builds the grid, the animated piece pools, and assigns each piece a zoom
+     * delay.
+     * @private
+     */
+    _init() {
+      matchGridOrientationToLogo(this.grid, this.makeLabLogo);
+
+      const pools = buildIntroPieces(this.grid, this.makeLabLogo,
+        { getGridColor: this.getGridColor });
+
+      const logoStartMs = this.totalDurationMs * this.logoRevealStartFraction;
+
+      this._pieces = [];
+      for (const p of pools.grid) {
+        this._addPiece(p, 'grid', Math.random() * this.gridStaggerMs);
+      }
+      const logoDelay = () =>
+        logoStartMs + Math.random() * this.logoStaggerMs;
+      for (const p of pools.logoTris) this._addPiece(p, 'logo', logoDelay());
+      for (const p of pools.outline) this._addPiece(p, 'outline', logoDelay());
+    }
+
+    /**
+     * Wraps a base piece with zoom-fade animation state and adds it to the pool.
+     * @private
+     */
+    _addPiece(base, group, delayMs) {
+      // Vary each piece's start scale so they arrive from a range of depths
+      // rather than a single flat plane.
+      const startScale = this.startScale *
+        (1 + (Math.random() * 2 - 1) * this.depthVariance);
+      this._pieces.push({
+        ...base,
+        group,
+        delayMs,
+        startScale,
+        // Per-frame state, filled in by update():
+        started: false,
+        scale: startScale,
+        opacity: 0,
+      });
+    }
+
+    /**
+     * Advances the animation to the given elapsed time, computing each piece's
+     * current scale and opacity. Call once per frame before {@link draw}.
+     *
+     * @param {number} elapsedMs - Milliseconds elapsed since the animation started.
+     */
+    update(elapsedMs) {
+      for (const p of this._pieces) {
+        if (elapsedMs < p.delayMs) {
+          p.started = false;
+          continue;
+        }
+        p.started = true;
+
+        const t = clamp((elapsedMs - p.delayMs) / this.pieceDurationMs, 0, 1);
+        const e = this.easingFunction(t);
+        p.scale = lerp(p.startScale, 1, e);
+        p.opacity = lerp(this.startOpacity, 1, e);
+      }
+    }
+
+    /**
+     * Draws the started pieces in layered order: grid, then logo triangles, then
+     * outline segments (on top). Respects grid.visible and makeLabLogo.visible.
+     *
+     * @param {CanvasRenderingContext2D} ctx - The canvas rendering context.
+     */
+    draw(ctx) {
+      for (const p of this._pieces) {
+        if (!p.started) continue;
+        if (p.group === 'grid' && !this.grid.visible) continue;
+        if ((p.group === 'logo' || p.group === 'outline') && !this.makeLabLogo.visible) continue;
+        // Pivot the scale about the shared perspective origin (not the piece's own
+        // center): at scale s a piece is drawn at origin + s × (rest − origin), so
+        // it both grows and flies outward/inward along a ray through that origin —
+        // the parallax that sells the 3D "flying in toward the viewer" effect.
+        drawPieceWithTransform(ctx, this.perspectiveX, this.perspectiveY,
+          { scale: p.scale, opacity: p.opacity }, p.drawFn);
+      }
+    }
+
+    /**
+     * Restarts the animation from the beginning (re-randomizes colors and delays).
+     * Call this, then reset your elapsed-time clock to 0.
+     */
+    reset() {
+      this.grid = buildAlignedGrid(this.makeLabLogo, this.canvasWidth, this.canvasHeight);
+      this._init();
     }
   }
 
@@ -4946,7 +5601,9 @@
   exports.MakeabilityLabLogo = MakeabilityLabLogo;
   exports.MakeabilityLabLogoColorer = MakeabilityLabLogoColorer;
   exports.MakeabilityLabLogoGridFade = MakeabilityLabLogoGridFade;
+  exports.MakeabilityLabLogoLeafFall = MakeabilityLabLogoLeafFall;
   exports.MakeabilityLabLogoMorpher = MakeabilityLabLogoMorpher;
+  exports.MakeabilityLabLogoZoomFade = MakeabilityLabLogoZoomFade;
   exports.ORIGINAL_COLOR_ARRAY = ORIGINAL_COLOR_ARRAY;
   exports.OriginalColorPaletteRGB = OriginalColorPaletteRGB;
   exports.Serial = Serial;

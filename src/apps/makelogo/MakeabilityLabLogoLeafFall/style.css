@@ -1,0 +1,41 @@
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  overflow: hidden;
+  background: rgb(250, 250, 250);
+  font-family: system-ui, sans-serif;
+}
+
+/* Canvas fills the whole window. */
+canvas {
+  display: block;
+  width: 100vw;
+  height: 100vh;
+}
+
+/* Keyboard hint, overlaid on the canvas. */
+.hint {
+  position: fixed;
+  left: 50%;
+  bottom: 1rem;
+  transform: translateX(-50%);
+  margin: 0;
+  padding: 0.4rem 0.9rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(4px);
+  color: #333;
+  font-size: 0.85rem;
+  white-space: nowrap;
+  pointer-events: none;       /* never blocks interaction with the canvas */
+  user-select: none;
+}
+
+kbd {
+  font-family: ui-monospace, monospace;
+  background: #eee;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  padding: 0 0.3em;
+}

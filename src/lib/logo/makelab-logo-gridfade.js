@@ -15,7 +15,9 @@
 //
 // Source: https://github.com/makeabilitylab/js
 
-import { Grid, Triangle, MakeabilityLabLogoColorer } from './makelab-logo.js';
+import { MakeabilityLabLogoColorer } from './makelab-logo.js';
+import { buildAlignedGrid, matchGridOrientationToLogo, findGridCellForTriangle }
+  from './makelab-logo-intro-utils.js';
 import { lerpColor } from '../graphics/color-utils.js';
 import { clamp, easeOutCubic } from '../math/math-utils.js';
 
@@ -85,8 +87,7 @@ export class MakeabilityLabLogoGridFade {
      * cells line up with the logo's cells.
      * @type {Grid}
      */
-    this.grid = new Grid(canvasWidth, canvasHeight, makeLabLogo.cellSize,
-      undefined, undefined, makeLabLogo.x, makeLabLogo.y);
+    this.grid = buildAlignedGrid(makeLabLogo, canvasWidth, canvasHeight);
 
     /**
      * Current logo opacity in [0, 1], updated each frame by {@link update}.
@@ -152,28 +153,13 @@ export class MakeabilityLabLogoGridFade {
    *   animation entry (so we can override the fade target color).
    */
   _matchGridToLogo(entryByTri) {
-    // Index grid cells by their (rounded) origin for position lookup.
-    const cellByPos = new Map();
-    for (const row of this.grid.gridArray) {
-      for (const cell of row) {
-        cellByPos.set(`${Math.round(cell.tri1.x)},${Math.round(cell.tri1.y)}`, cell);
-      }
-    }
-
-    // 1. Match orientation across the whole logo footprint.
-    for (const logoTri of this.makeLabLogo.getAllTriangles()) {
-      const cell = cellByPos.get(`${Math.round(logoTri.x)},${Math.round(logoTri.y)}`);
-      if (!cell) continue;
-      if (cell.tri1.direction !== logoTri.direction &&
-          cell.tri2.direction !== logoTri.direction) {
-        cell.tri1.direction = logoTri.direction;
-        cell.tri2.direction = Triangle.getOppositeDirection(logoTri.direction);
-      }
-    }
+    // 1. Match orientation across the whole logo footprint. Returns the cell
+    //    position index so we can reuse it for color pinning below.
+    const cellByPos = matchGridOrientationToLogo(this.grid, this.makeLabLogo);
 
     // 2. Pin the 12 colored triangles' grid counterparts to the logo's colors.
     for (const logoTri of this.makeLabLogo.getDefaultColoredTriangles()) {
-      const cell = cellByPos.get(`${Math.round(logoTri.x)},${Math.round(logoTri.y)}`);
+      const cell = findGridCellForTriangle(cellByPos, logoTri);
       if (!cell) continue;
       const match = cell.tri1.direction === logoTri.direction ? cell.tri1 : cell.tri2;
       const entry = entryByTri.get(match);
