@@ -134,6 +134,9 @@ document.addEventListener('keydown', (event) => {
     case 'h': // toggle the logo
       makeLabLogo.visible = !makeLabLogo.visible;
       break;
+    case 'f': // drop the background leaves to the ground; logo stays fixed
+      leafFall.dropLeaves();
+      break;
     default:
       return;
   }

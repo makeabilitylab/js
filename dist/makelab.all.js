@@ -4357,13 +4357,16 @@ function getOutlineSegments(logo) {
  * @param {function(): string} opts.getGridColor - Returns a fill/stroke color
  *   for each grid triangle.
  * @returns {{grid: Piece[], logoTris: Piece[], outline: Piece[]}} where each
- *   Piece is {drawFn, pivotX, pivotY, height}.
+ *   Piece is {drawFn, pivotX, pivotY, height}. Triangle pieces also carry their
+ *   source `tri`, and grid pieces carry `isLogoColor` (true for the cells pinned
+ *   to the logo's colors, i.e. the ones that form the colored logo).
  */
 function buildIntroPieces(grid, logo, { getGridColor }) {
   const triPiece = (tri) => {
     const bb = tri.getBoundingBox();
     return {
       drawFn: (ctx) => tri.draw(ctx),
+      tri,
       pivotX: bb.x + bb.width / 2,
       pivotY: bb.y + bb.height / 2,
       height: bb.height,
@@ -4389,12 +4392,21 @@ function buildIntroPieces(grid, logo, { getGridColor }) {
   // already orientation-matched to the logo, so the matching-direction triangle
   // in each cell lines up with the logo triangle.
   const cellByPos = indexCellsByPosition(grid);
+  const pinnedTris = new Set();
   for (const logoTri of logo.getDefaultColoredTriangles()) {
     const cell = findGridCellForTriangle(cellByPos, logoTri);
     if (!cell) continue;
     const match = cell.tri1.direction === logoTri.direction ? cell.tri1 : cell.tri2;
     match.fillColor = logoTri.fillColor;
     match.strokeColor = logoTri.fillColor;
+    pinnedTris.add(match);
+  }
+
+  // Tag the pinned grid triangles: these are the grid cells that *are* the
+  // colored logo, so callers can treat them as part of the logo (e.g. keep them
+  // fixed while the rest of the background grid animates away).
+  for (const piece of gridPieces) {
+    piece.isLogoColor = pinnedTris.has(piece.tri);
   }
 
   // Logo pieces that genuinely fall *on top of* the grid: the black M-shadow
@@ -4750,6 +4762,18 @@ class MakeabilityLabLogoLeafFall {
    *   of a leaf as it drifts down (decays to 0 on landing).
    * @param {number} [options.maxRotationDeg=140] - Max tumble rotation, in
    *   degrees, of a leaf as it falls (decays to 0 on landing).
+   * @param {number} [options.groundStaggerMs=700] - For {@link dropLeaves}: the
+   *   window over which background leaves begin falling to the ground.
+   * @param {number} [options.groundFallMinMs=700] - For {@link dropLeaves}:
+   *   shortest ground-fall duration (for leaves nearest the bottom).
+   * @param {number} [options.groundFallMaxMs=1700] - For {@link dropLeaves}:
+   *   longest ground-fall duration (for leaves falling the full height).
+   * @param {number} [options.groundPileSpread=70] - For {@link dropLeaves}: how
+   *   many pixels of random vertical spread the settled pile has at the bottom.
+   * @param {boolean} [options.startAssembled=false] - If true, the grid and logo
+   *   are fully assembled from the very first frame (the fall-in intro is
+   *   skipped), so nothing animates until you call {@link dropLeaves}. Useful for
+   *   showing a finished logo and then dropping the leaves on demand.
    * @param {function(number): number} [options.easingFunction=easeOutCubic] -
    *   Easing for each piece's vertical descent (t in [0,1] → [0,1]).
    * @param {function(): string} [options.getGridColor] - Returns the fill/stroke
@@ -4768,6 +4792,14 @@ class MakeabilityLabLogoLeafFall {
     this.maxFallMs = options.maxFallMs ?? 2800;
     this.swayAmplitude = options.swayAmplitude ?? 55;
     this.maxRotationDeg = options.maxRotationDeg ?? 140;
+
+    // --- "Leaf drop" (dropLeaves) tuning: background leaves fall to the ground ---
+    this.groundStaggerMs = options.groundStaggerMs ?? 700;
+    this.groundFallMinMs = options.groundFallMinMs ?? 700;
+    this.groundFallMaxMs = options.groundFallMaxMs ?? 1700;
+    this.groundPileSpread = options.groundPileSpread ?? 70;
+    this.startAssembled = options.startAssembled ?? false;
+
     this.easingFunction = options.easingFunction ?? easeOutCubic;
     this.getGridColor = options.getGridColor ??
       (() => MakeabilityLabLogoColorer.getRandomOriginalColor());
@@ -4808,6 +4840,10 @@ class MakeabilityLabLogoLeafFall {
       logoStartMs + Math.random() * this.logoStaggerMs;
     for (const p of pools.logoTris) this._addPiece(p, 'logo', logoDelay());
     for (const p of pools.outline) this._addPiece(p, 'outline', logoDelay());
+
+    // "Leaf drop" state (see dropLeaves()): not active until triggered.
+    this._dropping = false;
+    this._dropStartMs = null;
   }
 
   /**
@@ -4857,6 +4893,16 @@ class MakeabilityLabLogoLeafFall {
    */
   update(elapsedMs) {
     for (const p of this._pieces) {
+      // Skip the fall-in intro: every piece sits at rest from the first frame,
+      // so only dropLeaves() animates anything.
+      if (this.startAssembled) {
+        p.started = true;
+        p.dx = 0;
+        p.dy = 0;
+        p.angleRad = 0;
+        continue;
+      }
+
       if (elapsedMs < p.delayMs) {
         p.started = false;
         continue;
@@ -4870,6 +4916,72 @@ class MakeabilityLabLogoLeafFall {
       p.dy = lerp(p.startDy, 0, e);
       p.dx = p.sway.amp * Math.sin(t * p.sway.freq * Math.PI * 2 + p.sway.phase) * decay;
       p.angleRad = p.rot.amp * Math.sin(t * p.rot.freq * Math.PI * 2 + p.rot.phase) * decay;
+    }
+
+    // Leaf drop: once triggered, background grid leaves fall to the ground and
+    // pile up, overriding their resting transform. Logo pieces and the pinned
+    // colored grid cells have no `drop` params, so the logo stays fixed.
+    if (this._dropping) {
+      if (this._dropStartMs === null) {
+        this._dropStartMs = elapsedMs;
+        this._initDrop();
+      }
+      const dropMs = elapsedMs - this._dropStartMs;
+      for (const p of this._pieces) {
+        if (!p.drop) continue;
+        const t = clamp((dropMs - p.drop.delayMs) / p.drop.durationMs, 0, 1);
+        const decay = 1 - t;
+        // Vertical follows gravity (position ∝ t²), accelerating into the ground.
+        p.dy = p.drop.groundDy * t * t;
+        // Drift sideways with a decaying flutter, like a tumbling leaf.
+        p.dx = p.drop.driftX * t +
+          p.drop.sway.amp * Math.sin(t * p.drop.sway.freq * Math.PI * 2 + p.drop.sway.phase) * decay;
+        // Rotate to a random resting angle (leaves lie every which way).
+        p.angleRad = p.drop.finalAngle * this.easingFunction(t);
+      }
+    }
+  }
+
+  /**
+   * Triggers the "leaf drop": every background grid triangle falls to the bottom
+   * of the screen and settles into a pile, while the logo stays fixed in place
+   * (its colored triangles, black M-shadow, translucent L, and outlines do not
+   * move). Idempotent — calling it again while a drop is in progress is a no-op.
+   * {@link reset} clears the drop.
+   */
+  dropLeaves() {
+    if (this._dropping) return;
+    this._dropping = true;
+    this._dropStartMs = null; // captured on the next update() so it shares the clock
+  }
+
+  /**
+   * Assigns each background grid piece a ground target and randomized fall
+   * parameters. Called once, the first update() after dropLeaves().
+   * @private
+   */
+  _initDrop() {
+    for (const p of this._pieces) {
+      // Only the background grid falls; logo pieces and the pinned colored grid
+      // cells (isLogoColor) stay put so the logo remains intact.
+      if (p.group !== 'grid' || p.isLogoColor) continue;
+
+      const groundY = this.canvasHeight - p.height / 2 - Math.random() * this.groundPileSpread;
+      const groundDy = Math.max(0, groundY - p.pivotY); // fall downward only
+      const distanceFraction = clamp(groundDy / this.canvasHeight, 0, 1);
+
+      p.drop = {
+        delayMs: Math.random() * this.groundStaggerMs,
+        durationMs: lerp(this.groundFallMinMs, this.groundFallMaxMs, distanceFraction),
+        groundDy,
+        driftX: (Math.random() * 2 - 1) * 40,
+        finalAngle: (Math.random() * 2 - 1) * Math.PI * 1.5, // up to ~270° tumble
+        sway: {
+          amp: this.swayAmplitude * 0.5 * (0.5 + Math.random() * 0.5),
+          freq: 1 + Math.random() * 2,
+          phase: Math.random() * Math.PI * 2,
+        },
+      };
     }
   }
 

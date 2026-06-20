@@ -134,13 +134,16 @@ export function getOutlineSegments(logo) {
  * @param {function(): string} opts.getGridColor - Returns a fill/stroke color
  *   for each grid triangle.
  * @returns {{grid: Piece[], logoTris: Piece[], outline: Piece[]}} where each
- *   Piece is {drawFn, pivotX, pivotY, height}.
+ *   Piece is {drawFn, pivotX, pivotY, height}. Triangle pieces also carry their
+ *   source `tri`, and grid pieces carry `isLogoColor` (true for the cells pinned
+ *   to the logo's colors, i.e. the ones that form the colored logo).
  */
 export function buildIntroPieces(grid, logo, { getGridColor }) {
   const triPiece = (tri) => {
     const bb = tri.getBoundingBox();
     return {
       drawFn: (ctx) => tri.draw(ctx),
+      tri,
       pivotX: bb.x + bb.width / 2,
       pivotY: bb.y + bb.height / 2,
       height: bb.height,
@@ -166,12 +169,21 @@ export function buildIntroPieces(grid, logo, { getGridColor }) {
   // already orientation-matched to the logo, so the matching-direction triangle
   // in each cell lines up with the logo triangle.
   const cellByPos = indexCellsByPosition(grid);
+  const pinnedTris = new Set();
   for (const logoTri of logo.getDefaultColoredTriangles()) {
     const cell = findGridCellForTriangle(cellByPos, logoTri);
     if (!cell) continue;
     const match = cell.tri1.direction === logoTri.direction ? cell.tri1 : cell.tri2;
     match.fillColor = logoTri.fillColor;
     match.strokeColor = logoTri.fillColor;
+    pinnedTris.add(match);
+  }
+
+  // Tag the pinned grid triangles: these are the grid cells that *are* the
+  // colored logo, so callers can treat them as part of the logo (e.g. keep them
+  // fixed while the rest of the background grid animates away).
+  for (const piece of gridPieces) {
+    piece.isLogoColor = pinnedTris.has(piece.tri);
   }
 
   // Logo pieces that genuinely fall *on top of* the grid: the black M-shadow
