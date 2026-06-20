@@ -7,18 +7,21 @@ html, body {
   font-family: system-ui, sans-serif;
 }
 
-/* Canvas fills the whole window. */
+/* Canvas fills the whole window. Its pixel dimensions are set in JS (sketch.js)
+   to match the backing store, so the triangles stay perfectly square on mobile
+   (a CSS 100vw/100vh box would stretch against iOS Safari's larger 100vh). */
 canvas {
   display: block;
-  width: 100vw;
-  height: 100vh;
+  position: fixed;
+  top: 0;
+  left: 0;
 }
 
 /* Keyboard hint, overlaid on the canvas. */
 .hint {
   position: fixed;
   left: 50%;
-  bottom: 1rem;
+  bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
   transform: translateX(-50%);
   margin: 0;
   padding: 0.4rem 0.9rem;
@@ -38,4 +41,19 @@ kbd {
   border: 1px solid #ccc;
   border-radius: 4px;
   padding: 0 0.3em;
+}
+
+/* Show the keyboard hint on devices with a keyboard; on touch devices (no
+   keyboard) show the tap hint instead. */
+.hint-touch {
+  display: none;
+}
+
+@media (hover: none) and (pointer: coarse) {
+  .hint-desktop {
+    display: none;
+  }
+  .hint-touch {
+    display: block;
+  }
 }

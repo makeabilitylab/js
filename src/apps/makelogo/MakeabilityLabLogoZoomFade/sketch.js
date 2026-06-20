@@ -43,13 +43,20 @@ function buildScene() {
   const w = window.innerWidth;
   const h = window.innerHeight;
 
-  // High-DPI: draw in CSS pixels, render at device resolution. Reset the
-  // transform first since ctx.scale() is cumulative across rebuilds.
+  // High-DPI: the backing store is sized in device pixels, the CSS box in CSS
+  // pixels, and ctx is scaled by dpr so we can keep drawing in CSS pixels.
+  // Setting the CSS size explicitly (instead of via 100vw/100vh) is what keeps
+  // the triangles perfectly square on mobile: iOS Safari's 100vh is the larger
+  // url-bar-collapsed height, so a 100vh canvas gets stretched vertically and
+  // the squares distort. Matching the CSS box to innerWidth/innerHeight keeps
+  // the backing-to-CSS ratio uniform. setTransform (not scale) avoids the
+  // cumulative-scale bug across rebuilds.
   const dpr = window.devicePixelRatio || 1;
-  canvas.width = w * dpr;
-  canvas.height = h * dpr;
-  ctx.setTransform(1, 0, 0, 1, 0, 0);
-  ctx.scale(dpr, dpr);
+  canvas.width = Math.round(w * dpr);
+  canvas.height = Math.round(h * dpr);
+  canvas.style.width = w + 'px';
+  canvas.style.height = h + 'px';
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
   // Center the logo (6×4 cells) in the window.
   const logoX = Math.round((w - MakeabilityLabLogo.numCols * TRIANGLE_SIZE) / 2);
@@ -100,12 +107,26 @@ window.addEventListener('resize', () => {
   resizeTimer = setTimeout(buildScene, 150);
 });
 
-// --- Keyboard interaction ---
+// --- Interaction ---
+
+/** Restart the animation from the beginning. */
+function replay() {
+  zoomFade.reset();
+  animationStartMs = 0;
+}
+
+// Tap to replay on touch devices (which have no keyboard). Mouse clicks are
+// ignored so desktop users aren't surprised — they have the keyboard shortcuts.
+canvas.addEventListener('pointerup', (event) => {
+  if (event.pointerType === 'mouse') return;
+  replay();
+});
+
+// Keyboard shortcuts (desktop).
 document.addEventListener('keydown', (event) => {
   switch (event.key.toLowerCase()) {
     case 'r': // replay from the beginning
-      zoomFade.reset();
-      animationStartMs = 0;
+      replay();
       break;
     case 'g': // toggle the background grid
       zoomFade.grid.visible = !zoomFade.grid.visible;
