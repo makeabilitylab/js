@@ -442,6 +442,19 @@ static getGridYCenterPosition(triangleSize, canvasHeight, alignToGrid = false, s
   }
 
   /**
+   * Sets the fill color for all L-shaped triangles. Accepts any CSS color,
+   * including semi-translucent values (e.g. 'rgba(255, 255, 255, 0.5)') to let
+   * the colored logo show through the L.
+   *
+   * @param {string} color - The color to set as the fill color for the triangles.
+   */
+  setLTriangleFillColor(color){
+    for(const tri of this.getLTriangles()){
+      tri.fillColor = color;
+    }
+  }
+
+  /**
    * Sets the fill color for all MShadow triangles.
    *
    * @param {string} color - The color to set for the fill of the MShadow triangles.
