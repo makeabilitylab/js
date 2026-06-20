@@ -121,3 +121,15 @@ export function easeInOutCubic(t) {
 
 /** @param {number} t @returns {number} */
 export function easeInCubic(t) { return t * t * t; }
+
+/**
+ * Overshoots past 1 near the end before settling back, giving a springy "snap"
+ * landing. Useful for assembly animations where pieces should slightly overshoot
+ * their resting spot. Returns 0 at t=0 and 1 at t=1 but exceeds 1 in between.
+ * @param {number} t @returns {number}
+ */
+export function easeOutBack(t) {
+  const c1 = 1.70158;
+  const c3 = c1 + 1;
+  return 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2);
+}

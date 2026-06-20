@@ -3,6 +3,7 @@ import { Triangle } from './makelab-logo.js';
 import { lerpColor } from '../graphics/color-utils.js';
 import { lerp, random, easeOutCubic } from '../math/math-utils.js';
 import { shuffle } from '../array-utils.js';
+import { linearPath } from './morph-paths.js';
 
 // =============================================================================
 // MakeabilityLabLogoMorpher
@@ -155,6 +156,29 @@ export class MakeabilityLabLogoMorpher {
     this.easingFunction = easeOutCubic;
 
     // ------------------------------------------------------------------
+    // Trajectory (path) + stagger
+    // ------------------------------------------------------------------
+
+    /**
+     * The trajectory each triangle follows from its scattered start to its
+     * logo destination. Defaults to a straight line (original behaviour).
+     * Set to any path from morph-paths.js (e.g. arcPath(), spiralPath()) and
+     * then call reset()/resetFromArt() so the new path can prepare per-triangle
+     * data.
+     * @type {import('./morph-paths.js').MorphPath}
+     */
+    this.pathFunction = linearPath();
+
+    /**
+     * Per-piece arrival stagger in [0, 1). 0 = every triangle animates in
+     * lockstep (original behaviour). Higher values spread out arrival times so
+     * the logo assembles from the inside out — triangles nearer the logo centre
+     * start (and finish) sooner. Clamped to 0.95 to keep the window non-zero.
+     * @type {number}
+     */
+    this.stagger = 0;
+
+    // ------------------------------------------------------------------
     // L-outline animation
     // ------------------------------------------------------------------
 
@@ -292,6 +316,8 @@ export class MakeabilityLabLogoMorpher {
       tri._dest  = _snapshot(dest, 0);
       return tri;
     });
+
+    this._preparePaths(canvasWidth, canvasHeight);
   }
 
   /**
@@ -381,6 +407,83 @@ export class MakeabilityLabLogoMorpher {
 
       return tri;
     });
+
+    this._preparePaths(canvasWidth, canvasHeight);
+  }
+
+  // ===========================================================================
+  // Path / stagger preparation
+  // ===========================================================================
+
+  /**
+   * Prepares per-triangle trajectory and stagger data after start/end states
+   * are assigned. Computes the logo centroid, gives each triangle a normalized
+   * stagger delay based on how far its destination sits from that centroid
+   * (centre pieces arrive first), and lets the active pathFunction stash any
+   * per-triangle data it needs. Called automatically by reset()/resetFromArt().
+   *
+   * @param {number} canvasWidth
+   * @param {number} canvasHeight
+   * @private
+   */
+  _preparePaths(canvasWidth, canvasHeight) {
+    // Remember canvas dims so setPath() can re-prepare without re-randomizing.
+    this._canvasWidth  = canvasWidth;
+    this._canvasHeight = canvasHeight;
+
+    const box       = this.makeLabLogo.getBoundingBox();
+    const centroidX = box.x + box.width  / 2;
+    const centroidY = box.y + box.height / 2;
+    const count     = this._animTris.length;
+
+    // Distance of each destination from the centroid → normalized [0, 1] delay.
+    let maxDist = 0;
+    for (const tri of this._animTris) {
+      const d = tri._dest;
+      tri._delayDist = Math.hypot(d.x - centroidX, d.y - centroidY);
+      if (tri._delayDist > maxDist) maxDist = tri._delayDist;
+    }
+
+    this._animTris.forEach((tri, index) => {
+      tri._delayNorm = maxDist > 0 ? tri._delayDist / maxDist : 0;
+      this.pathFunction.prepare(tri, {
+        centroidX, centroidY, canvasWidth, canvasHeight, index, count,
+      });
+    });
+  }
+
+  /**
+   * Swaps the active trajectory and re-prepares per-triangle path data in place,
+   * keeping the current scattered start positions (does not re-randomize). Use
+   * when changing path style or its parameters mid-morph. If no start state
+   * exists yet, just stores the path for the next reset()/resetFromArt().
+   *
+   * @param {import('./morph-paths.js').MorphPath} path
+   */
+  setPath(path) {
+    this.pathFunction = path;
+    if (this._animTris.length > 0) {
+      this._preparePaths(this._canvasWidth, this._canvasHeight);
+    }
+  }
+
+  /**
+   * Computes a single triangle's raw (pre-easing) progress in [0, 1] for the
+   * given global lerpAmt, applying the stagger window. With stagger 0 this is
+   * just lerpAmt, so behaviour is unchanged.
+   *
+   * @param {Triangle} tri
+   * @param {number} lerpAmt
+   * @returns {number}
+   * @private
+   */
+  _pieceProgress(tri, lerpAmt) {
+    const stagger = Math.min(Math.max(this.stagger, 0), 0.95);
+    if (stagger <= 0) return lerpAmt;
+    const start  = stagger * (tri._delayNorm ?? 0);
+    const window = 1 - stagger;
+    const local  = (lerpAmt - start) / window;
+    return Math.min(Math.max(local, 0), 1);
   }
 
   // ===========================================================================
@@ -403,7 +506,6 @@ export class MakeabilityLabLogoMorpher {
     if (this._animTris.length === 0) return;
 
     this._currentLerpAmt = lerpAmt;
-    const t = this.easingFunction(lerpAmt); // eased value for spatial props
 
     // L outline: invisible below threshold, fades in above it
     if (lerpAmt >= this.lOutlineAppearThreshold) {
@@ -431,16 +533,22 @@ export class MakeabilityLabLogoMorpher {
         const s = tri._start;
         const d = tri._dest;
 
-        // Spatial: eased
-        tri.x     = lerp(s.x,     d.x,     t);
-        tri.y     = lerp(s.y,     d.y,     t);
+        // Per-piece progress (raw, then eased) — drives stagger.
+        const local = this._pieceProgress(tri, lerpAmt);
+        const t     = this.easingFunction(local);
+
+        // Spatial: position follows the pathFunction; size/angle eased.
+        const p   = this.pathFunction.position(tri, t);
+        tri.x     = p.x;
+        tri.y     = p.y;
         tri.size  = lerp(s.size,  d.size,  t);
         tri.angle = lerp(s.angle, d.angle, t);
 
-        // Visual: linear
-        tri.strokeWidth = lerp(s.strokeWidth,             d.strokeWidth,             lerpAmt);
-        tri.fillColor   = lerpColor(s.fillColor,   d.fillColor,   lerpAmt);
-        tri.strokeColor = lerpColor(s.strokeColor, d.strokeColor, lerpAmt);
+        // Visual: linear in the piece's own (raw) progress so colour tracks the
+        // triangle rather than the global timeline when staggered.
+        tri.strokeWidth = lerp(s.strokeWidth,      d.strokeWidth,      local);
+        tri.fillColor   = lerpColor(s.fillColor,   d.fillColor,        local);
+        tri.strokeColor = lerpColor(s.strokeColor, d.strokeColor,      local);
       }
     }
   }

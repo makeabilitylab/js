@@ -2,6 +2,6 @@
 
 export {
   convertToRadians, convertToDegrees, lerp, map, random, randomGaussian, clamp,
-  easeOutCubic, easeOutQuad, easeInOutCubic, easeInCubic
+  easeOutCubic, easeOutQuad, easeInOutCubic, easeInCubic, easeOutBack
 } from './math-utils.js';
 export { Vector } from './vector.js';

@@ -6,3 +6,5 @@ export { MakeabilityLabLogoGridFade } from './makelab-logo-gridfade.js';
 export { MakeabilityLabLogoLeafFall } from './makelab-logo-leaffall.js';
 export { MakeabilityLabLogoZoomFade } from './makelab-logo-zoomfade.js';
 export { TriangleArt } from './triangle-art.js';
+export { linearPath, arcPath, bezierPath, spiralPath,
+         MORPH_PATHS } from './morph-paths.js';

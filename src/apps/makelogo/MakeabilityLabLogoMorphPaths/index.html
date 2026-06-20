@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <link rel="stylesheet" type="text/css" href="style.css">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Makeability Lab Logo — Morph Paths</title>
+</head>
+<body>
+  <!-- Floating control sidebar. Collapsible; fully keyboard-operable. -->
+  <aside id="sidebar" aria-label="Animation controls">
+    <button id="sidebarToggle" class="sidebar-toggle"
+            aria-expanded="true" aria-controls="sidebarBody">
+      <span class="toggle-icon" aria-hidden="true">&#9776;</span>
+      <span class="toggle-text">Controls</span>
+    </button>
+
+    <div id="sidebarBody" class="sidebar-body">
+      <h1 class="sidebar-title">Morph Paths</h1>
+      <p class="sidebar-hint">Move the mouse left&rarr;right over the canvas to
+        assemble the logo, or switch to Playback. Press <kbd>r</kbd> to
+        re-scatter.</p>
+
+      <!-- Source ------------------------------------------------------------>
+      <fieldset class="group">
+        <legend>Source</legend>
+        <div class="control-row">
+          <label for="shapeSelect">Start from</label>
+          <select id="shapeSelect">
+            <option value="">Random Explosion</option>
+            <option value="../../../lib/logo/art_data/heart.json">Heart</option>
+            <option value="../../../lib/logo/art_data/shamrock.json">Shamrock</option>
+            <option value="../../../lib/logo/art_data/jack-o-lantern.json">Jack-O-Lantern</option>
+            <option value="../../../lib/logo/art_data/pumpkin.json">Pumpkin</option>
+            <option value="../../../lib/logo/art_data/santa.json">Santa</option>
+            <option value="../../../lib/logo/art_data/uw.json">UW Purple W</option>
+          </select>
+        </div>
+      </fieldset>
+
+      <!-- Path -------------------------------------------------------------->
+      <fieldset class="group">
+        <legend>Path shape</legend>
+        <div class="radio-group" role="radiogroup" aria-label="Path shape">
+          <label class="radio-label">
+            <input type="radio" name="pathStyle" value="linear"> Linear
+          </label>
+          <label class="radio-label">
+            <input type="radio" name="pathStyle" value="arc" checked> Arc
+          </label>
+          <label class="radio-label">
+            <input type="radio" name="pathStyle" value="bezier"> Bézier
+          </label>
+          <label class="radio-label">
+            <input type="radio" name="pathStyle" value="spiral"> Spiral
+          </label>
+        </div>
+
+        <div class="control-row" id="arcParam">
+          <label for="arcRange">Arc height</label>
+          <div class="range-with-value">
+            <input type="range" id="arcRange" min="0.05" max="1" step="0.05" value="0.35">
+            <span id="arcValue">0.35</span>
+          </div>
+        </div>
+
+        <div class="control-row" id="spiralParam">
+          <label for="spiralRange">Spiral turns</label>
+          <div class="range-with-value">
+            <input type="range" id="spiralRange" min="0" max="3" step="0.25" value="1">
+            <span id="spiralValue">1</span>
+          </div>
+        </div>
+      </fieldset>
+
+      <!-- Timing ------------------------------------------------------------>
+      <fieldset class="group">
+        <legend>Timing</legend>
+        <div class="control-row">
+          <label for="easingSelect">Easing</label>
+          <select id="easingSelect">
+            <option value="easeOutCubic" selected>Ease Out Cubic</option>
+            <option value="easeOutQuad">Ease Out Quad</option>
+            <option value="easeInCubic">Ease In Cubic</option>
+            <option value="easeInOutCubic">Ease In-Out Cubic</option>
+            <option value="easeOutBack">Ease Out Back (overshoot)</option>
+            <option value="linear">Linear</option>
+          </select>
+        </div>
+
+        <div class="control-row">
+          <label for="staggerRange">Stagger</label>
+          <div class="range-with-value">
+            <input type="range" id="staggerRange" min="0" max="0.9" step="0.05" value="0.2">
+            <span id="staggerValue">0.20</span>
+          </div>
+        </div>
+      </fieldset>
+
+      <!-- Layout ------------------------------------------------------------>
+      <fieldset class="group">
+        <legend>Layout</legend>
+        <div class="control-row">
+          <label for="sizeRange">Triangle size</label>
+          <div class="range-with-value">
+            <input type="range" id="sizeRange" min="20" max="90" step="5" value="50">
+            <span id="sizeValue">50</span>
+          </div>
+        </div>
+        <label class="checkbox-label" for="showGrid">
+          <input type="checkbox" id="showGrid"> Show grid
+        </label>
+        <label class="checkbox-label" for="showGhost">
+          <input type="checkbox" id="showGhost"> Show target ghost
+        </label>
+        <label class="checkbox-label" for="showMessage">
+          <input type="checkbox" id="showMessage" checked> Show message
+        </label>
+      </fieldset>
+
+      <!-- Drive ------------------------------------------------------------->
+      <fieldset class="group">
+        <legend>Drive mode</legend>
+        <div class="radio-group" role="radiogroup" aria-label="Drive mode">
+          <label class="radio-label">
+            <input type="radio" name="driveMode" value="mouse" checked> Mouse
+          </label>
+          <label class="radio-label">
+            <input type="radio" name="driveMode" value="playback"> Playback
+          </label>
+        </div>
+
+        <div id="playbackControls">
+          <div class="control-row">
+            <label for="directionSelect">Direction</label>
+            <select id="directionSelect">
+              <option value="artToLogo" selected>Source &rarr; Logo</option>
+              <option value="logoToArt">Logo &rarr; Source</option>
+            </select>
+          </div>
+          <div class="control-row">
+            <label for="durationRange">Duration</label>
+            <div class="range-with-value">
+              <input type="range" id="durationRange" min="0.5" max="8" step="0.5" value="3">
+              <span id="durationValue">3s</span>
+            </div>
+          </div>
+          <div class="control-row">
+            <label for="pauseRange">Pause at ends</label>
+            <div class="range-with-value">
+              <input type="range" id="pauseRange" min="0" max="3" step="0.25" value="1">
+              <span id="pauseValue">1s</span>
+            </div>
+          </div>
+          <label class="checkbox-label" for="repeatCheck">
+            <input type="checkbox" id="repeatCheck" checked> Repeat (ping-pong)
+          </label>
+          <div class="control-row">
+            <button id="playBtn" aria-label="Play animation">&#9654; Play</button>
+          </div>
+        </div>
+      </fieldset>
+
+      <div class="control-row">
+        <button id="scatterBtn">&#10227; Re-scatter</button>
+      </div>
+    </div>
+  </aside>
+
+  <div class="container">
+    <canvas id="myCanvas"></canvas>
+  </div>
+
+  <script type="module" src="sketch.js"></script>
+</body>
+</html>
