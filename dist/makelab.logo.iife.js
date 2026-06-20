@@ -4326,6 +4326,14 @@ this.Makelab = this.Makelab || {};
      *   longest ground-fall duration (for leaves falling the full height).
      * @param {number} [options.groundPileSpread=70] - For {@link dropLeaves}: how
      *   many pixels of random vertical spread the settled pile has at the bottom.
+     * @param {boolean} [options.fadeLeavesOnDrop=true] - For {@link dropLeaves}:
+     *   if true, leaves gradually fade toward leafPileOpacity as they fall, so the
+     *   settled pile at the bottom is slightly translucent. Set false to keep the
+     *   leaves fully opaque. Can also be toggled at runtime via the property.
+     * @param {number} [options.leafPileOpacity=0.75] - For {@link dropLeaves}: the
+     *   opacity (0–1) leaves reach once fully settled in the pile, when
+     *   fadeLeavesOnDrop is true. Default 0.75 (~25% translucent — still largely
+     *   opaque).
      * @param {boolean} [options.startAssembled=false] - If true, the grid and logo
      *   are fully assembled from the very first frame (the fall-in intro is
      *   skipped), so nothing animates until you call {@link dropLeaves}. Useful for
@@ -4354,6 +4362,8 @@ this.Makelab = this.Makelab || {};
       this.groundFallMinMs = options.groundFallMinMs ?? 700;
       this.groundFallMaxMs = options.groundFallMaxMs ?? 1700;
       this.groundPileSpread = options.groundPileSpread ?? 70;
+      this.fadeLeavesOnDrop = options.fadeLeavesOnDrop ?? true;
+      this.leafPileOpacity = options.leafPileOpacity ?? 0.75;
       this.startAssembled = options.startAssembled ?? false;
 
       this.easingFunction = options.easingFunction ?? easeOutCubic;
@@ -4438,6 +4448,7 @@ this.Makelab = this.Makelab || {};
         dx: 0,
         dy: startDy,
         angleRad: 0,
+        opacity: 1,
       });
     }
 
@@ -4494,6 +4505,9 @@ this.Makelab = this.Makelab || {};
             p.drop.sway.amp * Math.sin(t * p.drop.sway.freq * Math.PI * 2 + p.drop.sway.phase) * decay;
           // Rotate to a random resting angle (leaves lie every which way).
           p.angleRad = p.drop.finalAngle * this.easingFunction(t);
+          // Gradually fade toward the pile opacity so settled leaves are slightly
+          // translucent (defaults to ~25% translucent). Off → stay fully opaque.
+          p.opacity = this.fadeLeavesOnDrop ? lerp(1, this.leafPileOpacity, t) : 1;
         }
       }
     }
@@ -4553,7 +4567,7 @@ this.Makelab = this.Makelab || {};
         if (p.group === 'grid' && !this.grid.visible) continue;
         if ((p.group === 'logo' || p.group === 'outline') && !this.makeLabLogo.visible) continue;
         drawPieceWithTransform(ctx, p.pivotX, p.pivotY,
-          { dx: p.dx, dy: p.dy, angleRad: p.angleRad }, p.drawFn);
+          { dx: p.dx, dy: p.dy, angleRad: p.angleRad, opacity: p.opacity }, p.drawFn);
       }
     }
 

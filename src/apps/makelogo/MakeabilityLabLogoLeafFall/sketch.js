@@ -70,9 +70,7 @@ function buildScene() {
   makeLabLogo.visible = logoVisible;
 
   // Let the grid show through the L by making its triangle fills translucent.
-  for (const tri of makeLabLogo.getLTriangles()) {
-    tri.fillColor = L_TRIANGLE_FILL;
-  }
+  makeLabLogo.setLTriangleFillColor(L_TRIANGLE_FILL);
 
   leafFall = new MakeabilityLabLogoLeafFall(makeLabLogo, w, h);
   leafFall.grid.visible = gridVisible;
@@ -136,6 +134,9 @@ document.addEventListener('keydown', (event) => {
       break;
     case 'f': // drop the background leaves to the ground; logo stays fixed
       leafFall.dropLeaves();
+      break;
+    case 't': // toggle whether dropped leaves fade to translucent in the pile
+      leafFall.fadeLeavesOnDrop = !leafFall.fadeLeavesOnDrop;
       break;
     default:
       return;
