@@ -1,0 +1,92 @@
+{
+  "basic/Basic": {
+    "mode": "animated",
+    "appHash": "a8f87360f76f2050",
+    "sharedHash": null
+  },
+  "basic/BouncyBall": {
+    "mode": "animated",
+    "appHash": "c086b956106caacf",
+    "sharedHash": null
+  },
+  "graphics/LineSegment1-Basic": {
+    "mode": "animated",
+    "appHash": "a295920c47d92fa9",
+    "sharedHash": "e97ae895c4d62406"
+  },
+  "graphics/LineSegment2-Interactive": {
+    "mode": "animated",
+    "appHash": "4dc07136fcfe9741",
+    "sharedHash": "e97ae895c4d62406"
+  },
+  "makelogo/MakeabilityLabLogo": {
+    "mode": "animated",
+    "appHash": "dbaf72c142421016",
+    "sharedHash": "e97ae895c4d62406"
+  },
+  "makelogo/MakeabilityLabLogo-AutoResize": {
+    "mode": "animated",
+    "appHash": "8f6dea596333808c",
+    "sharedHash": "e97ae895c4d62406"
+  },
+  "makelogo/MakeabilityLabLogo-ReverseExplosion": {
+    "mode": "animated",
+    "appHash": "8b121fe3ab6768f7",
+    "sharedHash": "e97ae895c4d62406"
+  },
+  "makelogo/MakeabilityLabLogo-ReverseExplosion2": {
+    "mode": "animated",
+    "appHash": "c96288a69b1acb1e",
+    "sharedHash": "e97ae895c4d62406"
+  },
+  "makelogo/MakeabilityLabLogo-SantaMorph": {
+    "mode": "animated",
+    "appHash": "0cb4efcf9e50cd48",
+    "sharedHash": "e97ae895c4d62406"
+  },
+  "makelogo/MakeabilityLabLogoGridFade": {
+    "mode": "animated",
+    "appHash": "ad118b4b3e26c040",
+    "sharedHash": "e97ae895c4d62406"
+  },
+  "makelogo/MakeabilityLabLogoLeafFall": {
+    "mode": "animated",
+    "appHash": "f1a03dfadd11092e",
+    "sharedHash": "e97ae895c4d62406"
+  },
+  "makelogo/MakeabilityLabLogoMorphPaths": {
+    "mode": "animated",
+    "appHash": "3dd8aaf941043950",
+    "sharedHash": "e97ae895c4d62406"
+  },
+  "makelogo/MakeabilityLabLogoZoomFade": {
+    "mode": "animated",
+    "appHash": "ac07037c1b4c6fe9",
+    "sharedHash": "e97ae895c4d62406"
+  },
+  "makelogo/TriangleArtMorphTest": {
+    "mode": "animated",
+    "appHash": "d64ba07eec7d4224",
+    "sharedHash": "e97ae895c4d62406"
+  },
+  "makelogo/TriangleArtMorphTest2-MorphLib": {
+    "mode": "animated",
+    "appHash": "c2adfbbd01854295",
+    "sharedHash": "e97ae895c4d62406"
+  },
+  "serial/SerialColorTest": {
+    "mode": "poster",
+    "appHash": "0d0ae7e68bbb9803",
+    "sharedHash": "e97ae895c4d62406"
+  },
+  "serial/SerialHueTest": {
+    "mode": "poster",
+    "appHash": "e3a4ffa534aa587d",
+    "sharedHash": "e97ae895c4d62406"
+  },
+  "serial/SerialTest": {
+    "mode": "poster",
+    "appHash": "f3a2e7c6ac637272",
+    "sharedHash": "e97ae895c4d62406"
+  }
+}

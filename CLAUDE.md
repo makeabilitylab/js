@@ -9,10 +9,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Commands
 
 ```bash
-npm install                      # install dev deps (rollup + plugins)
+npm install                      # install dev deps (rollup + plugins + playwright)
 npx rollup -c rollup.config.js   # build everything in dist/ (ESM + IIFE, normal + min)
+node scripts/capture_previews.mjs  # regenerate gallery thumbnails in previews/ (needs ffmpeg)
 python scripts/build_gallery.py  # regenerate root index.html demo gallery
 ```
+
+`capture_previews.mjs` needs `ffmpeg` (with `libwebp_anim`) on PATH and a browser. Locally, set `PW_CHANNEL=chrome` to drive installed Google Chrome (no download); CI uses Playwright's bundled Chromium. Useful flags: `--force` (rebuild all) and `--only <substr>` (one app).
 
 There is no test runner, linter, or dev server. "Tests" are the interactive demo apps under `src/apps/` — open their `index.html` in a browser (many need Web Serial, which requires Chrome/Edge over http(s) or localhost, not `file://`).
 
@@ -20,6 +23,7 @@ There is no test runner, linter, or dev server. "Tests" are the interactive demo
 
 - **`dist/` is committed and is what users actually load via CDN.** After any change to `src/lib/`, you MUST run `npx rollup -c rollup.config.js` and commit the regenerated `dist/` files, or CDN consumers won't see the change. Source edits alone are not enough.
 - **Root `index.html` is auto-generated** by `scripts/build_gallery.py` (run in CI on every push to `main` via `.github/workflows/build-gallery.yml`). Do not hand-edit it. To change the gallery, edit the Python generator. The gallery lists every `src/apps/**/index.html`.
+- **`previews/` (gallery thumbnails) is auto-generated and committed**, also by the `build-gallery.yml` job (runs `scripts/capture_previews.mjs` before the gallery step). Each app gets an animated WebP loop + poster PNG (serial/static apps get a poster only). The script content-hashes each app — and the shared `src/lib`/`dist` for apps that import them — and skips unchanged apps, so CI only re-renders what changed. Per-app overrides live in a `preview.json` next to the app's `index.html` (`skip`, `mode: "animated"|"poster"`, `duration`, `fps`, `width`, `quality`). Cards degrade animated WebP → poster → category emoji, and the poster is the `prefers-reduced-motion` fallback.
 - Releases are GitHub Releases/tags (SemVer), not npm. Bump `version` in `package.json`, rebuild `dist/`, commit, then tag. See README "Versioning and Releases".
 
 ## Architecture

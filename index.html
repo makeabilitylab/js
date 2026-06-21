@@ -9,90 +9,157 @@
     body { font-family: system-ui, sans-serif; max-width: 960px; margin: 0 auto; padding: 2rem; }
     h1 { font-size: 1.8rem; margin-bottom: 0.25rem; }
     h2 { font-size: 1.1rem; color: #555; border-bottom: 1px solid #ddd; padding-bottom: 0.25rem; }
-    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 1rem; margin: 1rem 0 2rem; }
-    .card { display: block; padding: 1rem; border: 1px solid #ddd; border-radius: 8px; text-decoration: none; color: inherit; transition: box-shadow 0.15s; }
-    .card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem; margin: 1rem 0 2rem; }
+    .card { display: block; border: 1px solid #ddd; border-radius: 8px; overflow: hidden; text-decoration: none; color: inherit; transition: box-shadow 0.15s, transform 0.15s; }
+    .card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.15); transform: translateY(-2px); }
+    .card:focus-visible { outline: 2px solid #1a73e8; outline-offset: 2px; }
+    .card-thumb { aspect-ratio: 360 / 224; background: #fafafa; display: flex; align-items: center; justify-content: center; border-bottom: 1px solid #eee; }
+    .card-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .thumb-poster { display: none; }            /* shown only as the reduced-motion / no-anim fallback */
+    .thumb-poster--only { display: block; }      /* poster-only apps (e.g. serial) always show it */
+    .thumb-emoji { font-size: 3.5rem; line-height: 1; }
+    .card-body { padding: 0.75rem 1rem 1rem; }
     .card-name { font-weight: 600; font-size: 0.95rem; }
     .card-category { font-size: 0.75rem; color: #888; margin-top: 0.25rem; }
+
+    /* Accessibility: honor reduced-motion by swapping the loop for the poster. */
+    @media (prefers-reduced-motion: reduce) {
+      .thumb-anim { display: none; }
+      .thumb-poster { display: block; }
+    }
   </style>
 </head>
 <body>
   <h1>Makeability Lab — JavaScript Demo Gallery</h1>
   <section><h2>basic</h2><div class='grid'>
         <a class="card" href="src/apps/basic/Basic/">
-          <div class="card-name">Basic</div>
-          <div class="card-category">basic</div>
+          <div class="card-thumb"><img class="thumb-anim" src="previews/basic/Basic.webp" alt="Animated preview of Basic" loading="lazy" decoding="async"><img class="thumb-poster" src="previews/basic/Basic.poster.png" alt="Preview of Basic" loading="lazy" decoding="async"></div>
+          <div class="card-body">
+            <div class="card-name">Basic</div>
+            <div class="card-category">basic</div>
+          </div>
         </a>
         <a class="card" href="src/apps/basic/BouncyBall/">
-          <div class="card-name">BouncyBall</div>
-          <div class="card-category">basic</div>
+          <div class="card-thumb"><img class="thumb-anim" src="previews/basic/BouncyBall.webp" alt="Animated preview of BouncyBall" loading="lazy" decoding="async"><img class="thumb-poster" src="previews/basic/BouncyBall.poster.png" alt="Preview of BouncyBall" loading="lazy" decoding="async"></div>
+          <div class="card-body">
+            <div class="card-name">BouncyBall</div>
+            <div class="card-category">basic</div>
+          </div>
         </a></div></section>
 <section><h2>graphics</h2><div class='grid'>
         <a class="card" href="src/apps/graphics/LineSegment1-Basic/">
-          <div class="card-name">LineSegment1-Basic</div>
-          <div class="card-category">graphics</div>
+          <div class="card-thumb"><img class="thumb-anim" src="previews/graphics/LineSegment1-Basic.webp" alt="Animated preview of LineSegment1-Basic" loading="lazy" decoding="async"><img class="thumb-poster" src="previews/graphics/LineSegment1-Basic.poster.png" alt="Preview of LineSegment1-Basic" loading="lazy" decoding="async"></div>
+          <div class="card-body">
+            <div class="card-name">LineSegment1-Basic</div>
+            <div class="card-category">graphics</div>
+          </div>
         </a>
         <a class="card" href="src/apps/graphics/LineSegment2-Interactive/">
-          <div class="card-name">LineSegment2-Interactive</div>
-          <div class="card-category">graphics</div>
+          <div class="card-thumb"><img class="thumb-anim" src="previews/graphics/LineSegment2-Interactive.webp" alt="Animated preview of LineSegment2-Interactive" loading="lazy" decoding="async"><img class="thumb-poster" src="previews/graphics/LineSegment2-Interactive.poster.png" alt="Preview of LineSegment2-Interactive" loading="lazy" decoding="async"></div>
+          <div class="card-body">
+            <div class="card-name">LineSegment2-Interactive</div>
+            <div class="card-category">graphics</div>
+          </div>
         </a></div></section>
 <section><h2>makelogo</h2><div class='grid'>
         <a class="card" href="src/apps/makelogo/MakeabilityLabLogo/">
-          <div class="card-name">MakeabilityLabLogo</div>
-          <div class="card-category">makelogo</div>
+          <div class="card-thumb"><img class="thumb-anim" src="previews/makelogo/MakeabilityLabLogo.webp" alt="Animated preview of MakeabilityLabLogo" loading="lazy" decoding="async"><img class="thumb-poster" src="previews/makelogo/MakeabilityLabLogo.poster.png" alt="Preview of MakeabilityLabLogo" loading="lazy" decoding="async"></div>
+          <div class="card-body">
+            <div class="card-name">MakeabilityLabLogo</div>
+            <div class="card-category">makelogo</div>
+          </div>
         </a>
         <a class="card" href="src/apps/makelogo/MakeabilityLabLogo-AutoResize/">
-          <div class="card-name">MakeabilityLabLogo-AutoResize</div>
-          <div class="card-category">makelogo</div>
+          <div class="card-thumb"><img class="thumb-anim" src="previews/makelogo/MakeabilityLabLogo-AutoResize.webp" alt="Animated preview of MakeabilityLabLogo-AutoResize" loading="lazy" decoding="async"><img class="thumb-poster" src="previews/makelogo/MakeabilityLabLogo-AutoResize.poster.png" alt="Preview of MakeabilityLabLogo-AutoResize" loading="lazy" decoding="async"></div>
+          <div class="card-body">
+            <div class="card-name">MakeabilityLabLogo-AutoResize</div>
+            <div class="card-category">makelogo</div>
+          </div>
         </a>
         <a class="card" href="src/apps/makelogo/MakeabilityLabLogo-ReverseExplosion/">
-          <div class="card-name">MakeabilityLabLogo-ReverseExplosion</div>
-          <div class="card-category">makelogo</div>
+          <div class="card-thumb"><img class="thumb-anim" src="previews/makelogo/MakeabilityLabLogo-ReverseExplosion.webp" alt="Animated preview of MakeabilityLabLogo-ReverseExplosion" loading="lazy" decoding="async"><img class="thumb-poster" src="previews/makelogo/MakeabilityLabLogo-ReverseExplosion.poster.png" alt="Preview of MakeabilityLabLogo-ReverseExplosion" loading="lazy" decoding="async"></div>
+          <div class="card-body">
+            <div class="card-name">MakeabilityLabLogo-ReverseExplosion</div>
+            <div class="card-category">makelogo</div>
+          </div>
         </a>
         <a class="card" href="src/apps/makelogo/MakeabilityLabLogo-ReverseExplosion2/">
-          <div class="card-name">MakeabilityLabLogo-ReverseExplosion2</div>
-          <div class="card-category">makelogo</div>
+          <div class="card-thumb"><img class="thumb-anim" src="previews/makelogo/MakeabilityLabLogo-ReverseExplosion2.webp" alt="Animated preview of MakeabilityLabLogo-ReverseExplosion2" loading="lazy" decoding="async"><img class="thumb-poster" src="previews/makelogo/MakeabilityLabLogo-ReverseExplosion2.poster.png" alt="Preview of MakeabilityLabLogo-ReverseExplosion2" loading="lazy" decoding="async"></div>
+          <div class="card-body">
+            <div class="card-name">MakeabilityLabLogo-ReverseExplosion2</div>
+            <div class="card-category">makelogo</div>
+          </div>
         </a>
         <a class="card" href="src/apps/makelogo/MakeabilityLabLogo-SantaMorph/">
-          <div class="card-name">MakeabilityLabLogo-SantaMorph</div>
-          <div class="card-category">makelogo</div>
+          <div class="card-thumb"><img class="thumb-anim" src="previews/makelogo/MakeabilityLabLogo-SantaMorph.webp" alt="Animated preview of MakeabilityLabLogo-SantaMorph" loading="lazy" decoding="async"><img class="thumb-poster" src="previews/makelogo/MakeabilityLabLogo-SantaMorph.poster.png" alt="Preview of MakeabilityLabLogo-SantaMorph" loading="lazy" decoding="async"></div>
+          <div class="card-body">
+            <div class="card-name">MakeabilityLabLogo-SantaMorph</div>
+            <div class="card-category">makelogo</div>
+          </div>
         </a>
         <a class="card" href="src/apps/makelogo/MakeabilityLabLogoGridFade/">
-          <div class="card-name">MakeabilityLabLogoGridFade</div>
-          <div class="card-category">makelogo</div>
+          <div class="card-thumb"><img class="thumb-anim" src="previews/makelogo/MakeabilityLabLogoGridFade.webp" alt="Animated preview of MakeabilityLabLogoGridFade" loading="lazy" decoding="async"><img class="thumb-poster" src="previews/makelogo/MakeabilityLabLogoGridFade.poster.png" alt="Preview of MakeabilityLabLogoGridFade" loading="lazy" decoding="async"></div>
+          <div class="card-body">
+            <div class="card-name">MakeabilityLabLogoGridFade</div>
+            <div class="card-category">makelogo</div>
+          </div>
         </a>
         <a class="card" href="src/apps/makelogo/MakeabilityLabLogoLeafFall/">
-          <div class="card-name">MakeabilityLabLogoLeafFall</div>
-          <div class="card-category">makelogo</div>
+          <div class="card-thumb"><img class="thumb-anim" src="previews/makelogo/MakeabilityLabLogoLeafFall.webp" alt="Animated preview of MakeabilityLabLogoLeafFall" loading="lazy" decoding="async"><img class="thumb-poster" src="previews/makelogo/MakeabilityLabLogoLeafFall.poster.png" alt="Preview of MakeabilityLabLogoLeafFall" loading="lazy" decoding="async"></div>
+          <div class="card-body">
+            <div class="card-name">MakeabilityLabLogoLeafFall</div>
+            <div class="card-category">makelogo</div>
+          </div>
         </a>
         <a class="card" href="src/apps/makelogo/MakeabilityLabLogoMorphPaths/">
-          <div class="card-name">MakeabilityLabLogoMorphPaths</div>
-          <div class="card-category">makelogo</div>
+          <div class="card-thumb"><img class="thumb-anim" src="previews/makelogo/MakeabilityLabLogoMorphPaths.webp" alt="Animated preview of MakeabilityLabLogoMorphPaths" loading="lazy" decoding="async"><img class="thumb-poster" src="previews/makelogo/MakeabilityLabLogoMorphPaths.poster.png" alt="Preview of MakeabilityLabLogoMorphPaths" loading="lazy" decoding="async"></div>
+          <div class="card-body">
+            <div class="card-name">MakeabilityLabLogoMorphPaths</div>
+            <div class="card-category">makelogo</div>
+          </div>
         </a>
         <a class="card" href="src/apps/makelogo/MakeabilityLabLogoZoomFade/">
-          <div class="card-name">MakeabilityLabLogoZoomFade</div>
-          <div class="card-category">makelogo</div>
+          <div class="card-thumb"><img class="thumb-anim" src="previews/makelogo/MakeabilityLabLogoZoomFade.webp" alt="Animated preview of MakeabilityLabLogoZoomFade" loading="lazy" decoding="async"><img class="thumb-poster" src="previews/makelogo/MakeabilityLabLogoZoomFade.poster.png" alt="Preview of MakeabilityLabLogoZoomFade" loading="lazy" decoding="async"></div>
+          <div class="card-body">
+            <div class="card-name">MakeabilityLabLogoZoomFade</div>
+            <div class="card-category">makelogo</div>
+          </div>
         </a>
         <a class="card" href="src/apps/makelogo/TriangleArtMorphTest/">
-          <div class="card-name">TriangleArtMorphTest</div>
-          <div class="card-category">makelogo</div>
+          <div class="card-thumb"><img class="thumb-anim" src="previews/makelogo/TriangleArtMorphTest.webp" alt="Animated preview of TriangleArtMorphTest" loading="lazy" decoding="async"><img class="thumb-poster" src="previews/makelogo/TriangleArtMorphTest.poster.png" alt="Preview of TriangleArtMorphTest" loading="lazy" decoding="async"></div>
+          <div class="card-body">
+            <div class="card-name">TriangleArtMorphTest</div>
+            <div class="card-category">makelogo</div>
+          </div>
         </a>
         <a class="card" href="src/apps/makelogo/TriangleArtMorphTest2-MorphLib/">
-          <div class="card-name">TriangleArtMorphTest2-MorphLib</div>
-          <div class="card-category">makelogo</div>
+          <div class="card-thumb"><img class="thumb-anim" src="previews/makelogo/TriangleArtMorphTest2-MorphLib.webp" alt="Animated preview of TriangleArtMorphTest2-MorphLib" loading="lazy" decoding="async"><img class="thumb-poster" src="previews/makelogo/TriangleArtMorphTest2-MorphLib.poster.png" alt="Preview of TriangleArtMorphTest2-MorphLib" loading="lazy" decoding="async"></div>
+          <div class="card-body">
+            <div class="card-name">TriangleArtMorphTest2-MorphLib</div>
+            <div class="card-category">makelogo</div>
+          </div>
         </a></div></section>
 <section><h2>serial</h2><div class='grid'>
         <a class="card" href="src/apps/serial/SerialColorTest/">
-          <div class="card-name">SerialColorTest</div>
-          <div class="card-category">serial</div>
+          <div class="card-thumb"><img class="thumb-poster thumb-poster--only" src="previews/serial/SerialColorTest.poster.png" alt="Preview of SerialColorTest" loading="lazy" decoding="async"></div>
+          <div class="card-body">
+            <div class="card-name">SerialColorTest</div>
+            <div class="card-category">serial</div>
+          </div>
         </a>
         <a class="card" href="src/apps/serial/SerialHueTest/">
-          <div class="card-name">SerialHueTest</div>
-          <div class="card-category">serial</div>
+          <div class="card-thumb"><img class="thumb-poster thumb-poster--only" src="previews/serial/SerialHueTest.poster.png" alt="Preview of SerialHueTest" loading="lazy" decoding="async"></div>
+          <div class="card-body">
+            <div class="card-name">SerialHueTest</div>
+            <div class="card-category">serial</div>
+          </div>
         </a>
         <a class="card" href="src/apps/serial/SerialTest/">
-          <div class="card-name">SerialTest</div>
-          <div class="card-category">serial</div>
+          <div class="card-thumb"><img class="thumb-poster thumb-poster--only" src="previews/serial/SerialTest.poster.png" alt="Preview of SerialTest" loading="lazy" decoding="async"></div>
+          <div class="card-body">
+            <div class="card-name">SerialTest</div>
+            <div class="card-category">serial</div>
+          </div>
         </a></div></section>
 
 </body>
