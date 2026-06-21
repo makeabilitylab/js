@@ -14,7 +14,10 @@
     .card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.15); transform: translateY(-2px); }
     .card:focus-visible { outline: 2px solid #1a73e8; outline-offset: 2px; }
     .card-thumb { aspect-ratio: 360 / 224; background: #fafafa; display: flex; align-items: center; justify-content: center; border-bottom: 1px solid #eee; }
-    .card-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .card-thumb img { width: 100%; height: 100%; object-fit: cover; }
+    /* Keep all display rules at single-class specificity so the hide/show
+       toggles below aren't overridden by `.card-thumb img`. */
+    .thumb-anim { display: block; }
     .thumb-poster { display: none; }            /* shown only as the reduced-motion / no-anim fallback */
     .thumb-poster--only { display: block; }      /* poster-only apps (e.g. serial) always show it */
     .thumb-emoji { font-size: 3.5rem; line-height: 1; }

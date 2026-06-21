@@ -1,4 +1,4 @@
-import { LineSegment } from '/dist/makelab.graphics.js';
+import { LineSegment } from '../../../../dist/makelab.graphics.js';
 
 const canvas = document.getElementById('myCanvas');
 canvas.width = 400;

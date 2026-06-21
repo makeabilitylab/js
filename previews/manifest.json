@@ -11,12 +11,12 @@
   },
   "graphics/LineSegment1-Basic": {
     "mode": "animated",
-    "appHash": "a295920c47d92fa9",
+    "appHash": "1ec5fa729532aa95",
     "sharedHash": "6a5260e13aa3e16e"
   },
   "graphics/LineSegment2-Interactive": {
     "mode": "animated",
-    "appHash": "4dc07136fcfe9741",
+    "appHash": "3f36134e2d6d62bb",
     "sharedHash": "6a5260e13aa3e16e"
   },
   "makelogo/MakeabilityLabLogo": {
@@ -31,7 +31,7 @@
   },
   "makelogo/MakeabilityLabLogo-ReverseExplosion": {
     "mode": "animated",
-    "appHash": "8b121fe3ab6768f7",
+    "appHash": "a9f6158154900a64",
     "sharedHash": "6a5260e13aa3e16e"
   },
   "makelogo/MakeabilityLabLogo-ReverseExplosion2": {
