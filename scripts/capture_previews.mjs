@@ -59,13 +59,18 @@ const sh = (cmd, a) => spawnSync(cmd, a, { encoding: 'utf8' });
 
 // ---------- file discovery + hashing ----------
 
-/** Recursively list files under `dir` (absolute paths), skipping nothing. */
+/**
+ * Recursively list files under `dir` (absolute paths). Dotfiles/dot-dirs are
+ * skipped so machine-local junk (e.g. macOS `.DS_Store`, which is gitignored)
+ * doesn't pollute content hashes and make them differ between local and CI.
+ */
 async function listFiles(dir) {
   const out = [];
   async function walk(d) {
     let entries;
     try { entries = await readdir(d, { withFileTypes: true }); } catch { return; }
     for (const e of entries) {
+      if (e.name.startsWith('.')) continue; // .DS_Store, .git, etc.
       const p = path.join(d, e.name);
       if (e.isDirectory()) await walk(p);
       else out.push(p);
