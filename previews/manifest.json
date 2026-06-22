@@ -12,81 +12,81 @@
   "graphics/LineSegment1-Basic": {
     "mode": "animated",
     "appHash": "c451ad9489de8b35",
-    "sharedHash": "646b636977ab2336"
+    "sharedHash": "8691ed63b5a9e9c9"
   },
   "graphics/LineSegment2-Interactive": {
     "mode": "animated",
     "appHash": "e051cbb03d1f9946",
-    "sharedHash": "646b636977ab2336"
+    "sharedHash": "8691ed63b5a9e9c9"
   },
   "makelogo/MakeabilityLabLogo": {
     "mode": "animated",
     "appHash": "f5b36f70401c279d",
-    "sharedHash": "646b636977ab2336"
+    "sharedHash": "8691ed63b5a9e9c9"
   },
   "makelogo/MakeabilityLabLogo-AutoResize": {
     "mode": "animated",
     "appHash": "4ac225a886ca9ef2",
-    "sharedHash": "646b636977ab2336"
+    "sharedHash": "8691ed63b5a9e9c9"
   },
   "makelogo/MakeabilityLabLogo-ReverseExplosion": {
     "mode": "animated",
     "appHash": "1948efb3462a757c",
-    "sharedHash": "646b636977ab2336"
+    "sharedHash": "8691ed63b5a9e9c9"
   },
   "makelogo/MakeabilityLabLogo-ReverseExplosion2": {
     "mode": "animated",
     "appHash": "237fc0c9db1c9194",
-    "sharedHash": "646b636977ab2336"
+    "sharedHash": "8691ed63b5a9e9c9"
   },
   "makelogo/MakeabilityLabLogo-SantaMorph": {
     "mode": "animated",
     "appHash": "26c60c6aee59c4eb",
-    "sharedHash": "646b636977ab2336"
+    "sharedHash": "8691ed63b5a9e9c9"
   },
   "makelogo/MakeabilityLabLogoGridFade": {
     "mode": "animated",
     "appHash": "722ee006ecde9c12",
-    "sharedHash": "646b636977ab2336"
+    "sharedHash": "8691ed63b5a9e9c9"
   },
   "makelogo/MakeabilityLabLogoLeafFall": {
     "mode": "animated",
     "appHash": "a96c3fd5e4fd18ce",
-    "sharedHash": "646b636977ab2336"
+    "sharedHash": "8691ed63b5a9e9c9"
   },
   "makelogo/MakeabilityLabLogoMorphPaths": {
     "mode": "animated",
     "appHash": "955d1b9e618ba704",
-    "sharedHash": "646b636977ab2336"
+    "sharedHash": "8691ed63b5a9e9c9"
   },
   "makelogo/MakeabilityLabLogoZoomFade": {
     "mode": "animated",
     "appHash": "caf0cd0f7d9a0206",
-    "sharedHash": "646b636977ab2336"
+    "sharedHash": "8691ed63b5a9e9c9"
   },
   "makelogo/TriangleArtMorphTest": {
     "mode": "animated",
     "appHash": "31403dbdacafba32",
-    "sharedHash": "646b636977ab2336"
+    "sharedHash": "8691ed63b5a9e9c9"
   },
   "makelogo/TriangleArtMorphTest2-MorphLib": {
     "mode": "animated",
     "appHash": "fd681e66f2bda83d",
-    "sharedHash": "646b636977ab2336"
+    "sharedHash": "8691ed63b5a9e9c9"
   },
   "serial/SerialColorTest": {
     "mode": "poster",
     "appHash": "bdbbc9dc9b6e8800",
-    "sharedHash": "646b636977ab2336"
+    "sharedHash": "8691ed63b5a9e9c9"
   },
   "serial/SerialHueTest": {
     "mode": "poster",
     "appHash": "983b5c491bfc5a69",
-    "sharedHash": "646b636977ab2336"
+    "sharedHash": "8691ed63b5a9e9c9"
   },
   "serial/SerialTest": {
     "mode": "poster",
     "appHash": "1bc5bc6597c6fd5b",
-    "sharedHash": "646b636977ab2336"
+    "sharedHash": "8691ed63b5a9e9c9"
   }
 }
