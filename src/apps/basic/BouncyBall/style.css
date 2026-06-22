@@ -15,3 +15,18 @@ canvas {
   margin: 20px;
   height: calc(100vh - 40px); /* Subtract 20px from top and 20px from bottom */
 }
+
+/* Visually hidden: removed from view but kept in the accessibility tree so the
+   <h1> page heading is available for screen-reader navigation. */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  border: 0;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  overflow: hidden;
+  white-space: nowrap;
+}

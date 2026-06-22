@@ -5,10 +5,30 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>My Drawing</title>
+  <style>
+    /* Visually hidden: removed from view but kept in the accessibility tree so
+       the <h1> page heading is available for screen-reader navigation. */
+    .visually-hidden {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      margin: -1px;
+      padding: 0;
+      border: 0;
+      clip: rect(0 0 0 0);
+      clip-path: inset(50%);
+      overflow: hidden;
+      white-space: nowrap;
+    }
+  </style>
 </head>
 
 <body>
   <main>
+    <!-- Visually hidden heading: gives screen-reader users a proper page title
+         to navigate by. The canvas is just an image, so without this the page
+         would have no heading. Hidden from sighted users via .visually-hidden. -->
+    <h1 class="visually-hidden">My Drawing</h1>
     <canvas id="myCanvas" role="img"
       aria-label="A simple canvas sketch"></canvas>
   </main>

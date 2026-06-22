@@ -90,6 +90,13 @@ let originalSantaTriangles = null;
 /** @type {number} Current mouse/touch x-coordinate relative to the canvas. */
 let mouseX = 0;
 
+// Respect the user's "reduce motion" OS/browser setting (accessibility). The
+// Santa→logo morph is mouse-driven, so it's only ever in motion while the user
+// moves the pointer; the one thing that animates on its own is the holiday
+// text's pulsing glow, which we hold steady when reduced motion is requested.
+const reducedMotionQuery =
+  window.matchMedia?.('(prefers-reduced-motion: reduce)');
+
 // ---------------------------------------------------------------------------
 // Initialization & Layout
 // ---------------------------------------------------------------------------
@@ -317,8 +324,11 @@ function drawHolidayMessage() {
   const textColor = lerpColor(COLOR_SANTA_SUIT_RED, COLOR_SANTA_BELT, lerpAmt);
 
   // 4. Holiday Styling: Dynamic Sparkle/Glow
-  // We use a sine wave based on time to make the glow pulse
-  const sparkle = 5 + Math.sin(Date.now() / 300) * 5;
+  // We use a sine wave based on time to make the glow pulse — unless the user
+  // prefers reduced motion, in which case we hold the glow steady.
+  const sparkle = reducedMotionQuery?.matches
+    ? 5
+    : 5 + Math.sin(Date.now() / 300) * 5;
   ctx.shadowColor = 'rgba(255, 255, 255, 0.9)';
   ctx.shadowBlur = sparkle;
   
