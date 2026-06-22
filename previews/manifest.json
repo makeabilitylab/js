@@ -1,57 +1,57 @@
 {
   "basic/Basic": {
     "mode": "animated",
-    "appHash": "c038c5812fcf8b35",
+    "appHash": "2d44519dce8d8b55",
     "sharedHash": null
   },
   "basic/BouncyBall": {
     "mode": "animated",
-    "appHash": "b4296dbe05077dc8",
+    "appHash": "49b8e9c89ebbb9f0",
     "sharedHash": null
   },
   "graphics/LineSegment1-Basic": {
     "mode": "animated",
-    "appHash": "c451ad9489de8b35",
+    "appHash": "825601666c1716b4",
     "sharedHash": "8691ed63b5a9e9c9"
   },
   "graphics/LineSegment2-Interactive": {
     "mode": "animated",
-    "appHash": "e051cbb03d1f9946",
+    "appHash": "402b5584de28834c",
     "sharedHash": "8691ed63b5a9e9c9"
   },
   "makelogo/MakeabilityLabLogo": {
     "mode": "animated",
-    "appHash": "f5b36f70401c279d",
+    "appHash": "c15af3c7a7ac1f0c",
     "sharedHash": "8691ed63b5a9e9c9"
   },
   "makelogo/MakeabilityLabLogo-AutoResize": {
     "mode": "animated",
-    "appHash": "4ac225a886ca9ef2",
+    "appHash": "556bc850c0aa8802",
     "sharedHash": "8691ed63b5a9e9c9"
   },
   "makelogo/MakeabilityLabLogo-ReverseExplosion": {
     "mode": "animated",
-    "appHash": "1948efb3462a757c",
+    "appHash": "becf280655b1d961",
     "sharedHash": "8691ed63b5a9e9c9"
   },
   "makelogo/MakeabilityLabLogo-ReverseExplosion2": {
     "mode": "animated",
-    "appHash": "237fc0c9db1c9194",
+    "appHash": "1bd05641603e88b4",
     "sharedHash": "8691ed63b5a9e9c9"
   },
   "makelogo/MakeabilityLabLogo-SantaMorph": {
     "mode": "animated",
-    "appHash": "26c60c6aee59c4eb",
+    "appHash": "8003392920d0ef38",
     "sharedHash": "8691ed63b5a9e9c9"
   },
   "makelogo/MakeabilityLabLogoGridFade": {
     "mode": "animated",
-    "appHash": "722ee006ecde9c12",
+    "appHash": "e992be51b2ae53c1",
     "sharedHash": "8691ed63b5a9e9c9"
   },
   "makelogo/MakeabilityLabLogoLeafFall": {
     "mode": "animated",
-    "appHash": "a96c3fd5e4fd18ce",
+    "appHash": "4f431c173c1c5aab",
     "sharedHash": "8691ed63b5a9e9c9"
   },
   "makelogo/MakeabilityLabLogoMorphPaths": {
@@ -61,17 +61,17 @@
   },
   "makelogo/MakeabilityLabLogoZoomFade": {
     "mode": "animated",
-    "appHash": "caf0cd0f7d9a0206",
+    "appHash": "6bd0222e0b968652",
     "sharedHash": "8691ed63b5a9e9c9"
   },
   "makelogo/TriangleArtMorphTest": {
     "mode": "animated",
-    "appHash": "31403dbdacafba32",
+    "appHash": "cedf19722b775613",
     "sharedHash": "8691ed63b5a9e9c9"
   },
   "makelogo/TriangleArtMorphTest2-MorphLib": {
     "mode": "animated",
-    "appHash": "fd681e66f2bda83d",
+    "appHash": "7653bdaa3d55c7fb",
     "sharedHash": "8691ed63b5a9e9c9"
   },
   "serial/SerialColorTest": {
