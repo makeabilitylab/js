@@ -65,6 +65,11 @@ function random(min, max) {
  * map(15, 0, 10, 0, 100, true);  // 100 (clamped)
  */
 function map(value, start1, stop1, start2, stop2, withinBounds = false) {
+  // Guard against a zero-width input range, which would divide by zero. There's
+  // no meaningful position within an empty range, so collapse to the output start.
+  if (stop1 === start1) {
+    return start2;
+  }
   const mapped = start2 + (stop2 - start2) * ((value - start1) / (stop1 - start1));
   if (!withinBounds) return mapped;
 
@@ -86,7 +91,8 @@ function map(value, start1, stop1, start2, stop2, withinBounds = false) {
  * randomGaussian();         // standard normal (mean=0, sd=1)
  */
 function randomGaussian(mean = 0, sd = 1) {
-  const u1 = Math.random();
+  // Math.random() can return 0; guard so log(u1) never becomes -Infinity.
+  const u1 = Math.random() || Number.MIN_VALUE;
   const u2 = Math.random();
   const z = Math.sqrt(-2 * Math.log(u1)) * Math.cos(2.0 * Math.PI * u2);
   return z * sd + mean;
@@ -102,6 +108,19 @@ function randomGaussian(mean = 0, sd = 1) {
  */
 function clamp(value, min, max) {
   return Math.max(min, Math.min(max, value));
+}
+
+/**
+ * Constrains a value to a range. Alias for {@link clamp}, named to match
+ * p5.js's `constrain()` so p5 users find the familiar name.
+ *
+ * @param {number} value - The value to constrain.
+ * @param {number} min - The minimum bound.
+ * @param {number} max - The maximum bound.
+ * @returns {number} The constrained value.
+ */
+function constrain(value, min, max) {
+  return clamp(value, min, max);
 }
 
 // --- Easing functions ---
@@ -259,6 +278,80 @@ class Vector {
   }
 
   /**
+   * Returns this vector rotated counterclockwise by the given angle, in standard
+   * math orientation (+y up). Note: on a typical canvas the y-axis points *down*,
+   * so a positive angle appears clockwise on screen.
+   *
+   * @param {number} angleRadians - The rotation angle in radians.
+   * @returns {Vector} A new, rotated vector.
+   */
+  rotate(angleRadians) {
+    const cos = Math.cos(angleRadians);
+    const sin = Math.sin(angleRadians);
+    return new Vector(this.x * cos - this.y * sin, this.x * sin + this.y * cos);
+  }
+
+  /**
+   * The heading (direction) of this vector as an angle in radians, measured from
+   * the positive x-axis with {@link Math.atan2}, in the range (-π, π].
+   *
+   * @returns {number} The heading in radians.
+   */
+  heading() {
+    return Math.atan2(this.y, this.x);
+  }
+
+  /**
+   * The Euclidean distance between this vector's point and another's.
+   *
+   * @param {Vector} other - The other point/vector.
+   * @returns {number} The distance between the two points.
+   */
+  dist(other) {
+    return this.subtract(other).magnitude();
+  }
+
+  /**
+   * Returns a new vector in the same direction as this one but with its magnitude
+   * capped at `max`. Vectors already at or below `max` are returned unchanged (as
+   * a copy). Handy for limiting velocity/force in sketches.
+   *
+   * @param {number} max - The maximum allowed magnitude.
+   * @returns {Vector} A new vector with magnitude ≤ max.
+   */
+  limit(max) {
+    if (this.magnitude() > max) {
+      return this.normalize().multiply(max);
+    }
+    return this.clone();
+  }
+
+  /**
+   * Returns a new vector with the same direction as this one but the given
+   * magnitude. Returns (0, 0) if this vector has zero length.
+   *
+   * @param {number} length - The desired magnitude.
+   * @returns {Vector} A new vector of the given magnitude.
+   */
+  withMagnitude(length) {
+    return this.normalize().multiply(length);
+  }
+
+  /**
+   * Linearly interpolates between this vector and another.
+   *
+   * @param {Vector} other - The vector to interpolate toward.
+   * @param {number} amt - The amount, 0 (this) to 1 (other).
+   * @returns {Vector} A new, interpolated vector.
+   */
+  lerp(other, amt) {
+    return new Vector(
+      this.x + (other.x - this.x) * amt,
+      this.y + (other.y - this.y) * amt
+    );
+  }
+
+  /**
    * Returns a new Vector with the same components.
    * @returns {Vector} A copy of this vector.
    */
@@ -296,7 +389,19 @@ class Vector {
   static fromPoints(p1, p2) {
     return new Vector(p2.x - p1.x, p2.y - p1.y);
   }
+
+  /**
+   * Creates a vector pointing in the direction of the given angle, measured from
+   * the positive x-axis in standard math orientation (counterclockwise, +y up).
+   *
+   * @param {number} angleRadians - The direction angle in radians.
+   * @param {number} [length=1] - The magnitude of the resulting vector.
+   * @returns {Vector} The new vector.
+   */
+  static fromAngle(angleRadians, length = 1) {
+    return new Vector(Math.cos(angleRadians) * length, Math.sin(angleRadians) * length);
+  }
 }
 
-export { Vector, clamp, convertToDegrees, convertToRadians, easeInCubic, easeInOutCubic, easeOutBack, easeOutCubic, easeOutQuad, lerp, map, random, randomGaussian };
+export { Vector, clamp, constrain, convertToDegrees, convertToRadians, easeInCubic, easeInOutCubic, easeOutBack, easeOutCubic, easeOutQuad, lerp, map, random, randomGaussian };
 //# sourceMappingURL=makelab.math.js.map

@@ -65,6 +65,11 @@ export function random(min, max) {
  * map(15, 0, 10, 0, 100, true);  // 100 (clamped)
  */
 export function map(value, start1, stop1, start2, stop2, withinBounds = false) {
+  // Guard against a zero-width input range, which would divide by zero. There's
+  // no meaningful position within an empty range, so collapse to the output start.
+  if (stop1 === start1) {
+    return start2;
+  }
   const mapped = start2 + (stop2 - start2) * ((value - start1) / (stop1 - start1));
   if (!withinBounds) return mapped;
 
@@ -86,7 +91,8 @@ export function map(value, start1, stop1, start2, stop2, withinBounds = false) {
  * randomGaussian();         // standard normal (mean=0, sd=1)
  */
 export function randomGaussian(mean = 0, sd = 1) {
-  const u1 = Math.random();
+  // Math.random() can return 0; guard so log(u1) never becomes -Infinity.
+  const u1 = Math.random() || Number.MIN_VALUE;
   const u2 = Math.random();
   const z = Math.sqrt(-2.0 * Math.log(u1)) * Math.cos(2.0 * Math.PI * u2);
   return z * sd + mean;
@@ -102,6 +108,19 @@ export function randomGaussian(mean = 0, sd = 1) {
  */
 export function clamp(value, min, max) {
   return Math.max(min, Math.min(max, value));
+}
+
+/**
+ * Constrains a value to a range. Alias for {@link clamp}, named to match
+ * p5.js's `constrain()` so p5 users find the familiar name.
+ *
+ * @param {number} value - The value to constrain.
+ * @param {number} min - The minimum bound.
+ * @param {number} max - The maximum bound.
+ * @returns {number} The constrained value.
+ */
+export function constrain(value, min, max) {
+  return clamp(value, min, max);
 }
 
 // --- Easing functions ---

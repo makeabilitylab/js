@@ -10,6 +10,15 @@ declare class Vector {
      */
     static fromPoints(p1: any, p2: any): Vector;
     /**
+     * Creates a vector pointing in the direction of the given angle, measured from
+     * the positive x-axis in standard math orientation (counterclockwise, +y up).
+     *
+     * @param {number} angleRadians - The direction angle in radians.
+     * @param {number} [length=1] - The magnitude of the resulting vector.
+     * @returns {Vector} The new vector.
+     */
+    static fromAngle(angleRadians: number, length?: number): Vector;
+    /**
      * Create a vector.
      * @param {number} x - The x coordinate.
      * @param {number} y - The y coordinate.
@@ -83,6 +92,54 @@ declare class Vector {
      * @returns {number} The signed angle in radians, in (-π, π].
      */
     signedAngleTo(other: Vector): number;
+    /**
+     * Returns this vector rotated counterclockwise by the given angle, in standard
+     * math orientation (+y up). Note: on a typical canvas the y-axis points *down*,
+     * so a positive angle appears clockwise on screen.
+     *
+     * @param {number} angleRadians - The rotation angle in radians.
+     * @returns {Vector} A new, rotated vector.
+     */
+    rotate(angleRadians: number): Vector;
+    /**
+     * The heading (direction) of this vector as an angle in radians, measured from
+     * the positive x-axis with {@link Math.atan2}, in the range (-π, π].
+     *
+     * @returns {number} The heading in radians.
+     */
+    heading(): number;
+    /**
+     * The Euclidean distance between this vector's point and another's.
+     *
+     * @param {Vector} other - The other point/vector.
+     * @returns {number} The distance between the two points.
+     */
+    dist(other: Vector): number;
+    /**
+     * Returns a new vector in the same direction as this one but with its magnitude
+     * capped at `max`. Vectors already at or below `max` are returned unchanged (as
+     * a copy). Handy for limiting velocity/force in sketches.
+     *
+     * @param {number} max - The maximum allowed magnitude.
+     * @returns {Vector} A new vector with magnitude ≤ max.
+     */
+    limit(max: number): Vector;
+    /**
+     * Returns a new vector with the same direction as this one but the given
+     * magnitude. Returns (0, 0) if this vector has zero length.
+     *
+     * @param {number} length - The desired magnitude.
+     * @returns {Vector} A new vector of the given magnitude.
+     */
+    withMagnitude(length: number): Vector;
+    /**
+     * Linearly interpolates between this vector and another.
+     *
+     * @param {Vector} other - The vector to interpolate toward.
+     * @param {number} amt - The amount, 0 (this) to 1 (other).
+     * @returns {Vector} A new, interpolated vector.
+     */
+    lerp(other: Vector, amt: number): Vector;
     /**
      * Returns a new Vector with the same components.
      * @returns {Vector} A copy of this vector.
@@ -175,6 +232,16 @@ declare function randomGaussian(mean?: number, sd?: number): number;
  * @returns {number} The clamped value.
  */
 declare function clamp(value: number, min: number, max: number): number;
+/**
+ * Constrains a value to a range. Alias for {@link clamp}, named to match
+ * p5.js's `constrain()` so p5 users find the familiar name.
+ *
+ * @param {number} value - The value to constrain.
+ * @param {number} min - The minimum bound.
+ * @param {number} max - The maximum bound.
+ * @returns {number} The constrained value.
+ */
+declare function constrain(value: number, min: number, max: number): number;
 /** @param {number} t @returns {number} */
 declare function easeOutCubic(t: number): number;
 /** @param {number} t @returns {number} */
@@ -191,4 +258,4 @@ declare function easeInCubic(t: number): number;
  */
 declare function easeOutBack(t: number): number;
 
-export { Vector, clamp, convertToDegrees, convertToRadians, easeInCubic, easeInOutCubic, easeOutBack, easeOutCubic, easeOutQuad, lerp, map, random, randomGaussian };
+export { Vector, clamp, constrain, convertToDegrees, convertToRadians, easeInCubic, easeInOutCubic, easeOutBack, easeOutCubic, easeOutQuad, lerp, map, random, randomGaussian };

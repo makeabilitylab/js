@@ -8,8 +8,9 @@
  * @example <caption>Basic usage</caption>
  * const serial = new Serial();
  *
- * serial.on(SerialEvents.CONNECTION_OPENED, () => {
+ * serial.on(SerialEvents.CONNECTION_OPENED, async () => {
  *   console.log("Connected!");
+ *   await serial.writeLine("Hello Arduino!"); // safe to send once open
  * });
  *
  * serial.on(SerialEvents.DATA_RECEIVED, (sender, line) => {
@@ -20,14 +21,11 @@
  *   console.error("Error:", error.message);
  * });
  *
- * // Connect with default baud rate (9600)
- * await serial.connectAndOpen();
- *
- * // Or for ESP32, use 115200:
- * // await serial.connectAndOpen(null, { baudRate: 115200 });
- *
- * // Send data to the microcontroller
- * await serial.writeLine("Hello Arduino!");
+ * // Open from a user gesture (the browser requires one). connectAndOpen() stays
+ * // pending the whole time the port is open — it runs the read loop internally —
+ * // so do follow-up work from the CONNECTION_OPENED event above, not after this
+ * // call. For ESP32, pass { baudRate: 115200 }.
+ * connectButton.addEventListener("click", () => serial.connectAndOpen());
  *
  * @example <caption>Auto-reconnect to a previously approved port</caption>
  * const serial = new Serial();
@@ -75,6 +73,14 @@ declare class Serial {
      * @type {Set<string>}
      */
     private knownEvents;
+    /**
+     * The navigator-level "disconnect" handler, registered while the port is
+     * open and removed on close() so listeners don't accumulate across Serial
+     * instances. Null when not open.
+     * @private
+     * @type {?function}
+     */
+    private _onDeviceDisconnect;
     /**
      * The current connection state.
      *
@@ -162,6 +168,12 @@ declare class Serial {
      * **Must be called from a user gesture** (e.g., a button click) because
      * `navigator.serial.requestPort()` requires user activation.
      *
+     * **The returned promise stays pending until the port is closed** — internally
+     * this runs the read loop for the whole session. Don't `await` it and expect
+     * the next line to run while connected; instead, react to
+     * {@link SerialEvents.CONNECTION_OPENED} (and `DATA_RECEIVED`) and call
+     * {@link Serial#writeLine} from there.
+     *
      * @param {Object[]|null} [portFilters=null] - Optional USB vendor/product ID filters.
      * @param {Object} [serialOptions={ baudRate: 9600 }] - Serial port options.
      *   Use `{ baudRate: 115200 }` for ESP32.
@@ -213,7 +225,9 @@ declare class Serial {
      */
     write(data: string): Promise<void>;
     /**
-     * Opens the serial port and begins listening for incoming data.
+     * Opens the serial port and begins listening for incoming data. The returned
+     * promise stays pending until the port is closed, since it runs the read loop
+     * internally (see {@link Serial#connectAndOpen}).
      *
      * Most callers should use {@link Serial#connectAndOpen} instead. This lower-level
      * method is called internally after a port has been selected via {@link Serial#connect}.
@@ -234,6 +248,19 @@ declare class Serial {
      * });
      */
     close(): Promise<void>;
+    /**
+     * Registers a navigator-level "disconnect" listener that auto-closes this port
+     * if the OS reports the device was unplugged. Called from {@link Serial#open};
+     * paired with {@link Serial#_removeDisconnectListener} in {@link Serial#close}
+     * so listeners don't accumulate across instances.
+     * @private
+     */
+    private _addDisconnectListener;
+    /**
+     * Removes the "disconnect" listener registered by {@link Serial#_addDisconnectListener}.
+     * @private
+     */
+    private _removeDisconnectListener;
     /**
      * Checks if the Web Serial API is available in this browser.
      * @private

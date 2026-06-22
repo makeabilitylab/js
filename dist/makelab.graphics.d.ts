@@ -10,6 +10,15 @@ declare class Vector {
      */
     static fromPoints(p1: any, p2: any): Vector;
     /**
+     * Creates a vector pointing in the direction of the given angle, measured from
+     * the positive x-axis in standard math orientation (counterclockwise, +y up).
+     *
+     * @param {number} angleRadians - The direction angle in radians.
+     * @param {number} [length=1] - The magnitude of the resulting vector.
+     * @returns {Vector} The new vector.
+     */
+    static fromAngle(angleRadians: number, length?: number): Vector;
+    /**
      * Create a vector.
      * @param {number} x - The x coordinate.
      * @param {number} y - The y coordinate.
@@ -84,6 +93,54 @@ declare class Vector {
      */
     signedAngleTo(other: Vector): number;
     /**
+     * Returns this vector rotated counterclockwise by the given angle, in standard
+     * math orientation (+y up). Note: on a typical canvas the y-axis points *down*,
+     * so a positive angle appears clockwise on screen.
+     *
+     * @param {number} angleRadians - The rotation angle in radians.
+     * @returns {Vector} A new, rotated vector.
+     */
+    rotate(angleRadians: number): Vector;
+    /**
+     * The heading (direction) of this vector as an angle in radians, measured from
+     * the positive x-axis with {@link Math.atan2}, in the range (-π, π].
+     *
+     * @returns {number} The heading in radians.
+     */
+    heading(): number;
+    /**
+     * The Euclidean distance between this vector's point and another's.
+     *
+     * @param {Vector} other - The other point/vector.
+     * @returns {number} The distance between the two points.
+     */
+    dist(other: Vector): number;
+    /**
+     * Returns a new vector in the same direction as this one but with its magnitude
+     * capped at `max`. Vectors already at or below `max` are returned unchanged (as
+     * a copy). Handy for limiting velocity/force in sketches.
+     *
+     * @param {number} max - The maximum allowed magnitude.
+     * @returns {Vector} A new vector with magnitude ≤ max.
+     */
+    limit(max: number): Vector;
+    /**
+     * Returns a new vector with the same direction as this one but the given
+     * magnitude. Returns (0, 0) if this vector has zero length.
+     *
+     * @param {number} length - The desired magnitude.
+     * @returns {Vector} A new vector of the given magnitude.
+     */
+    withMagnitude(length: number): Vector;
+    /**
+     * Linearly interpolates between this vector and another.
+     *
+     * @param {Vector} other - The vector to interpolate toward.
+     * @param {number} amt - The amount, 0 (this) to 1 (other).
+     * @returns {Vector} A new, interpolated vector.
+     */
+    lerp(other: Vector, amt: number): Vector;
+    /**
      * Returns a new Vector with the same components.
      * @returns {Vector} A copy of this vector.
      */
@@ -129,12 +186,19 @@ declare class LineSegment {
     constructor(x1: number | object, y1: number | object, x2?: number, y2?: number, ...args: any[]);
     pt1: any;
     pt2: any;
+    /** @type {number} Font size (px) of the angle/magnitude label. */
     fontSize: number;
+    /** @type {string} Stroke color of the line, arrowhead, and label. */
     strokeColor: string;
+    /** @type {boolean} If true, draw the line dashed instead of solid. */
     isDashedLine: boolean;
+    /** @type {boolean} If true, draw the text label next to the segment. */
     drawTextLabels: boolean;
+    /** @type {boolean} If true (and labels are on), include the magnitude in the label. */
     drawTextMagnitude: boolean;
+    /** @type {boolean} If true (and labels are on), include the angle in the label. */
     drawTextAngle: boolean;
+    /** @type {number} Stroke width of the line in pixels. */
     strokeWeight: number;
     /**
      * Set x1
@@ -227,7 +291,16 @@ declare class LineSegment {
      * @param {CanvasRenderingContext2D} ctx - The canvas rendering context to draw on.
      */
     draw(ctx: CanvasRenderingContext2D): void;
-    drawArrow(ctx: any, p1: any, p2: any, color: any): void;
+    /**
+     * Draws an arrow: a line from `p1` along the offset vector `p2`, with an
+     * arrowhead at the tip. Used internally by {@link LineSegment#draw}.
+     *
+     * @param {CanvasRenderingContext2D} ctx - The canvas rendering context to draw on.
+     * @param {Vector} p1 - The arrow's start point (tail).
+     * @param {Vector} p2 - The offset from the tail to the tip (i.e. tip = p1 + p2).
+     * @param {string} color - The stroke and fill color of the arrow.
+     */
+    drawArrow(ctx: CanvasRenderingContext2D, p1: Vector, p2: Vector, color: string): void;
     /**
      * Generates the label to be displayed on the line segment.
      *

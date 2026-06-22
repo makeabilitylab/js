@@ -68,6 +68,11 @@
    * map(15, 0, 10, 0, 100, true);  // 100 (clamped)
    */
   function map(value, start1, stop1, start2, stop2, withinBounds = false) {
+    // Guard against a zero-width input range, which would divide by zero. There's
+    // no meaningful position within an empty range, so collapse to the output start.
+    if (stop1 === start1) {
+      return start2;
+    }
     const mapped = start2 + (stop2 - start2) * ((value - start1) / (stop1 - start1));
     if (!withinBounds) return mapped;
 
@@ -89,7 +94,8 @@
    * randomGaussian();         // standard normal (mean=0, sd=1)
    */
   function randomGaussian(mean = 0, sd = 1) {
-    const u1 = Math.random();
+    // Math.random() can return 0; guard so log(u1) never becomes -Infinity.
+    const u1 = Math.random() || Number.MIN_VALUE;
     const u2 = Math.random();
     const z = Math.sqrt(-2 * Math.log(u1)) * Math.cos(2.0 * Math.PI * u2);
     return z * sd + mean;
@@ -105,6 +111,19 @@
    */
   function clamp(value, min, max) {
     return Math.max(min, Math.min(max, value));
+  }
+
+  /**
+   * Constrains a value to a range. Alias for {@link clamp}, named to match
+   * p5.js's `constrain()` so p5 users find the familiar name.
+   *
+   * @param {number} value - The value to constrain.
+   * @param {number} min - The minimum bound.
+   * @param {number} max - The maximum bound.
+   * @returns {number} The constrained value.
+   */
+  function constrain(value, min, max) {
+    return clamp(value, min, max);
   }
 
   // --- Easing functions ---
@@ -262,6 +281,80 @@
     }
 
     /**
+     * Returns this vector rotated counterclockwise by the given angle, in standard
+     * math orientation (+y up). Note: on a typical canvas the y-axis points *down*,
+     * so a positive angle appears clockwise on screen.
+     *
+     * @param {number} angleRadians - The rotation angle in radians.
+     * @returns {Vector} A new, rotated vector.
+     */
+    rotate(angleRadians) {
+      const cos = Math.cos(angleRadians);
+      const sin = Math.sin(angleRadians);
+      return new Vector(this.x * cos - this.y * sin, this.x * sin + this.y * cos);
+    }
+
+    /**
+     * The heading (direction) of this vector as an angle in radians, measured from
+     * the positive x-axis with {@link Math.atan2}, in the range (-π, π].
+     *
+     * @returns {number} The heading in radians.
+     */
+    heading() {
+      return Math.atan2(this.y, this.x);
+    }
+
+    /**
+     * The Euclidean distance between this vector's point and another's.
+     *
+     * @param {Vector} other - The other point/vector.
+     * @returns {number} The distance between the two points.
+     */
+    dist(other) {
+      return this.subtract(other).magnitude();
+    }
+
+    /**
+     * Returns a new vector in the same direction as this one but with its magnitude
+     * capped at `max`. Vectors already at or below `max` are returned unchanged (as
+     * a copy). Handy for limiting velocity/force in sketches.
+     *
+     * @param {number} max - The maximum allowed magnitude.
+     * @returns {Vector} A new vector with magnitude ≤ max.
+     */
+    limit(max) {
+      if (this.magnitude() > max) {
+        return this.normalize().multiply(max);
+      }
+      return this.clone();
+    }
+
+    /**
+     * Returns a new vector with the same direction as this one but the given
+     * magnitude. Returns (0, 0) if this vector has zero length.
+     *
+     * @param {number} length - The desired magnitude.
+     * @returns {Vector} A new vector of the given magnitude.
+     */
+    withMagnitude(length) {
+      return this.normalize().multiply(length);
+    }
+
+    /**
+     * Linearly interpolates between this vector and another.
+     *
+     * @param {Vector} other - The vector to interpolate toward.
+     * @param {number} amt - The amount, 0 (this) to 1 (other).
+     * @returns {Vector} A new, interpolated vector.
+     */
+    lerp(other, amt) {
+      return new Vector(
+        this.x + (other.x - this.x) * amt,
+        this.y + (other.y - this.y) * amt
+      );
+    }
+
+    /**
      * Returns a new Vector with the same components.
      * @returns {Vector} A copy of this vector.
      */
@@ -298,6 +391,18 @@
      */
     static fromPoints(p1, p2) {
       return new Vector(p2.x - p1.x, p2.y - p1.y);
+    }
+
+    /**
+     * Creates a vector pointing in the direction of the given angle, measured from
+     * the positive x-axis in standard math orientation (counterclockwise, +y up).
+     *
+     * @param {number} angleRadians - The direction angle in radians.
+     * @param {number} [length=1] - The magnitude of the resulting vector.
+     * @returns {Vector} The new vector.
+     */
+    static fromAngle(angleRadians, length = 1) {
+      return new Vector(Math.cos(angleRadians) * length, Math.sin(angleRadians) * length);
     }
   }
 
@@ -699,9 +804,8 @@
   // This library provides basic line segment functionality, including drawing
   // and vector operations
   //
-  // By Jon E. Froehlich
-  // UW CSE Professor
-  // http://makeabilitylab.io/
+  // By Jon E. Froehlich and the Makeability Lab
+  // https://makeabilitylab.io
   //
 
   class LineSegment {
@@ -725,12 +829,19 @@
         this.pt2 = new Vector(x2, y2);
       }
 
+      /** @type {number} Font size (px) of the angle/magnitude label. */
       this.fontSize = 10;
+      /** @type {string} Stroke color of the line, arrowhead, and label. */
       this.strokeColor = "black";
+      /** @type {boolean} If true, draw the line dashed instead of solid. */
       this.isDashedLine = false;
+      /** @type {boolean} If true, draw the text label next to the segment. */
       this.drawTextLabels = true;
+      /** @type {boolean} If true (and labels are on), include the magnitude in the label. */
       this.drawTextMagnitude = true;
+      /** @type {boolean} If true (and labels are on), include the angle in the label. */
       this.drawTextAngle = true;
+      /** @type {number} Stroke width of the line in pixels. */
       this.strokeWeight = 2;
     }
 
@@ -947,6 +1058,15 @@
       ctx.restore();
     }
 
+    /**
+     * Draws an arrow: a line from `p1` along the offset vector `p2`, with an
+     * arrowhead at the tip. Used internally by {@link LineSegment#draw}.
+     *
+     * @param {CanvasRenderingContext2D} ctx - The canvas rendering context to draw on.
+     * @param {Vector} p1 - The arrow's start point (tail).
+     * @param {Vector} p2 - The offset from the tail to the tip (i.e. tip = p1 + p2).
+     * @param {string} color - The stroke and fill color of the arrow.
+     */
     drawArrow(ctx, p1, p2, color) {
       const headLength = 10; // Length of the arrow head
       const angle = Math.atan2(p2.y, p2.x);
@@ -1146,8 +1266,9 @@
    * @example <caption>Basic usage</caption>
    * const serial = new Serial();
    *
-   * serial.on(SerialEvents.CONNECTION_OPENED, () => {
+   * serial.on(SerialEvents.CONNECTION_OPENED, async () => {
    *   console.log("Connected!");
+   *   await serial.writeLine("Hello Arduino!"); // safe to send once open
    * });
    *
    * serial.on(SerialEvents.DATA_RECEIVED, (sender, line) => {
@@ -1158,14 +1279,11 @@
    *   console.error("Error:", error.message);
    * });
    *
-   * // Connect with default baud rate (9600)
-   * await serial.connectAndOpen();
-   *
-   * // Or for ESP32, use 115200:
-   * // await serial.connectAndOpen(null, { baudRate: 115200 });
-   *
-   * // Send data to the microcontroller
-   * await serial.writeLine("Hello Arduino!");
+   * // Open from a user gesture (the browser requires one). connectAndOpen() stays
+   * // pending the whole time the port is open — it runs the read loop internally —
+   * // so do follow-up work from the CONNECTION_OPENED event above, not after this
+   * // call. For ESP32, pass { baudRate: 115200 }.
+   * connectButton.addEventListener("click", () => serial.connectAndOpen());
    *
    * @example <caption>Auto-reconnect to a previously approved port</caption>
    * const serial = new Serial();
@@ -1218,20 +1336,14 @@
         SerialEvents.ERROR_OCCURRED,
       ]);
 
-      // Listen for browser-level serial connect/disconnect events
-      if (typeof navigator !== "undefined" && navigator.serial) {
-        navigator.serial.addEventListener("connect", (event) => {
-          console.log("[Serial] Device connected to system");
-        });
-
-        navigator.serial.addEventListener("disconnect", (event) => {
-          console.log("[Serial] Device disconnected from system");
-          // Only auto-close if this instance has an open port
-          if (this.serialPort) {
-            this.close();
-          }
-        });
-      }
+      /**
+       * The navigator-level "disconnect" handler, registered while the port is
+       * open and removed on close() so listeners don't accumulate across Serial
+       * instances. Null when not open.
+       * @private
+       * @type {?function}
+       */
+      this._onDeviceDisconnect = null;
     }
 
     // ---------------------------------------------------------------------------
@@ -1392,6 +1504,12 @@
      * **Must be called from a user gesture** (e.g., a button click) because
      * `navigator.serial.requestPort()` requires user activation.
      *
+     * **The returned promise stays pending until the port is closed** — internally
+     * this runs the read loop for the whole session. Don't `await` it and expect
+     * the next line to run while connected; instead, react to
+     * {@link SerialEvents.CONNECTION_OPENED} (and `DATA_RECEIVED`) and call
+     * {@link Serial#writeLine} from there.
+     *
      * @param {Object[]|null} [portFilters=null] - Optional USB vendor/product ID filters.
      * @param {Object} [serialOptions={ baudRate: 9600 }] - Serial port options.
      *   Use `{ baudRate: 115200 }` for ESP32.
@@ -1503,7 +1621,9 @@
     // ---------------------------------------------------------------------------
 
     /**
-     * Opens the serial port and begins listening for incoming data.
+     * Opens the serial port and begins listening for incoming data. The returned
+     * promise stays pending until the port is closed, since it runs the read loop
+     * internally (see {@link Serial#connectAndOpen}).
      *
      * Most callers should use {@link Serial#connectAndOpen} instead. This lower-level
      * method is called internally after a port has been selected via {@link Serial#connect}.
@@ -1536,6 +1656,9 @@
         this.serialReader = textDecoder.readable
           .pipeThrough(new TransformStream(new LineBreakTransformer()))
           .getReader();
+
+        // Auto-close if the OS reports the device unplugged (active while open).
+        this._addDisconnectListener();
 
         this._state = SerialState.OPEN;
         this.fireEvent(SerialEvents.CONNECTION_OPENED);
@@ -1611,6 +1734,9 @@
       // Signal the read loop to stop
       this.keepReading = false;
 
+      // Stop listening for OS-level disconnects (paired with open()).
+      this._removeDisconnectListener();
+
       // --- Close the reader ---
       if (this.serialReader) {
         try {
@@ -1664,6 +1790,35 @@
     // ---------------------------------------------------------------------------
     //  Private helpers
     // ---------------------------------------------------------------------------
+
+    /**
+     * Registers a navigator-level "disconnect" listener that auto-closes this port
+     * if the OS reports the device was unplugged. Called from {@link Serial#open};
+     * paired with {@link Serial#_removeDisconnectListener} in {@link Serial#close}
+     * so listeners don't accumulate across instances.
+     * @private
+     */
+    _addDisconnectListener() {
+      if (typeof navigator === "undefined" || !navigator.serial) return;
+      this._onDeviceDisconnect = () => {
+        console.log("[Serial] Device disconnected from system");
+        if (this.serialPort) {
+          this.close();
+        }
+      };
+      navigator.serial.addEventListener("disconnect", this._onDeviceDisconnect);
+    }
+
+    /**
+     * Removes the "disconnect" listener registered by {@link Serial#_addDisconnectListener}.
+     * @private
+     */
+    _removeDisconnectListener() {
+      if (this._onDeviceDisconnect && typeof navigator !== "undefined" && navigator.serial) {
+        navigator.serial.removeEventListener("disconnect", this._onDeviceDisconnect);
+      }
+      this._onDeviceDisconnect = null;
+    }
 
     /**
      * Checks if the Web Serial API is available in this browser.
@@ -3628,10 +3783,9 @@
 
   /**
    * Array utility functions.
-   * 
-   * By Jon E. Froehlich
-   * https://jonfroehlich.github.io/
-   * http://makeabilitylab.cs.washington.edu
+   *
+   * By Jon E. Froehlich and the Makeability Lab
+   * https://makeabilitylab.io
    */
 
   /**
@@ -6087,6 +6241,7 @@
   exports.changeColorBrightness = changeColorBrightness;
   exports.changeColorSaturationAndBrightness = changeColorSaturationAndBrightness;
   exports.clamp = clamp;
+  exports.constrain = constrain;
   exports.convertColorStringToObject = convertColorStringToObject;
   exports.convertToDegrees = convertToDegrees;
   exports.convertToRadians = convertToRadians;
@@ -6110,5 +6265,5 @@
   exports.spiralPath = spiralPath;
 
 })(this.Makelab = this.Makelab || {});
-if(typeof window!=="undefined"&&window.Makelab){window.Serial=window.Makelab.Serial;window.SerialEvents=window.Makelab.SerialEvents;window.SerialState=window.Makelab.SerialState;window.Vector=window.Makelab.Vector;window.lerp=window.Makelab.lerp;}
+if(typeof window!=="undefined"&&window.Makelab){window.Serial=window.Makelab.Serial;window.SerialEvents=window.Makelab.SerialEvents;window.SerialState=window.Makelab.SerialState;window.Vector=window.Makelab.Vector;window.lerp=window.Makelab.lerp;window.constrain=window.Makelab.constrain;}
 //# sourceMappingURL=makelab.all.iife.js.map

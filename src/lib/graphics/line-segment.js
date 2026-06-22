@@ -1,9 +1,8 @@
 // This library provides basic line segment functionality, including drawing
 // and vector operations
 //
-// By Jon E. Froehlich
-// UW CSE Professor
-// http://makeabilitylab.io/
+// By Jon E. Froehlich and the Makeability Lab
+// https://makeabilitylab.io
 //
 import { Vector } from '../math/vector.js';
 import { convertToRadians, convertToDegrees } from '../math/math-utils.js';
@@ -29,12 +28,19 @@ export class LineSegment {
       this.pt2 = new Vector(x2, y2);
     }
 
+    /** @type {number} Font size (px) of the angle/magnitude label. */
     this.fontSize = 10;
+    /** @type {string} Stroke color of the line, arrowhead, and label. */
     this.strokeColor = "black";
+    /** @type {boolean} If true, draw the line dashed instead of solid. */
     this.isDashedLine = false;
+    /** @type {boolean} If true, draw the text label next to the segment. */
     this.drawTextLabels = true;
+    /** @type {boolean} If true (and labels are on), include the magnitude in the label. */
     this.drawTextMagnitude = true;
+    /** @type {boolean} If true (and labels are on), include the angle in the label. */
     this.drawTextAngle = true;
+    /** @type {number} Stroke width of the line in pixels. */
     this.strokeWeight = 2;
   }
 
@@ -251,6 +257,15 @@ export class LineSegment {
     ctx.restore();
   }
 
+  /**
+   * Draws an arrow: a line from `p1` along the offset vector `p2`, with an
+   * arrowhead at the tip. Used internally by {@link LineSegment#draw}.
+   *
+   * @param {CanvasRenderingContext2D} ctx - The canvas rendering context to draw on.
+   * @param {Vector} p1 - The arrow's start point (tail).
+   * @param {Vector} p2 - The offset from the tail to the tip (i.e. tip = p1 + p2).
+   * @param {string} color - The stroke and fill color of the arrow.
+   */
   drawArrow(ctx, p1, p2, color) {
     const headLength = 10; // Length of the arrow head
     const angle = Math.atan2(p2.y, p2.x);

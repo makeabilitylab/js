@@ -69,8 +69,9 @@ this.Makelab = this.Makelab || {};
    * @example <caption>Basic usage</caption>
    * const serial = new Serial();
    *
-   * serial.on(SerialEvents.CONNECTION_OPENED, () => {
+   * serial.on(SerialEvents.CONNECTION_OPENED, async () => {
    *   console.log("Connected!");
+   *   await serial.writeLine("Hello Arduino!"); // safe to send once open
    * });
    *
    * serial.on(SerialEvents.DATA_RECEIVED, (sender, line) => {
@@ -81,14 +82,11 @@ this.Makelab = this.Makelab || {};
    *   console.error("Error:", error.message);
    * });
    *
-   * // Connect with default baud rate (9600)
-   * await serial.connectAndOpen();
-   *
-   * // Or for ESP32, use 115200:
-   * // await serial.connectAndOpen(null, { baudRate: 115200 });
-   *
-   * // Send data to the microcontroller
-   * await serial.writeLine("Hello Arduino!");
+   * // Open from a user gesture (the browser requires one). connectAndOpen() stays
+   * // pending the whole time the port is open — it runs the read loop internally —
+   * // so do follow-up work from the CONNECTION_OPENED event above, not after this
+   * // call. For ESP32, pass { baudRate: 115200 }.
+   * connectButton.addEventListener("click", () => serial.connectAndOpen());
    *
    * @example <caption>Auto-reconnect to a previously approved port</caption>
    * const serial = new Serial();
@@ -141,20 +139,14 @@ this.Makelab = this.Makelab || {};
         SerialEvents.ERROR_OCCURRED,
       ]);
 
-      // Listen for browser-level serial connect/disconnect events
-      if (typeof navigator !== "undefined" && navigator.serial) {
-        navigator.serial.addEventListener("connect", (event) => {
-          console.log("[Serial] Device connected to system");
-        });
-
-        navigator.serial.addEventListener("disconnect", (event) => {
-          console.log("[Serial] Device disconnected from system");
-          // Only auto-close if this instance has an open port
-          if (this.serialPort) {
-            this.close();
-          }
-        });
-      }
+      /**
+       * The navigator-level "disconnect" handler, registered while the port is
+       * open and removed on close() so listeners don't accumulate across Serial
+       * instances. Null when not open.
+       * @private
+       * @type {?function}
+       */
+      this._onDeviceDisconnect = null;
     }
 
     // ---------------------------------------------------------------------------
@@ -315,6 +307,12 @@ this.Makelab = this.Makelab || {};
      * **Must be called from a user gesture** (e.g., a button click) because
      * `navigator.serial.requestPort()` requires user activation.
      *
+     * **The returned promise stays pending until the port is closed** — internally
+     * this runs the read loop for the whole session. Don't `await` it and expect
+     * the next line to run while connected; instead, react to
+     * {@link SerialEvents.CONNECTION_OPENED} (and `DATA_RECEIVED`) and call
+     * {@link Serial#writeLine} from there.
+     *
      * @param {Object[]|null} [portFilters=null] - Optional USB vendor/product ID filters.
      * @param {Object} [serialOptions={ baudRate: 9600 }] - Serial port options.
      *   Use `{ baudRate: 115200 }` for ESP32.
@@ -426,7 +424,9 @@ this.Makelab = this.Makelab || {};
     // ---------------------------------------------------------------------------
 
     /**
-     * Opens the serial port and begins listening for incoming data.
+     * Opens the serial port and begins listening for incoming data. The returned
+     * promise stays pending until the port is closed, since it runs the read loop
+     * internally (see {@link Serial#connectAndOpen}).
      *
      * Most callers should use {@link Serial#connectAndOpen} instead. This lower-level
      * method is called internally after a port has been selected via {@link Serial#connect}.
@@ -459,6 +459,9 @@ this.Makelab = this.Makelab || {};
         this.serialReader = textDecoder.readable
           .pipeThrough(new TransformStream(new LineBreakTransformer()))
           .getReader();
+
+        // Auto-close if the OS reports the device unplugged (active while open).
+        this._addDisconnectListener();
 
         this._state = SerialState.OPEN;
         this.fireEvent(SerialEvents.CONNECTION_OPENED);
@@ -534,6 +537,9 @@ this.Makelab = this.Makelab || {};
       // Signal the read loop to stop
       this.keepReading = false;
 
+      // Stop listening for OS-level disconnects (paired with open()).
+      this._removeDisconnectListener();
+
       // --- Close the reader ---
       if (this.serialReader) {
         try {
@@ -587,6 +593,35 @@ this.Makelab = this.Makelab || {};
     // ---------------------------------------------------------------------------
     //  Private helpers
     // ---------------------------------------------------------------------------
+
+    /**
+     * Registers a navigator-level "disconnect" listener that auto-closes this port
+     * if the OS reports the device was unplugged. Called from {@link Serial#open};
+     * paired with {@link Serial#_removeDisconnectListener} in {@link Serial#close}
+     * so listeners don't accumulate across instances.
+     * @private
+     */
+    _addDisconnectListener() {
+      if (typeof navigator === "undefined" || !navigator.serial) return;
+      this._onDeviceDisconnect = () => {
+        console.log("[Serial] Device disconnected from system");
+        if (this.serialPort) {
+          this.close();
+        }
+      };
+      navigator.serial.addEventListener("disconnect", this._onDeviceDisconnect);
+    }
+
+    /**
+     * Removes the "disconnect" listener registered by {@link Serial#_addDisconnectListener}.
+     * @private
+     */
+    _removeDisconnectListener() {
+      if (this._onDeviceDisconnect && typeof navigator !== "undefined" && navigator.serial) {
+        navigator.serial.removeEventListener("disconnect", this._onDeviceDisconnect);
+      }
+      this._onDeviceDisconnect = null;
+    }
 
     /**
      * Checks if the Web Serial API is available in this browser.

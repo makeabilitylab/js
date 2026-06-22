@@ -59,3 +59,28 @@ test('Vector toString', () =>
   assertEquals(new Vector(2, 3).toString(), '(2, 3)'));
 test('Vector fromPoints', () =>
   assert(Vector.fromPoints({ x: 1, y: 2 }, { x: 3, y: 5 }).equals(new Vector(2, 3))));
+
+// p5-parity helpers — all immutable (return new vectors)
+test('rotate by π/2 turns (1,0) into (0,1)', () =>
+  assert(new Vector(1, 0).rotate(Math.PI / 2).equals(new Vector(0, 1), EPS)));
+test('heading of (0,1) is π/2', () =>
+  assertEquals(new Vector(0, 1).heading(), Math.PI / 2, EPS));
+test('dist between (0,0) and (3,4) is 5', () =>
+  assertEquals(new Vector(0, 0).dist(new Vector(3, 4)), 5, EPS));
+test('limit caps an over-long vector to the max magnitude', () =>
+  assertEquals(new Vector(3, 4).limit(2.5).magnitude(), 2.5, EPS));
+test('limit leaves a short-enough vector unchanged', () =>
+  assert(new Vector(3, 4).limit(10).equals(new Vector(3, 4), EPS)));
+test('withMagnitude sets length while keeping direction', () =>
+  assert(new Vector(3, 4).withMagnitude(10).equals(new Vector(6, 8), EPS)));
+test('lerp halfway between (0,0) and (10,20)', () =>
+  assert(new Vector(0, 0).lerp(new Vector(10, 20), 0.5).equals(new Vector(5, 10), EPS)));
+test('static fromAngle(0) is the unit x vector', () =>
+  assert(Vector.fromAngle(0).equals(new Vector(1, 0), EPS)));
+test('static fromAngle with length', () =>
+  assert(Vector.fromAngle(Math.PI / 2, 5).equals(new Vector(0, 5), EPS)));
+test('the new helpers do not mutate the original vector', () => {
+  const v = new Vector(3, 4);
+  v.rotate(1); v.limit(1); v.withMagnitude(1); v.lerp(new Vector(0, 0), 0.5);
+  assert(v.equals(new Vector(3, 4)));
+});

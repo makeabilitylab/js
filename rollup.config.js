@@ -139,6 +139,7 @@ export default defineConfig([
     'if(typeof window!=="undefined"&&window.Makelab&&window.Makelab.Math){' +
     'window.Vector=window.Makelab.Math.Vector;' +
     'window.lerp=window.Makelab.Math.lerp;' +
+    'window.constrain=window.Makelab.Math.constrain;' +
     '}'
   ),
 
@@ -185,6 +186,7 @@ export default defineConfig([
     'window.SerialState=window.Makelab.SerialState;' +
     'window.Vector=window.Makelab.Vector;' +
     'window.lerp=window.Makelab.lerp;' +
+    'window.constrain=window.Makelab.constrain;' +
     '}'
   ),
 

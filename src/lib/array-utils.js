@@ -1,9 +1,8 @@
 /**
  * Array utility functions.
- * 
- * By Jon E. Froehlich
- * https://jonfroehlich.github.io/
- * http://makeabilitylab.cs.washington.edu
+ *
+ * By Jon E. Froehlich and the Makeability Lab
+ * https://makeabilitylab.io
  */
 
 /**

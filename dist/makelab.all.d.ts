@@ -10,6 +10,15 @@ declare class Vector {
      */
     static fromPoints(p1: any, p2: any): Vector;
     /**
+     * Creates a vector pointing in the direction of the given angle, measured from
+     * the positive x-axis in standard math orientation (counterclockwise, +y up).
+     *
+     * @param {number} angleRadians - The direction angle in radians.
+     * @param {number} [length=1] - The magnitude of the resulting vector.
+     * @returns {Vector} The new vector.
+     */
+    static fromAngle(angleRadians: number, length?: number): Vector;
+    /**
      * Create a vector.
      * @param {number} x - The x coordinate.
      * @param {number} y - The y coordinate.
@@ -83,6 +92,54 @@ declare class Vector {
      * @returns {number} The signed angle in radians, in (-π, π].
      */
     signedAngleTo(other: Vector): number;
+    /**
+     * Returns this vector rotated counterclockwise by the given angle, in standard
+     * math orientation (+y up). Note: on a typical canvas the y-axis points *down*,
+     * so a positive angle appears clockwise on screen.
+     *
+     * @param {number} angleRadians - The rotation angle in radians.
+     * @returns {Vector} A new, rotated vector.
+     */
+    rotate(angleRadians: number): Vector;
+    /**
+     * The heading (direction) of this vector as an angle in radians, measured from
+     * the positive x-axis with {@link Math.atan2}, in the range (-π, π].
+     *
+     * @returns {number} The heading in radians.
+     */
+    heading(): number;
+    /**
+     * The Euclidean distance between this vector's point and another's.
+     *
+     * @param {Vector} other - The other point/vector.
+     * @returns {number} The distance between the two points.
+     */
+    dist(other: Vector): number;
+    /**
+     * Returns a new vector in the same direction as this one but with its magnitude
+     * capped at `max`. Vectors already at or below `max` are returned unchanged (as
+     * a copy). Handy for limiting velocity/force in sketches.
+     *
+     * @param {number} max - The maximum allowed magnitude.
+     * @returns {Vector} A new vector with magnitude ≤ max.
+     */
+    limit(max: number): Vector;
+    /**
+     * Returns a new vector with the same direction as this one but the given
+     * magnitude. Returns (0, 0) if this vector has zero length.
+     *
+     * @param {number} length - The desired magnitude.
+     * @returns {Vector} A new vector of the given magnitude.
+     */
+    withMagnitude(length: number): Vector;
+    /**
+     * Linearly interpolates between this vector and another.
+     *
+     * @param {Vector} other - The vector to interpolate toward.
+     * @param {number} amt - The amount, 0 (this) to 1 (other).
+     * @returns {Vector} A new, interpolated vector.
+     */
+    lerp(other: Vector, amt: number): Vector;
     /**
      * Returns a new Vector with the same components.
      * @returns {Vector} A copy of this vector.
@@ -175,6 +232,16 @@ declare function randomGaussian(mean?: number, sd?: number): number;
  * @returns {number} The clamped value.
  */
 declare function clamp(value: number, min: number, max: number): number;
+/**
+ * Constrains a value to a range. Alias for {@link clamp}, named to match
+ * p5.js's `constrain()` so p5 users find the familiar name.
+ *
+ * @param {number} value - The value to constrain.
+ * @param {number} min - The minimum bound.
+ * @param {number} max - The maximum bound.
+ * @returns {number} The constrained value.
+ */
+declare function constrain(value: number, min: number, max: number): number;
 /** @param {number} t @returns {number} */
 declare function easeOutCubic(t: number): number;
 /** @param {number} t @returns {number} */
@@ -216,12 +283,19 @@ declare class LineSegment {
     constructor(x1: number | object, y1: number | object, x2?: number, y2?: number, ...args: any[]);
     pt1: any;
     pt2: any;
+    /** @type {number} Font size (px) of the angle/magnitude label. */
     fontSize: number;
+    /** @type {string} Stroke color of the line, arrowhead, and label. */
     strokeColor: string;
+    /** @type {boolean} If true, draw the line dashed instead of solid. */
     isDashedLine: boolean;
+    /** @type {boolean} If true, draw the text label next to the segment. */
     drawTextLabels: boolean;
+    /** @type {boolean} If true (and labels are on), include the magnitude in the label. */
     drawTextMagnitude: boolean;
+    /** @type {boolean} If true (and labels are on), include the angle in the label. */
     drawTextAngle: boolean;
+    /** @type {number} Stroke width of the line in pixels. */
     strokeWeight: number;
     /**
      * Set x1
@@ -314,7 +388,16 @@ declare class LineSegment {
      * @param {CanvasRenderingContext2D} ctx - The canvas rendering context to draw on.
      */
     draw(ctx: CanvasRenderingContext2D): void;
-    drawArrow(ctx: any, p1: any, p2: any, color: any): void;
+    /**
+     * Draws an arrow: a line from `p1` along the offset vector `p2`, with an
+     * arrowhead at the tip. Used internally by {@link LineSegment#draw}.
+     *
+     * @param {CanvasRenderingContext2D} ctx - The canvas rendering context to draw on.
+     * @param {Vector} p1 - The arrow's start point (tail).
+     * @param {Vector} p2 - The offset from the tail to the tip (i.e. tip = p1 + p2).
+     * @param {string} color - The stroke and fill color of the arrow.
+     */
+    drawArrow(ctx: CanvasRenderingContext2D, p1: Vector, p2: Vector, color: string): void;
     /**
      * Generates the label to be displayed on the line segment.
      *
@@ -457,8 +540,9 @@ declare function rgbToHex(r: number, g: number, b: number): string;
  * @example <caption>Basic usage</caption>
  * const serial = new Serial();
  *
- * serial.on(SerialEvents.CONNECTION_OPENED, () => {
+ * serial.on(SerialEvents.CONNECTION_OPENED, async () => {
  *   console.log("Connected!");
+ *   await serial.writeLine("Hello Arduino!"); // safe to send once open
  * });
  *
  * serial.on(SerialEvents.DATA_RECEIVED, (sender, line) => {
@@ -469,14 +553,11 @@ declare function rgbToHex(r: number, g: number, b: number): string;
  *   console.error("Error:", error.message);
  * });
  *
- * // Connect with default baud rate (9600)
- * await serial.connectAndOpen();
- *
- * // Or for ESP32, use 115200:
- * // await serial.connectAndOpen(null, { baudRate: 115200 });
- *
- * // Send data to the microcontroller
- * await serial.writeLine("Hello Arduino!");
+ * // Open from a user gesture (the browser requires one). connectAndOpen() stays
+ * // pending the whole time the port is open — it runs the read loop internally —
+ * // so do follow-up work from the CONNECTION_OPENED event above, not after this
+ * // call. For ESP32, pass { baudRate: 115200 }.
+ * connectButton.addEventListener("click", () => serial.connectAndOpen());
  *
  * @example <caption>Auto-reconnect to a previously approved port</caption>
  * const serial = new Serial();
@@ -524,6 +605,14 @@ declare class Serial {
      * @type {Set<string>}
      */
     private knownEvents;
+    /**
+     * The navigator-level "disconnect" handler, registered while the port is
+     * open and removed on close() so listeners don't accumulate across Serial
+     * instances. Null when not open.
+     * @private
+     * @type {?function}
+     */
+    private _onDeviceDisconnect;
     /**
      * The current connection state.
      *
@@ -611,6 +700,12 @@ declare class Serial {
      * **Must be called from a user gesture** (e.g., a button click) because
      * `navigator.serial.requestPort()` requires user activation.
      *
+     * **The returned promise stays pending until the port is closed** — internally
+     * this runs the read loop for the whole session. Don't `await` it and expect
+     * the next line to run while connected; instead, react to
+     * {@link SerialEvents.CONNECTION_OPENED} (and `DATA_RECEIVED`) and call
+     * {@link Serial#writeLine} from there.
+     *
      * @param {Object[]|null} [portFilters=null] - Optional USB vendor/product ID filters.
      * @param {Object} [serialOptions={ baudRate: 9600 }] - Serial port options.
      *   Use `{ baudRate: 115200 }` for ESP32.
@@ -662,7 +757,9 @@ declare class Serial {
      */
     write(data: string): Promise<void>;
     /**
-     * Opens the serial port and begins listening for incoming data.
+     * Opens the serial port and begins listening for incoming data. The returned
+     * promise stays pending until the port is closed, since it runs the read loop
+     * internally (see {@link Serial#connectAndOpen}).
      *
      * Most callers should use {@link Serial#connectAndOpen} instead. This lower-level
      * method is called internally after a port has been selected via {@link Serial#connect}.
@@ -683,6 +780,19 @@ declare class Serial {
      * });
      */
     close(): Promise<void>;
+    /**
+     * Registers a navigator-level "disconnect" listener that auto-closes this port
+     * if the OS reports the device was unplugged. Called from {@link Serial#open};
+     * paired with {@link Serial#_removeDisconnectListener} in {@link Serial#close}
+     * so listeners don't accumulate across instances.
+     * @private
+     */
+    private _addDisconnectListener;
+    /**
+     * Removes the "disconnect" listener registered by {@link Serial#_addDisconnectListener}.
+     * @private
+     */
+    private _removeDisconnectListener;
     /**
      * Checks if the Web Serial API is available in this browser.
      * @private
@@ -2583,9 +2693,8 @@ declare class TriangleArt$1 {
 /**
  * Array utility functions.
  *
- * By Jon E. Froehlich
- * https://jonfroehlich.github.io/
- * http://makeabilitylab.cs.washington.edu
+ * By Jon E. Froehlich and the Makeability Lab
+ * https://makeabilitylab.io
  */
 /**
  * Shuffles an array in place using the Fisher-Yates algorithm.
@@ -2599,4 +2708,4 @@ declare class TriangleArt$1 {
  */
 declare function shuffle(array: any[]): any[];
 
-export { Cell, Grid$1 as Grid, LineBreakTransformer, LineSegment, MORPH_PATHS, MakeabilityLabLogo$1 as MakeabilityLabLogo, MakeabilityLabLogoColorer, MakeabilityLabLogoGridFade, MakeabilityLabLogoLeafFall, MakeabilityLabLogoMorpher, MakeabilityLabLogoZoomFade, ORIGINAL_COLOR_ARRAY, OriginalColorPaletteRGB, Serial, SerialEvents, SerialState, Triangle$1 as Triangle, TriangleArt$1 as TriangleArt, TriangleDir, Vector, arcPath, bezierPath, changeColorBrightness, changeColorSaturationAndBrightness, clamp, convertColorStringToObject, convertToDegrees, convertToRadians, easeInCubic, easeInOutCubic, easeOutBack, easeOutCubic, easeOutQuad, hexStringToRgb, hsvToRgb, lerp, lerpColor, linearPath, map, parseHexString, random, randomGaussian, rgbToHex, rgbToHsv, shuffle, spiralPath };
+export { Cell, Grid$1 as Grid, LineBreakTransformer, LineSegment, MORPH_PATHS, MakeabilityLabLogo$1 as MakeabilityLabLogo, MakeabilityLabLogoColorer, MakeabilityLabLogoGridFade, MakeabilityLabLogoLeafFall, MakeabilityLabLogoMorpher, MakeabilityLabLogoZoomFade, ORIGINAL_COLOR_ARRAY, OriginalColorPaletteRGB, Serial, SerialEvents, SerialState, Triangle$1 as Triangle, TriangleArt$1 as TriangleArt, TriangleDir, Vector, arcPath, bezierPath, changeColorBrightness, changeColorSaturationAndBrightness, clamp, constrain, convertColorStringToObject, convertToDegrees, convertToRadians, easeInCubic, easeInOutCubic, easeOutBack, easeOutCubic, easeOutQuad, hexStringToRgb, hsvToRgb, lerp, lerpColor, linearPath, map, parseHexString, random, randomGaussian, rgbToHex, rgbToHsv, shuffle, spiralPath };
