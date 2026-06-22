@@ -1,0 +1,39 @@
+name: CI
+
+# Runs the unit tests and verifies that the committed dist/ bundles are in sync
+# with src/. Because dist/ is what CDN consumers load (jsDelivr serves it straight
+# from this repo), a stale dist/ would silently ship old code — this job fails the
+# build if someone edits src/ without rebuilding.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Set up Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests
+        run: npm test
+
+      - name: Rebuild dist/
+        run: npm run build
+
+      - name: Verify dist/ is in sync with src/
+        run: |
+          if ! git diff --exit-code -- dist/; then
+            echo "::error::dist/ is out of date with src/. Run 'npx rollup -c rollup.config.js' and commit the regenerated dist/ files."
+            exit 1
+          fi

@@ -53,8 +53,6 @@ function lerpColor(startColor, endColor, amt) {
   startColor = convertColorStringToObject(startColor);
   endColor = convertColorStringToObject(endColor);
 
-  const clamp = (val, min, max) => Math.min(max, Math.max(min, val));
-
   const r = clamp(Math.round(lerp(startColor.r, endColor.r, amt)), 0, 255);
   const g = clamp(Math.round(lerp(startColor.g, endColor.g, amt)), 0, 255);
   const b = clamp(Math.round(lerp(startColor.b, endColor.b, amt)), 0, 255);
@@ -80,43 +78,23 @@ function convertColorStringToObject(colorStr) {
       return HTML_COLOR_NAMES[colorStr.toLowerCase()];
     }
 
-    // Handle hexstring, rgb, or rgba string
-    const match = colorStr.match(/^#([0-9a-fA-F]{6}|[0-9a-fA-F]{3}|[0-9a-fA-F]{8})$/);
-    if (match) {
-      // Hexstring
-      const hex = match[1];
-      if (hex.length === 8) {
-        // 8-digit hex string with alpha
-        return {
-          r: parseInt(hex.substring(0, 2), 16),
-          g: parseInt(hex.substring(2, 4), 16),
-          b: parseInt(hex.substring(4, 6), 16),
-          a: parseInt(hex.substring(6, 8), 16) / 255
-        };
-      } else {
-        // 6-digit hex string without alpha
-        return {
-          r: parseInt(hex.substring(0, 2), 16),
-          g: parseInt(hex.substring(2, 4), 16),
-          b: parseInt(hex.substring(4, 6), 16),
-          a: 1 // Default to 1 if alpha is not specified
-        };
+    // Handle hex string (3-, 6-, or 8-digit, with optional alpha)
+    if (colorStr.startsWith('#')) {
+      const parsed = parseHexString(colorStr);
+      if (parsed) {
+        return parsed;
       }
     } else if (colorStr.startsWith('rgb')) {
       // Improved regex to support varied spacing and decimal alpha (e.g., .5 or 0.5)
       const match = colorStr.match(/rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*(?:,\s*(\d*\.?\d+)\s*)?\)/);
-      
+
       if (match) {
         const [, r, g, b, a] = match;
-        
-        // BUG FIX: Helper to clamp values between 0-255
-        const clamp = (val) => Math.min(255, Math.max(0, parseInt(val)));
-
         return {
-          r: clamp(r),
-          g: clamp(g),
-          b: clamp(b),
-          a: a !== undefined ? parseFloat(a) : 1 
+          r: clamp(parseInt(r, 10), 0, 255),
+          g: clamp(parseInt(g, 10), 0, 255),
+          b: clamp(parseInt(b, 10), 0, 255),
+          a: a !== undefined ? parseFloat(a) : 1
         };
       }
     }
@@ -236,21 +214,61 @@ function changeColorSaturationAndBrightness(color, newSaturationPercent, newBrig
 }
 
 /**
+ * Parses a 3-, 6-, or 8-digit hex color string into an {r, g, b, a} object.
+ * The leading `#` is optional. The 8-digit form carries alpha in its final two
+ * digits (returned as 0–1); otherwise alpha defaults to 1. The 3-digit shorthand
+ * is expanded (e.g., `"f80"` → `"ff8800"`).
+ *
+ * Shared by {@link convertColorStringToObject} and {@link hexStringToRgb} so
+ * both accept the same set of hex formats.
+ *
+ * @param {string} hex - Hex color string (e.g., "#f80", "cc4133", "#ff000080").
+ * @returns {{r: number, g: number, b: number, a: number}|null} The parsed color,
+ *   or `null` if the string is not a valid 3/6/8-digit hex color.
+ */
+function parseHexString(hex) {
+  if (typeof hex !== 'string') {
+    return null;
+  }
+
+  let h = hex.startsWith('#') ? hex.slice(1) : hex;
+
+  // Expand 3-digit shorthand (e.g., "f80" -> "ff8800").
+  if (/^[0-9a-fA-F]{3}$/.test(h)) {
+    h = h.split('').map(c => c + c).join('');
+  }
+
+  if (/^[0-9a-fA-F]{6}$/.test(h)) {
+    return {
+      r: parseInt(h.substring(0, 2), 16),
+      g: parseInt(h.substring(2, 4), 16),
+      b: parseInt(h.substring(4, 6), 16),
+      a: 1
+    };
+  }
+
+  if (/^[0-9a-fA-F]{8}$/.test(h)) {
+    return {
+      r: parseInt(h.substring(0, 2), 16),
+      g: parseInt(h.substring(2, 4), 16),
+      b: parseInt(h.substring(4, 6), 16),
+      a: parseInt(h.substring(6, 8), 16) / 255
+    };
+  }
+
+  return null;
+}
+
+/**
  * Converts a hex color string to an RGB object.
  *
- * @param {string} hex - Hex color string (e.g., "#cc4133" or "cc4133").
+ * @param {string} hex - Hex color string (e.g., "#cc4133" or "cc4133"). Accepts
+ *   3-, 6-, or 8-digit hex (the alpha of the 8-digit form is ignored here).
  * @returns {{r: number, g: number, b: number}|null} RGB object or null if invalid.
  */
 function hexStringToRgb(hex) {
-  const shorthandRegex = /^#?([a-f\d])([a-f\d])([a-f\d])$/i;
-  hex = hex.replace(shorthandRegex, (m, r, g, b) => r + r + g + g + b + b);
-
-  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-  return result ? {
-    r: parseInt(result[1], 16),
-    g: parseInt(result[2], 16),
-    b: parseInt(result[3], 16)
-  } : null;
+  const parsed = parseHexString(hex);
+  return parsed ? { r: parsed.r, g: parsed.g, b: parsed.b } : null;
 }
 
 /**
@@ -800,18 +818,22 @@ class LineSegment {
    * @param {CanvasRenderingContext2D} ctx - The canvas rendering context to draw on.
    */
   draw(ctx) {
+    // Save/restore around the whole method so that per-segment style — stroke
+    // color/weight and especially the dashed-line pattern — does not leak onto
+    // the context and affect later draw calls that share it.
+    ctx.save();
+
     ctx.strokeStyle = this.strokeColor;
     ctx.lineWidth = this.strokeWeight;
-  
+
     if (this.isDashedLine) {
       ctx.setLineDash([5, 15]);
     }
-  
-    this.drawArrow(ctx, this.pt1, this.pt2.subtract(this.pt1), this.strokeColor); 
-  
+
+    this.drawArrow(ctx, this.pt1, this.pt2.subtract(this.pt1), this.strokeColor);
+
     // Draw text labels (optional)
     if (this.drawTextLabels) {
-      ctx.save(); // Save context to prevent affecting other drawing calls
       ctx.font = `${this.fontSize}px Arial`;
       ctx.textAlign = "left";
       ctx.textBaseline = "top";
@@ -819,11 +841,12 @@ class LineSegment {
 
       const label = this.generateLabel();
       const labelWidth = ctx.measureText(label).width;
-      
+
       // BUG FIX: Draw relative to pt1 instead of global origin
       ctx.fillText(label, this.pt1.x - labelWidth - 3, this.pt1.y + 12);
-      ctx.restore();
     }
+
+    ctx.restore();
   }
 
   drawArrow(ctx, p1, p2, color) {
@@ -958,5 +981,5 @@ function calculateNormals(pt1, pt2) {
   return [new Vector(v.y, -v.x), new Vector(-v.y, v.x)];
 }
 
-export { LineSegment, changeColorBrightness, changeColorSaturationAndBrightness, convertColorStringToObject, hexStringToRgb, hsvToRgb, lerpColor, rgbToHex, rgbToHsv };
+export { LineSegment, changeColorBrightness, changeColorSaturationAndBrightness, convertColorStringToObject, hexStringToRgb, hsvToRgb, lerpColor, parseHexString, rgbToHex, rgbToHsv };
 //# sourceMappingURL=makelab.graphics.js.map

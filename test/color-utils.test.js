@@ -16,6 +16,13 @@ test('hexStringToRgb (shorthand)', () => {
   const c = hexStringToRgb('#f80');
   assert(c.r === 255 && c.g === 136 && c.b === 0);
 });
+test('hexStringToRgb (8-digit ignores alpha)', () => {
+  const c = hexStringToRgb('#ff000080');
+  assert(c.r === 255 && c.g === 0 && c.b === 0);
+  assert(c.a === undefined, 'hexStringToRgb should not return an alpha channel');
+});
+test('hexStringToRgb returns null on invalid input', () =>
+  assertEquals(hexStringToRgb('nope'), null));
 test('rgbToHex', () => assertEquals(rgbToHex(255, 0, 0), '#FF0000'));
 test('rgbToHex rounds and clamps out-of-range values', () =>
   assertEquals(rgbToHex(255.6, -5, 128), '#FF0080'));
@@ -48,6 +55,11 @@ test('convertColorStringToObject (named color)', () => {
 test('convertColorStringToObject (rgb string)', () => {
   const c = convertColorStringToObject('rgb(10, 20, 30)');
   assert(c.r === 10 && c.g === 20 && c.b === 30);
+});
+test('convertColorStringToObject (3-digit hex shorthand)', () => {
+  const c = convertColorStringToObject('#f80');
+  assert(c.r === 255 && c.g === 136 && c.b === 0, `got ${JSON.stringify(c)}`);
+  assert(c.a === 1);
 });
 test('convertColorStringToObject (8-digit hex with alpha)', () => {
   const c = convertColorStringToObject('#ff000080');

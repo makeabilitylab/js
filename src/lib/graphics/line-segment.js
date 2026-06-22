@@ -220,18 +220,22 @@ export class LineSegment {
    * @param {CanvasRenderingContext2D} ctx - The canvas rendering context to draw on.
    */
   draw(ctx) {
+    // Save/restore around the whole method so that per-segment style — stroke
+    // color/weight and especially the dashed-line pattern — does not leak onto
+    // the context and affect later draw calls that share it.
+    ctx.save();
+
     ctx.strokeStyle = this.strokeColor;
     ctx.lineWidth = this.strokeWeight;
-  
+
     if (this.isDashedLine) {
       ctx.setLineDash([5, 15]);
     }
-  
-    this.drawArrow(ctx, this.pt1, this.pt2.subtract(this.pt1), this.strokeColor); 
-  
+
+    this.drawArrow(ctx, this.pt1, this.pt2.subtract(this.pt1), this.strokeColor);
+
     // Draw text labels (optional)
     if (this.drawTextLabels) {
-      ctx.save(); // Save context to prevent affecting other drawing calls
       ctx.font = `${this.fontSize}px Arial`;
       ctx.textAlign = "left";
       ctx.textBaseline = "top";
@@ -239,11 +243,12 @@ export class LineSegment {
 
       const label = this.generateLabel();
       const labelWidth = ctx.measureText(label).width;
-      
+
       // BUG FIX: Draw relative to pt1 instead of global origin
       ctx.fillText(label, this.pt1.x - labelWidth - 3, this.pt1.y + 12);
-      ctx.restore();
     }
+
+    ctx.restore();
   }
 
   drawArrow(ctx, p1, p2, color) {
