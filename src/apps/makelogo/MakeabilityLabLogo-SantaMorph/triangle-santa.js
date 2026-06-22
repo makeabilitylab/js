@@ -26,9 +26,11 @@
  * http://makeabilitylab.cs.washington.edu
  */
 
-import { Cell, Triangle, TriangleDir } from '../../../lib/logo/makelab-logo.js';
-import { changeColorBrightness, changeColorSaturationAndBrightness } from '../../../lib/graphics/color-utils.js';
-import { random, randomGaussian } from '../../../lib/math/math-utils.js';
+import {
+  Cell, Triangle, TriangleDir,
+  changeColorBrightness, changeColorSaturationAndBrightness,
+  random, randomGaussian,
+} from 'makelab';
 
 // --- Santa color palette (base hex values) ---
 // Each getter method applies random HSV brightness jitter to these base colors

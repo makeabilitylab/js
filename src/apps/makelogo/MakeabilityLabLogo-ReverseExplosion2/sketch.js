@@ -1,5 +1,4 @@
-import { MakeabilityLabLogoMorpher } from '../../../lib/logo/makelab-logo-morpher.js';
-import { MakeabilityLabLogo } from '../../../lib/logo/makelab-logo.js'; 
+import { MakeabilityLabLogoMorpher, MakeabilityLabLogo } from 'makelab';
 
 // --- Constants & Globals ---
 const canvas = document.getElementById('myCanvas');

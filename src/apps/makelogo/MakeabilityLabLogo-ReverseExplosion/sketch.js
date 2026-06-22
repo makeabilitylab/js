@@ -23,9 +23,7 @@
  * http://makeabilitylab.cs.washington.edu
  */
 
-import { MakeabilityLabLogo, Grid, ORIGINAL_COLOR_ARRAY } from '../../../../dist/makelab.all.js';
-import { lerpColor } from '../../../../dist/makelab.all.js';
-import { lerp, random } from '../../../../dist/makelab.all.js';
+import { MakeabilityLabLogo, Grid, ORIGINAL_COLOR_ARRAY, lerpColor, lerp, random } from 'makelab';
 
 // ---------------------------------------------------------------------------
 // Constants

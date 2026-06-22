@@ -12,13 +12,10 @@
 // ⭐ New Year's — star or firework burst
 // 🌸 Spring/Cherry Blossom — simple flower shape, pink (could double for UW cherry blossom season)
 
-import { 
-  MakeabilityLabLogo, Grid, Triangle, ORIGINAL_COLOR_ARRAY, 
-} from '../../../lib/logo/makelab-logo.js';
-import { shuffle } from '../../../lib/array-utils.js';
-import { map, lerp } from '../../../lib/math/math-utils.js';
-import { lerpColor } from '../../../lib/graphics/color-utils.js';
-import { TriangleArt } from '../../../lib/logo/triangle-art.js'; 
+import {
+  MakeabilityLabLogo, Grid, Triangle, ORIGINAL_COLOR_ARRAY,
+  shuffle, map, lerp, lerpColor, TriangleArt,
+} from 'makelab';
 
 // --- Constants ---
 const TRIANGLE_SIZE = 50;

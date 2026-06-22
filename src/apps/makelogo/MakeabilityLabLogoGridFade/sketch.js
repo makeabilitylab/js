@@ -18,7 +18,7 @@
 import {
   MakeabilityLabLogo,
   MakeabilityLabLogoGridFade,
-} from '../../../lib/logo/index.js';
+} from 'makelab';
 
 const TRIANGLE_SIZE = 50;
 const BACKGROUND_COLOR = 'rgb(250, 250, 250)';

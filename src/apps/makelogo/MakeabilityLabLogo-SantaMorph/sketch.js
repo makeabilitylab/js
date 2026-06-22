@@ -35,13 +35,11 @@
  * http://makeabilitylab.cs.washington.edu
  */
 
-import { 
-  MakeabilityLabLogo, Grid, Triangle, ORIGINAL_COLOR_ARRAY, 
-} from '../../../lib/logo/makelab-logo.js';
-import { TriangleSanta, COLOR_SANTA_SUIT_RED, COLOR_SANTA_BELT} from './triangle-santa.js';
-import { shuffle } from '../../../lib/array-utils.js';
-import { map, lerp } from '../../../lib/math/math-utils.js';
-import { lerpColor } from '../../../lib/graphics/color-utils.js';
+import {
+  MakeabilityLabLogo, Grid, Triangle, ORIGINAL_COLOR_ARRAY,
+  shuffle, map, lerp, lerpColor,
+} from 'makelab';
+import { TriangleSanta, COLOR_SANTA_SUIT_RED, COLOR_SANTA_BELT } from './triangle-santa.js';
 
 // ---------------------------------------------------------------------------
 // Constants

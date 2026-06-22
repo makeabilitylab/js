@@ -1,4 +1,4 @@
-import { MakeabilityLabLogo, Grid } from '../../../lib/logo/makelab-logo.js'; 
+import { MakeabilityLabLogo, Grid } from 'makelab';
 
 const div = document.querySelector('.container');
 const canvas = document.getElementById('myCanvas');

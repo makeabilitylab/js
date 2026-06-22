@@ -8,12 +8,20 @@
    <!-- Unlike ReverseExplosion2, does not use the makelab-logo-exploder.js library -->
   <title>Makeability Lab Logo Animation: Reverse Explosion (No Library)</title>
   
+  <!-- The makelab library, loaded directly from source (src/lib) so local edits
+       show up on reload with no build step. Developers consuming the published
+       library can instead point this specifier at the jsDelivr CDN:
+       https://cdn.jsdelivr.net/gh/makeabilitylab/js@main/dist/makelab.all.js -->
+  <script type="importmap">
+    { "imports": { "makelab": "../../../lib/index.js" } }
+  </script>
 </head>
 
 <body>
-  <div class="container">
-    <canvas id="myCanvas"></canvas>
-  </div>
+  <main class="container">
+    <canvas id="myCanvas" role="img"
+      aria-label="Animation: the scattered triangles of the Makeability Lab logo fly back together to form the logo"></canvas>
+  </main>
   <script type="module" src="sketch.js"></script>
 </body>
 

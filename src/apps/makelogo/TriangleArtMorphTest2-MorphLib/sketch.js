@@ -18,16 +18,10 @@
  *   Spring       — cherry blossom / flower, pink
  */
 
-import { MakeabilityLabLogo } from '../../../lib/logo/makelab-logo.js';
-import { MakeabilityLabLogoMorpher } from '../../../lib/logo/makelab-logo-morpher.js';
-import { TriangleArt } from '../../../lib/logo/triangle-art.js';
 import {
-  map,
-  easeOutCubic,
-  easeOutQuad,
-  easeInCubic,
-  easeInOutCubic
-} from '../../../lib/math/math-utils.js';
+  MakeabilityLabLogo, MakeabilityLabLogoMorpher, TriangleArt,
+  map, easeOutCubic, easeOutQuad, easeInCubic, easeInOutCubic,
+} from 'makelab';
 
 // =============================================================================
 // Constants

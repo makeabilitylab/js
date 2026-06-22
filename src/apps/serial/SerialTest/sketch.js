@@ -14,7 +14,7 @@
  * Source: https://github.com/makeabilitylab/js 
  */
 
-import { Serial, SerialEvents, SerialState } from '../../../lib/serial/index.js';
+import { Serial, SerialEvents, SerialState } from 'makelab';
 
 // --- DOM references ---
 const connectBtn = document.getElementById("connect-btn");

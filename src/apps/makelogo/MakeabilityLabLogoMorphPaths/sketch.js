@@ -14,18 +14,11 @@
  * By Jon E. Froehlich — https://makeabilitylab.io
  */
 
-import { MakeabilityLabLogo, Grid } from '../../../lib/logo/makelab-logo.js';
-import { MakeabilityLabLogoMorpher } from '../../../lib/logo/makelab-logo-morpher.js';
-import { TriangleArt } from '../../../lib/logo/triangle-art.js';
-import { linearPath, arcPath, bezierPath, spiralPath } from '../../../lib/logo/morph-paths.js';
 import {
-  map,
-  easeOutCubic,
-  easeOutQuad,
-  easeInCubic,
-  easeInOutCubic,
-  easeOutBack,
-} from '../../../lib/math/math-utils.js';
+  MakeabilityLabLogo, Grid, MakeabilityLabLogoMorpher, TriangleArt,
+  linearPath, arcPath, bezierPath, spiralPath,
+  map, easeOutCubic, easeOutQuad, easeInCubic, easeInOutCubic, easeOutBack,
+} from 'makelab';
 
 // =============================================================================
 // Constants

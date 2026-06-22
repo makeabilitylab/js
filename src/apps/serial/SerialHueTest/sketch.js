@@ -15,8 +15,7 @@
  *   strip.setPixelColor(0, strip.ColorHSV(hue16));
  */
 
-import { Serial, SerialEvents, SerialState } from '../../../lib/serial/index.js';
-import { hsvToRgb, rgbToHex } from '../../../lib/graphics/index.js';
+import { Serial, SerialEvents, SerialState, hsvToRgb, rgbToHex } from 'makelab';
 
 // --- DOM references ---
 const connectBtn = document.getElementById("connect-btn");

@@ -11,7 +11,7 @@
  * 
  */
 
-import { MakeabilityLabLogo, Grid } from '../../../lib/logo/makelab-logo.js';
+import { MakeabilityLabLogo, Grid } from 'makelab';
 
 const canvas = document.getElementById('myCanvas');
 const ctx = canvas.getContext('2d');

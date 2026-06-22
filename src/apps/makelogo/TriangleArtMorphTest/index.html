@@ -6,6 +6,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Makeability Lab Shape Morph</title>
   
+  <!-- The makelab library, loaded directly from source (src/lib) so local edits
+       show up on reload with no build step. Developers consuming the published
+       library can instead point this specifier at the jsDelivr CDN:
+       https://cdn.jsdelivr.net/gh/makeabilitylab/js@main/dist/makelab.all.js -->
+  <script type="importmap">
+    { "imports": { "makelab": "../../../lib/index.js" } }
+  </script>
 </head>
 <body>
   <div id="controls">
@@ -20,9 +27,10 @@
     </select>
   </div>
 
-  <div class="container">
-    <canvas id="myCanvas"></canvas>
-  </div>
+  <main class="container">
+    <canvas id="myCanvas" role="img"
+      aria-label="Animation: triangle-grid art morphing between holiday shapes"></canvas>
+  </main>
   
   <script type="module" src="sketch.js"></script>
 </body>
