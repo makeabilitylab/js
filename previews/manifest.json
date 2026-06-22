@@ -1,92 +1,92 @@
 {
   "basic/Basic": {
     "mode": "animated",
-    "appHash": "a8f87360f76f2050",
+    "appHash": "c038c5812fcf8b35",
     "sharedHash": null
   },
   "basic/BouncyBall": {
     "mode": "animated",
-    "appHash": "c086b956106caacf",
+    "appHash": "b4296dbe05077dc8",
     "sharedHash": null
   },
   "graphics/LineSegment1-Basic": {
     "mode": "animated",
-    "appHash": "1ec5fa729532aa95",
-    "sharedHash": "6a5260e13aa3e16e"
+    "appHash": "c451ad9489de8b35",
+    "sharedHash": "e75effffaeac8eb1"
   },
   "graphics/LineSegment2-Interactive": {
     "mode": "animated",
-    "appHash": "3f36134e2d6d62bb",
-    "sharedHash": "6a5260e13aa3e16e"
+    "appHash": "e051cbb03d1f9946",
+    "sharedHash": "e75effffaeac8eb1"
   },
   "makelogo/MakeabilityLabLogo": {
     "mode": "animated",
-    "appHash": "dbaf72c142421016",
-    "sharedHash": "6a5260e13aa3e16e"
+    "appHash": "f5b36f70401c279d",
+    "sharedHash": "e75effffaeac8eb1"
   },
   "makelogo/MakeabilityLabLogo-AutoResize": {
     "mode": "animated",
-    "appHash": "8f6dea596333808c",
-    "sharedHash": "6a5260e13aa3e16e"
+    "appHash": "4ac225a886ca9ef2",
+    "sharedHash": "e75effffaeac8eb1"
   },
   "makelogo/MakeabilityLabLogo-ReverseExplosion": {
     "mode": "animated",
-    "appHash": "a9f6158154900a64",
-    "sharedHash": "6a5260e13aa3e16e"
+    "appHash": "1948efb3462a757c",
+    "sharedHash": "e75effffaeac8eb1"
   },
   "makelogo/MakeabilityLabLogo-ReverseExplosion2": {
     "mode": "animated",
-    "appHash": "c96288a69b1acb1e",
-    "sharedHash": "6a5260e13aa3e16e"
+    "appHash": "237fc0c9db1c9194",
+    "sharedHash": "e75effffaeac8eb1"
   },
   "makelogo/MakeabilityLabLogo-SantaMorph": {
     "mode": "animated",
-    "appHash": "0cb4efcf9e50cd48",
-    "sharedHash": "6a5260e13aa3e16e"
+    "appHash": "cbe65f10a2c01b1d",
+    "sharedHash": "e75effffaeac8eb1"
   },
   "makelogo/MakeabilityLabLogoGridFade": {
     "mode": "animated",
-    "appHash": "ad118b4b3e26c040",
-    "sharedHash": "6a5260e13aa3e16e"
+    "appHash": "722ee006ecde9c12",
+    "sharedHash": "e75effffaeac8eb1"
   },
   "makelogo/MakeabilityLabLogoLeafFall": {
     "mode": "animated",
-    "appHash": "f1a03dfadd11092e",
-    "sharedHash": "6a5260e13aa3e16e"
+    "appHash": "a96c3fd5e4fd18ce",
+    "sharedHash": "e75effffaeac8eb1"
   },
   "makelogo/MakeabilityLabLogoMorphPaths": {
     "mode": "animated",
-    "appHash": "3dd8aaf941043950",
-    "sharedHash": "6a5260e13aa3e16e"
+    "appHash": "955d1b9e618ba704",
+    "sharedHash": "e75effffaeac8eb1"
   },
   "makelogo/MakeabilityLabLogoZoomFade": {
     "mode": "animated",
-    "appHash": "ac07037c1b4c6fe9",
-    "sharedHash": "6a5260e13aa3e16e"
+    "appHash": "caf0cd0f7d9a0206",
+    "sharedHash": "e75effffaeac8eb1"
   },
   "makelogo/TriangleArtMorphTest": {
     "mode": "animated",
-    "appHash": "d64ba07eec7d4224",
-    "sharedHash": "6a5260e13aa3e16e"
+    "appHash": "31403dbdacafba32",
+    "sharedHash": "e75effffaeac8eb1"
   },
   "makelogo/TriangleArtMorphTest2-MorphLib": {
     "mode": "animated",
-    "appHash": "c2adfbbd01854295",
-    "sharedHash": "6a5260e13aa3e16e"
+    "appHash": "fd681e66f2bda83d",
+    "sharedHash": "e75effffaeac8eb1"
   },
   "serial/SerialColorTest": {
     "mode": "poster",
-    "appHash": "0d0ae7e68bbb9803",
-    "sharedHash": "6a5260e13aa3e16e"
+    "appHash": "bdbbc9dc9b6e8800",
+    "sharedHash": "e75effffaeac8eb1"
   },
   "serial/SerialHueTest": {
     "mode": "poster",
-    "appHash": "e3a4ffa534aa587d",
-    "sharedHash": "6a5260e13aa3e16e"
+    "appHash": "983b5c491bfc5a69",
+    "sharedHash": "e75effffaeac8eb1"
   },
   "serial/SerialTest": {
     "mode": "poster",
-    "appHash": "f3a2e7c6ac637272",
-    "sharedHash": "6a5260e13aa3e16e"
+    "appHash": "1bc5bc6597c6fd5b",
+    "sharedHash": "e75effffaeac8eb1"
   }
 }
