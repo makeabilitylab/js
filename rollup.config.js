@@ -32,6 +32,7 @@ import { defineConfig } from 'rollup';
 import resolve from '@rollup/plugin-node-resolve';
 import alias from '@rollup/plugin-alias';
 import terser from '@rollup/plugin-terser';
+import { dts } from 'rollup-plugin-dts';
 import { fileURLToPath } from 'url';
 import path from 'path';
 
@@ -110,6 +111,24 @@ function createModuleConfigs(input, baseName, iifeGlobal, iifeFooter = '') {
   ];
 }
 
+/**
+ * Bundles the per-file TypeScript declarations that `tsc` emits into `.types/`
+ * (see tsconfig.json + the "build" script) down to a single `.d.ts` next to the
+ * matching ESM bundle. So `import ... from '.../dist/makelab.math.js'` picks up
+ * types from the sibling `dist/makelab.math.d.ts` automatically.
+ *
+ * @param {string} typesEntry - Emitted declaration entry (e.g. '.types/math/index.d.ts')
+ * @param {string} baseName   - Output base name (e.g. 'makelab.math')
+ * @returns {object} A Rollup config object.
+ */
+function createDtsConfig(typesEntry, baseName) {
+  return {
+    input: typesEntry,
+    output: { file: `dist/${baseName}.d.ts`, format: 'es' },
+    plugins: [dts()],
+  };
+}
+
 export default defineConfig([
   // Math module
   ...createModuleConfigs(
@@ -168,4 +187,13 @@ export default defineConfig([
     'window.lerp=window.Makelab.lerp;' +
     '}'
   ),
+
+  // TypeScript declarations — one bundled .d.ts per entry point, generated from
+  // the library's JSDoc. Reads .types/ produced by `tsc` (run before rollup in
+  // the "build" script), so these run last.
+  createDtsConfig('.types/math/index.d.ts', 'makelab.math'),
+  createDtsConfig('.types/graphics/index.d.ts', 'makelab.graphics'),
+  createDtsConfig('.types/serial/index.d.ts', 'makelab.serial'),
+  createDtsConfig('.types/logo/index.d.ts', 'makelab.logo'),
+  createDtsConfig('.types/index.d.ts', 'makelab.all'),
 ]);

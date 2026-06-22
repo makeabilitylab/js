@@ -1,0 +1,22 @@
+{
+  // This config exists ONLY to generate TypeScript declarations (.d.ts) from the
+  // library's JSDoc — it does not type-check or compile any runtime code. The
+  // per-file declarations land in .types/ (git-ignored, temporary); rollup then
+  // bundles them into one dist/makelab.<entry>.d.ts per entry point. See
+  // rollup.config.js and the "build" script in package.json.
+  "compilerOptions": {
+    "allowJs": true,             // read the .js sources
+    "checkJs": false,            // emit types; don't type-check the JS bodies
+    "declaration": true,
+    "emitDeclarationOnly": true, // no .js output — rollup builds the bundles
+    "rootDir": "src/lib",        // mirror src/lib/* into .types/* (e.g. .types/math/index.d.ts)
+    "outDir": ".types",
+    "module": "esnext",
+    "target": "es2020",
+    "moduleResolution": "bundler",
+    "lib": ["es2020", "dom"],    // Serial wraps the Web Serial / DOM stream APIs
+    "skipLibCheck": true,
+    "strict": false
+  },
+  "include": ["src/lib"]
+}

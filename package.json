@@ -3,9 +3,10 @@
   "version": "0.6.0",
   "description": "A library for the Makeability Lab",
   "main": "dist/makelab.all.js",
+  "types": "dist/makelab.all.d.ts",
   "author": "Jon E. Froehlich",
   "scripts": {
-    "build": "rollup -c rollup.config.js",
+    "build": "tsc -p tsconfig.json && rollup -c rollup.config.js",
     "test": "node test/all.test.js"
   },
   "devDependencies": {
@@ -13,7 +14,9 @@
     "@rollup/plugin-node-resolve": "^16.0.3",
     "@rollup/plugin-terser": "^1.0.0",
     "playwright": "^1.61.0",
-    "rollup": "^4.62.2"
+    "rollup": "^4.62.2",
+    "rollup-plugin-dts": "^6.4.1",
+    "typescript": "^6.0.3"
   },
   "type": "module"
 }

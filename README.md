@@ -223,10 +223,11 @@ The project uses Rollup to create optimized bundles. The build process generates
 ### Build All Modules
 
 ```bash
-npx rollup -c rollup.config.js
+npm run build
 ```
 
-This command generates the following files in the `dist/` directory:
+This runs TypeScript first (to generate `.d.ts` type declarations from the
+JSDoc) and then Rollup, generating the following files in the `dist/` directory:
 
 | Module | ESM | ESM (min) | IIFE | IIFE (min) |
 |--------|-----|-----------|------|------------|
@@ -240,6 +241,7 @@ This command generates the following files in the `dist/` directory:
 
 - **ESM format**: ES6 modules for use with `import` statements and `<script type="module">`
 - **IIFE format**: Immediately Invoked Function Expression for use with plain `<script>` tags. Exports are placed on `window.Makelab.*` and commonly used classes (like `Serial`, `SerialEvents`, `Vector`) are also hoisted to the global scope for convenience.
+- **TypeScript declarations**: one bundled `makelab.<entry>.d.ts` per entry point (e.g. `makelab.math.d.ts`, `makelab.all.d.ts`), generated from the library's JSDoc. A TypeScript project or editor that imports a bundle picks up types from the sibling `.d.ts` automatically; `package.json`'s `types` field points at `dist/makelab.all.d.ts`. (Types target the ESM bundles.)
 - **Source Maps**: Generated for non-minified versions
 - **Minification**: Terser plugin for optimized builds
 - **Path Aliases**: Configured for clean imports (@lib, @mathlib, @graphicslib, @apps, @dist)
@@ -265,7 +267,8 @@ For production use, reference the minified versions:
 ## Testing
 
 The library has a small, zero-dependency test suite in `test/` (covering the
-`Vector` class and the math and color utilities). The same tests run in two ways:
+`Vector` and `LineSegment` classes and the math, color, and array utilities).
+The same tests run in two ways:
 
 ```bash
 # From the command line (Node):
