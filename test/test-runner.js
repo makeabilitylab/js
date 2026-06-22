@@ -17,10 +17,23 @@ const tests = [];
  *
  * @param {string} name - Description of what is being tested.
  * @param {function(): (void|Promise<void>)} fn - Test body; throw (e.g. via
- *   {@link assert}) to fail.
+ *   {@link assert}) to fail. May be async.
  */
 export function test(name, fn) {
   tests.push({ name, fn });
+}
+
+/**
+ * Registers a test that is intentionally not run (reported separately, counted
+ * as neither pass nor fail). Useful when a test only makes sense in one
+ * environment — e.g. Serial tests that mock `navigator`, which works in Node but
+ * not in a real browser.
+ *
+ * @param {string} name - Description of the skipped test.
+ * @param {string} [reason] - Why it is skipped (shown in the report).
+ */
+export function skip(name, reason = '') {
+  tests.push({ name, fn: null, skipped: true, reason });
 }
 
 /**
@@ -53,6 +66,58 @@ export function assertEquals(actual, expected, epsilon = 0) {
 }
 
 /**
+ * Asserts that a synchronous function throws. Optionally checks the error
+ * message against a substring or RegExp.
+ *
+ * @param {function(): void} fn - Function expected to throw.
+ * @param {string|RegExp} [expected] - Substring or pattern the message must match.
+ */
+export function assertThrows(fn, expected) {
+  let threw = false;
+  try {
+    fn();
+  } catch (err) {
+    threw = true;
+    checkErrorMatch(err, expected);
+  }
+  if (!threw) {
+    throw new Error('expected the function to throw, but it did not');
+  }
+}
+
+/**
+ * Asserts that a promise (or the promise returned by a function) rejects.
+ * Optionally checks the error message against a substring or RegExp.
+ *
+ * @param {Promise|function(): Promise} promiseOrFn - The promise, or a function returning one.
+ * @param {string|RegExp} [expected] - Substring or pattern the message must match.
+ * @returns {Promise<void>}
+ */
+export async function assertRejects(promiseOrFn, expected) {
+  const p = typeof promiseOrFn === 'function' ? promiseOrFn() : promiseOrFn;
+  let rejected = false;
+  try {
+    await p;
+  } catch (err) {
+    rejected = true;
+    checkErrorMatch(err, expected);
+  }
+  if (!rejected) {
+    throw new Error('expected the promise to reject, but it resolved');
+  }
+}
+
+/** @private Verifies an error's message matches a substring or RegExp (if given). */
+function checkErrorMatch(err, expected) {
+  if (expected === undefined) return;
+  const msg = err && err.message ? err.message : String(err);
+  const ok = expected instanceof RegExp ? expected.test(msg) : msg.includes(expected);
+  if (!ok) {
+    throw new Error(`error message ${JSON.stringify(msg)} did not match ${expected}`);
+  }
+}
+
+/**
  * Runs all registered tests and reports results to the page (in the browser)
  * or the console (in Node). In Node, sets a non-zero exit code if any test
  * fails so CI can detect failures.
@@ -78,20 +143,27 @@ export async function run() {
 
   let passed = 0;
   let failed = 0;
-  for (const { name, fn } of tests) {
+  let skipped = 0;
+  for (const t of tests) {
+    if (t.skipped) {
+      skipped++;
+      log(`⏭️  ${t.name}${t.reason ? ` — ${t.reason}` : ''}`);
+      continue;
+    }
     try {
-      await fn();
+      await t.fn();
       passed++;
-      log(`✅ ${name}`);
+      log(`✅ ${t.name}`);
     } catch (err) {
       failed++;
-      log(`❌ ${name} — ${err.message}`, true);
+      log(`❌ ${t.name} — ${err.message}`, true);
     }
   }
-  log(`\n${passed} passed, ${failed} failed (${passed + failed} total)`);
+  const skipNote = skipped > 0 ? `, ${skipped} skipped` : '';
+  log(`\n${passed} passed, ${failed} failed${skipNote} (${tests.length} total)`);
 
   if (!isBrowser && failed > 0 && typeof process !== 'undefined') {
     process.exitCode = 1;
   }
-  return { passed, failed };
+  return { passed, failed, skipped };
 }

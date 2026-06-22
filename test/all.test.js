@@ -7,6 +7,7 @@ import './math-utils.test.js';
 import './color-utils.test.js';
 import './line-segment.test.js';
 import './array-utils.test.js';
+import './serial.test.js';
 import { run } from './test-runner.js';
 
 run();
