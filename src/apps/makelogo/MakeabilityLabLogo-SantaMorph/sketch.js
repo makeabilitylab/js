@@ -49,7 +49,7 @@ import { TriangleSanta, COLOR_SANTA_SUIT_RED, COLOR_SANTA_BELT } from './triangl
 const TRIANGLE_SIZE = 50;
 
 /** @const {string} CSS font-family for the holiday greeting text. */
-const HOLIDAY_FONT_FAMILY = 'MerryChristmasFlake, cursive';
+const HOLIDAY_FONT_FAMILY = "'Mountains of Christmas', cursive";
 
 /** @const {number} Font size in pixels for the holiday greeting text. */
 const HOLIDAY_TEXT_SIZE = 45;
@@ -151,12 +151,13 @@ function setupCanvas() {
  * @returns {Promise<void>}
  */
 async function loadFonts() {
-  const font = new FontFace('MerryChristmasFlake', "url('fonts/MerryChristmasFlake.ttf')");
+  // Mountains of Christmas (Apache-2.0, committed under fonts/). See fonts/README.md.
+  const font = new FontFace('Mountains of Christmas', "url('fonts/MountainsOfChristmas-Regular.ttf')");
   try {
     const loadedFont = await font.load();
     document.fonts.add(loadedFont);
   } catch (e) {
-    console.warn('Could not load MerryChristmasFlake font, falling back to cursive:', e);
+    console.warn('Could not load the Mountains of Christmas font, falling back to cursive:', e);
   }
 }
 
