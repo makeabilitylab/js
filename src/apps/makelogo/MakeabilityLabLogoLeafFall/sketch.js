@@ -34,6 +34,16 @@ const ctx = canvas.getContext('2d');
 let makeLabLogo;
 let leafFall;
 let animationStartMs = 0;
+let rafId = 0;
+
+// Respect the user's "reduce motion" OS/browser setting (accessibility). When
+// it's on, we skip the falling animation and just show the finished logo.
+const reducedMotionQuery =
+  window.matchMedia?.('(prefers-reduced-motion: reduce)');
+
+// A timestamp well past the end of the fall. Every piece clamps its progress
+// to 1, so updating with this settles the whole animation to its final frame.
+const SETTLE_MS = 10_000_000;
 
 /**
  * (Re)builds the canvas, logo, and animation for the current window size.
@@ -94,7 +104,30 @@ function frame(now) {
   leafFall.update(elapsedMs);
   leafFall.draw(ctx);
 
-  requestAnimationFrame(frame);
+  rafId = requestAnimationFrame(frame);
+}
+
+/** Draws the finished logo as a single static frame (no motion). */
+function drawSettledFrame() {
+  ctx.fillStyle = BACKGROUND_COLOR;
+  ctx.fillRect(0, 0, window.innerWidth, window.innerHeight);
+  leafFall.update(SETTLE_MS);
+  leafFall.draw(ctx);
+}
+
+/**
+ * Plays the falling animation — or, if the user prefers reduced motion, draws
+ * the finished logo as one static frame instead of animating.
+ */
+function start() {
+  cancelAnimationFrame(rafId);
+  leafFall.reset();
+  animationStartMs = 0;
+  if (reducedMotionQuery?.matches) {
+    drawSettledFrame();
+  } else {
+    rafId = requestAnimationFrame(frame);
+  }
 }
 
 // Rebuild on resize (debounced). The clock keeps running, so an already-revealed
@@ -102,7 +135,11 @@ function frame(now) {
 let resizeTimer;
 window.addEventListener('resize', () => {
   clearTimeout(resizeTimer);
-  resizeTimer = setTimeout(buildScene, 150);
+  resizeTimer = setTimeout(() => {
+    buildScene();
+    // No loop runs under reduced motion, so repaint the static frame ourselves.
+    if (reducedMotionQuery?.matches) drawSettledFrame();
+  }, 150);
 });
 
 // --- Interaction ---
@@ -144,4 +181,8 @@ document.addEventListener('keydown', (event) => {
 });
 
 buildScene();
-requestAnimationFrame(frame);
+start();
+
+// If the user toggles "reduce motion" while the page is open, react live
+// (start animating, or settle to the static frame) without a reload.
+reducedMotionQuery?.addEventListener?.('change', start);

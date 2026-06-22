@@ -1,6 +1,12 @@
 const canvas = document.getElementById('myCanvas');
 const ctx = canvas.getContext('2d');
 
+// Respect the user's "reduce motion" OS/browser setting (accessibility). When
+// it's on, we draw the ball once and don't start the bouncing loop.
+const reducedMotionQuery =
+  window.matchMedia?.('(prefers-reduced-motion: reduce)');
+let rafId = 0;
+
 // Ball properties
 const ballRadius = canvas.width * 0.1;
 const ballColor = 'red';
@@ -43,7 +49,25 @@ function animate() {
 
   drawBall();
   moveBall();
-  requestAnimationFrame(animate);
+  rafId = requestAnimationFrame(animate);
+}
+
+// Draw the ball once, without moving it (used when motion is reduced).
+function drawStaticFrame() {
+  ctx.fillStyle = bgColor;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  drawBall();
+}
+
+// Start bouncing — or, if the user prefers reduced motion, just draw the ball
+// as a single static frame instead of animating.
+function start() {
+  cancelAnimationFrame(rafId);
+  if (reducedMotionQuery?.matches) {
+    drawStaticFrame();
+  } else {
+    rafId = requestAnimationFrame(animate);
+  }
 }
 
 function resizeCanvas() {
@@ -61,8 +85,15 @@ function resizeCanvas() {
   maxSpeed = Math.max(3, canvas.height * 0.01);
   xSpeed = Math.random() * maxSpeed * initialDir; // Random x velocity
   ySpeed = Math.random() * maxSpeed * initialDir; // Random y velocity
+
+  // No loop runs under reduced motion, so repaint the static frame ourselves.
+  if (reducedMotionQuery?.matches) drawStaticFrame();
 }
 
 window.addEventListener('resize', resizeCanvas);
 resizeCanvas();
-animate();
+start();
+
+// If the user toggles "reduce motion" while the page is open, react live
+// (start bouncing, or freeze to the static frame) without a reload.
+reducedMotionQuery?.addEventListener?.('change', start);
